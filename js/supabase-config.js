@@ -6,7 +6,7 @@
 
 const SUPABASE_CONFIG = {
   // 您的 Supabase 專案 URL (例如: "https://your-project.supabase.co")
-  DEFAULT_URL: "",
+  DEFAULT_URL: "https://lzuvzdbdrtsevmgchckp.supabase.co",
   
   // 您的 Supabase Public Anon Key (可以在 Supabase Project Settings -> API 找到)
   DEFAULT_ANON_KEY: "",
