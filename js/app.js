@@ -6,14 +6,14 @@
 const App = (() => {
   const STORAGE_KEY = 'word_dungeon_save_v1';
 
-  // Global App State
-  let state = {
-    heroName: '單字勇者',
+  // Default State Factory (Ensures clean state isolation between accounts)
+  const getDefaultState = (heroName = '單字勇者') => ({
+    heroName: heroName,
     currentHp: 120,
     gold: 60,
     streak: 1,
     lastActiveDate: '',
-    lastActiveTimestamp: 0,
+    lastActiveTimestamp: Date.now(),
     leavePassExpires: 0,
     activeBuff: null,
     equippedWeapon: 'w1',
@@ -42,7 +42,10 @@ const App = (() => {
     endlessPracticeCounter: 0,
     checkinClaimedDate: '',
     checkinDayIndex: 0
-  };
+  });
+
+  // Global App State
+  let state = getDefaultState();
 
   // Runtime Battle State
   let battle = {
@@ -73,10 +76,25 @@ const App = (() => {
   let heroExpression = 'happy';
   let heroSpeechText = '';
 
-  // Save & Load
+  // Data Isolation per User
+  const getStorageKey = () => {
+    const user = (window.SupabaseClient && typeof SupabaseClient.getUser === 'function') ? SupabaseClient.getUser() : null;
+    return (user && user.id) ? `word_dungeon_save_${user.id}` : 'word_dungeon_save_guest';
+  };
+
+  // Toggle HUD and debug visibility (hidden during unauthenticated gate)
+  const setHUDVisible = (visible) => {
+    const hud = document.querySelector('.top-hud');
+    const dbg = document.querySelector('.debug-toolbar');
+    if (hud) hud.style.display = visible ? 'block' : 'none';
+    if (dbg) dbg.style.display = visible ? 'flex' : 'none';
+  };
+
+  // Save & Load (Independent per user)
   const saveState = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const key = getStorageKey();
+      localStorage.setItem(key, JSON.stringify(state));
       if (window.SupabaseClient && SupabaseClient.isLoggedIn()) {
         SupabaseClient.syncToCloud(state);
       }
@@ -87,12 +105,16 @@ const App = (() => {
 
   const loadState = () => {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const key = getStorageKey();
+      const data = localStorage.getItem(key);
       if (data) {
-        state = Object.assign(state, JSON.parse(data));
+        state = Object.assign(getDefaultState(), JSON.parse(data));
+      } else {
+        state = getDefaultState();
       }
     } catch (e) {
       console.error('Load failed', e);
+      state = getDefaultState();
     }
   };
 
@@ -1794,7 +1816,178 @@ const App = (() => {
     document.getElementById('modal-root').innerHTML = modalHtml;
   };
 
-  // Auth & Supabase Configuration Modal
+  // Enforced Auth Gate View (Main screen when unauthenticated)
+  const renderAuthGateView = (tab = 'login') => {
+    setHUDVisible(false);
+    const main = document.getElementById('main-content');
+    if (!main) return;
+
+    main.innerHTML = `
+      <div class="auth-gate-wrapper">
+        <div class="auth-gate-banner">
+          <div style="margin-bottom:6px; display:inline-block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));">
+            ${PixelSprites.icon('castle', 48)}
+          </div>
+          <div class="auth-gate-title">單字地下城與通天塔</div>
+          <div class="auth-gate-subtitle">公會通行驗證處・每位冒險者皆擁有獨立雲端進度庫</div>
+        </div>
+
+        <div class="auth-gate-card">
+          <div class="auth-gate-tabs">
+            <button class="auth-tab-btn ${tab === 'login' ? 'active' : ''}" onclick="App.renderAuthGateView('login')">
+              ${PixelSprites.icon('key', 14)} 冒險者登入
+            </button>
+            <button class="auth-tab-btn ${tab === 'signup' ? 'active' : ''}" onclick="App.renderAuthGateView('signup')">
+              ${PixelSprites.icon('scroll', 14)} 註冊新勇者
+            </button>
+          </div>
+
+          <div id="auth-gate-body" style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
+            ${tab === 'login' ? `
+              <form id="gate-login-form" onsubmit="event.preventDefault(); App.handleGateLogin();" style="display:flex; flex-direction:column; gap:10px;">
+                <div class="auth-form-group">
+                  <label class="auth-label">冒險者電子信箱 (Email)</label>
+                  <input type="email" id="gate-email" class="auth-input" placeholder="hero@dungeon.com" required autocomplete="email">
+                </div>
+
+                <div class="auth-form-group">
+                  <label class="auth-label">通行密碼 (Password)</label>
+                  <input type="password" id="gate-password" class="auth-input" placeholder="請輸入通行密碼" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" id="btn-gate-submit" class="auth-submit-btn">
+                  進入地下城世界
+                </button>
+              </form>
+            ` : `
+              <form id="gate-signup-form" onsubmit="event.preventDefault(); App.handleGateSignup();" style="display:flex; flex-direction:column; gap:10px;">
+                <div class="auth-form-group">
+                  <label class="auth-label">冒險者電子信箱 (Email)</label>
+                  <input type="email" id="gate-email" class="auth-input" placeholder="hero@dungeon.com" required autocomplete="email">
+                </div>
+
+                <div class="auth-form-group">
+                  <label class="auth-label">通行密碼 (至少 6 位數)</label>
+                  <input type="password" id="gate-password" class="auth-input" placeholder="設定密碼 (至少 6 位數)" minlength="6" required autocomplete="new-password">
+                </div>
+
+                <div class="auth-form-group">
+                  <label class="auth-label">公會唯一帳號 (Username)</label>
+                  <input type="text" id="gate-username" class="auth-input" placeholder="例如: brave_sam99" required autocomplete="username">
+                </div>
+
+                <div class="auth-form-group">
+                  <label class="auth-label">勇者稱號 (顯示於排行榜與對話)</label>
+                  <input type="text" id="gate-heroname" class="auth-input" placeholder="例如: 破曉守護者" value="單字勇者">
+                </div>
+
+                <button type="submit" id="btn-gate-submit" class="auth-submit-btn">
+                  簽署公會契約・啟程
+                </button>
+              </form>
+            `}
+          </div>
+
+          <div class="auth-secure-notice">
+            <span>🛡️</span>
+            <div>
+              <strong>資料獨立與全球即時排行：</strong><br>
+              每位玩家擁有獨立的資料庫檔案，生命值、裝備、通天塔層數皆完全隔離；登入後即時參與跨界天梯競賽！
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const handleGateLogin = async () => {
+    const email = document.getElementById('gate-email')?.value?.trim();
+    const password = document.getElementById('gate-password')?.value;
+    const btn = document.getElementById('btn-gate-submit');
+
+    if (!email || !password) {
+      alert('請填寫完整 Email 與通行密碼！');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = '驗證冒險者勳章中...';
+    }
+
+    try {
+      showToast('正在驗證冒險者資料...');
+      await SupabaseClient.signIn(email, password);
+
+      setHUDVisible(true);
+      loadState();
+      await SupabaseClient.syncFromCloud();
+      checkAbsence();
+      updateHUD();
+      renderLobbyView();
+      bindDebugToolbar();
+      showToast(`登入成功！歡迎回到地下城，勇者 ${state.heroName}！`);
+    } catch (err) {
+      console.error('Gate login error:', err);
+      alert('登入失敗: ' + (err.message || '請確認帳號密碼或網路連線'));
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = '進入地下城世界';
+      }
+    }
+  };
+
+  const handleGateSignup = async () => {
+    const email = document.getElementById('gate-email')?.value?.trim();
+    const password = document.getElementById('gate-password')?.value;
+    const username = document.getElementById('gate-username')?.value?.trim();
+    const heroName = document.getElementById('gate-heroname')?.value?.trim() || '單字勇者';
+    const btn = document.getElementById('btn-gate-submit');
+
+    if (!email || !password || !username) {
+      alert('請填寫完整註冊資料！');
+      return;
+    }
+
+    if (password.length < 6) {
+      alert('密碼長度至少需要 6 個字元！');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = '正在建立冒險者檔案...';
+    }
+
+    try {
+      showToast('正在向公會註冊新勇者...');
+      const res = await SupabaseClient.signUp(email, password, username, heroName);
+
+      if (SupabaseClient.isLoggedIn()) {
+        state = getDefaultState(heroName);
+        saveState();
+        await SupabaseClient.syncToCloud(state);
+        setHUDVisible(true);
+        checkAbsence();
+        updateHUD();
+        renderLobbyView();
+        bindDebugToolbar();
+        showToast(`註冊成功！歡迎踏入單字地下城，${state.heroName}！`);
+      } else {
+        alert('註冊成功！若有啟用信箱確認機制，請前往信箱點擊確認信後，切換至「冒險者登入」即可啟程！');
+        renderAuthGateView('login');
+      }
+    } catch (err) {
+      console.error('Gate signup error:', err);
+      alert('註冊失敗: ' + (err.message || '請檢查資訊格式或稍後再試'));
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = '簽署公會契約・啟程';
+      }
+    }
+  };
+
+  // Auth & Supabase Configuration Modal (Accessible inside lobby)
   const showAuthModal = (activeTab = 'login') => {
     const isConfigured = window.SupabaseClient && SupabaseClient.isConfigured();
     const savedUrl = SUPABASE_CONFIG.getUrl() || '';
@@ -1856,8 +2049,14 @@ const App = (() => {
     try {
       showToast('正在登入 Supabase...');
       await SupabaseClient.signIn(email, password);
+      loadState();
+      await SupabaseClient.syncFromCloud();
       showToast('登入成功！雲端進度已同步！');
-      renderLeaderboardModal();
+      closeModal();
+      setHUDVisible(true);
+      checkAbsence();
+      updateHUD();
+      renderLobbyView();
     } catch (err) {
       alert('登入失敗: ' + (err.message || '請確認帳號密碼或 Supabase 設定'));
     }
@@ -1869,7 +2068,7 @@ const App = (() => {
     const username = document.getElementById('auth-username').value;
     const heroname = document.getElementById('auth-heroname').value;
 
-    if (!email || !password) {
+    if (!email || !password || !username) {
       alert('請填寫完整資訊！');
       return;
     }
@@ -1877,18 +2076,38 @@ const App = (() => {
     try {
       showToast('正在註冊帳號...');
       await SupabaseClient.signUp(email, password, username, heroname);
-      showToast('註冊成功！已自動登入！');
-      renderLeaderboardModal();
+      if (SupabaseClient.isLoggedIn()) {
+        state = getDefaultState(heroname || '單字勇者');
+        saveState();
+        await SupabaseClient.syncToCloud(state);
+        showToast('註冊成功！已自動登入！');
+        closeModal();
+        setHUDVisible(true);
+        checkAbsence();
+        updateHUD();
+        renderLobbyView();
+      } else {
+        alert('註冊成功！若有啟用信箱確認，請前往信箱驗證後登入。');
+        closeModal();
+        renderAuthGateView('login');
+      }
     } catch (err) {
       alert('註冊失敗: ' + (err.message || '請檢查資訊格式或確認信件'));
     }
   };
 
   const handleLogout = async () => {
-    if (confirm('確定要登出當前帳號嗎？')) {
-      await SupabaseClient.signOut();
-      showToast('已登出帳號，切換為訪客模式。');
-      renderLeaderboardModal();
+    if (confirm('確定要登出冒險者公會嗎？（您的雲端進度已完整保存）')) {
+      try {
+        await SupabaseClient.signOut();
+      } catch (e) {
+        console.warn('Sign out warning:', e);
+      }
+      closeModal();
+      state = getDefaultState();
+      setHUDVisible(false);
+      showToast('已登出冒險者公會。');
+      renderAuthGateView('login');
     }
   };
 
@@ -2132,8 +2351,10 @@ const App = (() => {
       renderLobbyView();
     };
     document.getElementById('dbg-reset-save').onclick = () => {
-      if (confirm('確定要重設所有遊戲進度嗎？')) {
-        localStorage.removeItem(STORAGE_KEY);
+      if (confirm('確定要重設當前帳號的本機遊戲進度嗎？')) {
+        localStorage.removeItem(getStorageKey());
+        state = getDefaultState();
+        saveState();
         location.reload();
       }
     };
@@ -2148,33 +2369,55 @@ const App = (() => {
   };
 
   // Init
-  const init = () => {
-    loadState();
-    if (window.SupabaseClient) {
-      SupabaseClient.init();
+  const init = async () => {
+    // Top HUD buttons
+    const soundBtn = document.getElementById('btn-sound-toggle');
+    if (soundBtn) {
+      soundBtn.onclick = () => {
+        AudioManager.toggleMute();
+        updateHUD();
+      };
     }
+    const accBtn = document.getElementById('btn-account-open');
+    if (accBtn) {
+      accBtn.onclick = () => {
+        renderLeaderboardModal();
+      };
+    }
+
+    if (window.SupabaseClient) {
+      await SupabaseClient.init();
+    }
+
+    // Enforce authentication gate: guest cannot play without login/signup
+    if (!window.SupabaseClient || !SupabaseClient.isLoggedIn()) {
+      setHUDVisible(false);
+      renderAuthGateView('login');
+      return;
+    }
+
+    // User is authenticated: restore profile and launch dungeon camp
+    setHUDVisible(true);
+    loadState();
+    await SupabaseClient.syncFromCloud();
     checkAbsence();
     updateHUD();
     renderLobbyView();
     bindDebugToolbar();
 
-    // Top HUD buttons
-    document.getElementById('btn-sound-toggle').onclick = () => {
-      AudioManager.toggleMute();
-      updateHUD();
-    };
-    document.getElementById('btn-account-open').onclick = () => {
-      renderLeaderboardModal();
-    };
-
     // Ticker for timed buffs & leave pass every second
     setInterval(() => {
-      updateHUD();
+      if (window.SupabaseClient && SupabaseClient.isLoggedIn()) {
+        updateHUD();
+      }
     }, 1000);
   };
 
   return {
     init,
+    renderAuthGateView,
+    handleGateLogin,
+    handleGateSignup,
     renderLobby: renderLobbyView,
     renderDungeonSelect: renderDungeonSelectView,
     renderShopView,

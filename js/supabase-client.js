@@ -7,7 +7,7 @@ const SupabaseClient = (() => {
   let client = null;
   let currentUser = null;
 
-  const init = () => {
+  const init = async () => {
     if (!window.supabase) {
       console.warn('Supabase JS SDK not loaded yet.');
       return false;
@@ -23,18 +23,15 @@ const SupabaseClient = (() => {
       client = window.supabase.createClient(url, key);
 
       // Check existing session
-      client.auth.getSession().then(({ data: { session } }) => {
-        if (session && session.user) {
-          currentUser = session.user;
-          syncFromCloud();
-        }
-      });
+      const { data } = await client.auth.getSession();
+      if (data && data.session && data.session.user) {
+        currentUser = data.session.user;
+      } else {
+        currentUser = null;
+      }
 
       client.auth.onAuthStateChange((event, session) => {
         currentUser = session ? session.user : null;
-        if (currentUser) {
-          syncFromCloud();
-        }
       });
 
       return true;
@@ -45,8 +42,8 @@ const SupabaseClient = (() => {
   };
 
   const getClient = () => {
-    if (!client) {
-      init();
+    if (!client && window.supabase && SUPABASE_CONFIG.isConfigured()) {
+      client = window.supabase.createClient(SUPABASE_CONFIG.getUrl(), SUPABASE_CONFIG.getAnonKey());
     }
     return client;
   };
