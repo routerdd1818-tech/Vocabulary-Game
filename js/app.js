@@ -728,131 +728,204 @@ const App = (() => {
     const relicTier = relicItem ? relicItem.tier : 0;
 
     const html = `
-      <!-- Hero Camp Stage Card -->
-      <div class="pixel-box hero-stage-card">
-        <div class="avatar-wrapper" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄姿態與神域覺醒">
-          ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
+      <div class="cabin-lodge-container">
+        <!-- 1. Hero Hearth & Rest Area (冒險者壁爐與休息地毯) -->
+        <div class="cabin-hearth-card">
+          <!-- Pixel Stone Hearth & Fireplace Scene -->
+          <div class="cabin-hearth-scene">
+            ${PixelSprites.renderCabinHearth()}
+            <div class="cabin-hero-perch" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄姿態與神域覺醒">
+              ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
+            </div>
+          </div>
+
+          <!-- Hero Class Insignia Plaque -->
+          <div class="cabin-class-plaque-row">
+            ${state.heroClass === 'novice' ? `
+              <button class="cabin-plaque-btn novice-plaque" onclick="App.showClassSelectModal()">
+                ${PixelSprites.icon('quill', 12)}
+                <span>🔰 見習村民 (點此前往道場多益轉職)</span>
+              </button>
+            ` : `
+              <button class="cabin-plaque-btn" onclick="App.showClassSelectModal()">
+                ${PixelSprites.icon('crown', 12)}
+                <span>【${(GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === state.heroClass) : null)?.name || '未知職業'}】</span>
+                ${((state.classAwakening && state.classAwakening[state.heroClass]) || 0) > 0 ? `
+                  <span class="awakening-stars-tag">★x${state.classAwakening[state.heroClass]}</span>
+                ` : `
+                  <span style="color:#d4a0ff; font-size:10px;">[未覺醒]</span>
+                `}
+                <span style="color:var(--gold); font-size:10px; margin-left:3px;">[姿態/覺醒]</span>
+              </button>
+            `}
+          </div>
+
+          <!-- Hearthside Cozy Speech Bubble -->
+          <div class="cabin-speech-bubble">
+            <div class="cabin-speech-pointer"></div>
+            <div>${heroSpeechText}</div>
+          </div>
+
+          <!-- 3 Carved Wooden Status Plaques -->
+          <div class="cabin-stats-row">
+            <div class="cabin-stat-plaque stat-hp">
+              <span class="cabin-stat-label">${PixelSprites.icon('heart', 12)} 最大生命</span>
+              <span class="cabin-stat-val">${stats.maxHp} HP</span>
+            </div>
+            <div class="cabin-stat-plaque stat-atk">
+              <span class="cabin-stat-label">${PixelSprites.icon('sword', 12)} 總攻擊力</span>
+              <span class="cabin-stat-val">${stats.atk} ATK</span>
+            </div>
+            <div class="cabin-stat-plaque stat-def">
+              <span class="cabin-stat-label">${PixelSprites.icon('shield', 12)} 總防禦力</span>
+              <span class="cabin-stat-val">${stats.def} DEF</span>
+            </div>
+          </div>
         </div>
 
-        <div class="hero-class-bar">
-          ${state.heroClass === 'novice' ? `
-            <button class="hero-class-pill novice-pill" onclick="App.showClassSelectModal()">
-              ${PixelSprites.icon('quill', 12)}
-              <span>🔰 見習村民 (點此前往道場多益轉職)</span>
+        <!-- 2. Cabin Interactive Facilities (三大冒險模式：觀星窗台、討伐告示板、劍技木人樁) -->
+        <div class="cabin-section-box">
+          <div class="cabin-section-header">
+            <span>🪵 小屋冒險設施 (點擊出發探索)</span>
+          </div>
+
+          <div class="cabin-props-grid">
+            <!-- 觀星窗台・挑戰登塔 -->
+            <button class="cabin-prop-btn prop-btn-tower" id="btn-mode-tower">
+              <div class="prop-icon-frame">
+                ${PixelSprites.renderTowerWindow(40)}
+              </div>
+              <div class="prop-info-col">
+                <div class="prop-title">觀星窗台・挑戰登塔</div>
+                <div class="prop-desc">1000層通天塔・5分升層</div>
+                <div class="prop-badge badge-tower">${PixelSprites.icon('tower', 10)} 目前進度: ${state.towerFloor}F (${state.towerPoints}/5點)</div>
+              </div>
             </button>
-          ` : `
-            <button class="hero-class-pill" onclick="App.showClassSelectModal()">
-              ${PixelSprites.icon('crown', 12)}
-              <span>【${(GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === state.heroClass) : null)?.name || '未知職業'}】</span>
-              ${((state.classAwakening && state.classAwakening[state.heroClass]) || 0) > 0 ? `
-                <span class="awakening-stars-tag">★x${state.classAwakening[state.heroClass]}</span>
-              ` : `
-                <span style="color:#ba68c8; font-size:10px;">[未覺醒]</span>
-              `}
-              <span style="color:var(--gold); font-size:10px; margin-left:3px;">[姿態/覺醒]</span>
+
+            <!-- 討伐告示板・地下城 -->
+            <button class="cabin-prop-btn prop-btn-dungeon" id="btn-mode-dungeon">
+              <div class="prop-icon-frame">
+                ${PixelSprites.renderBountyBoard(40)}
+              </div>
+              <div class="prop-info-col">
+                <div class="prop-title">討伐告示板・地下城</div>
+                <div class="prop-desc">15大固定Boss・耐戰高題量</div>
+                <div class="prop-badge badge-dungeon">${PixelSprites.icon('skull', 10)} 目前開放至: B${state.dungeonProgress}F</div>
+              </div>
             </button>
-          `}
-        </div>
-
-        <div class="hero-speech-bubble">
-          <div class="speech-pointer"></div>
-          <div>${heroSpeechText}</div>
-        </div>
-
-        <div class="hero-stats-grid">
-          <div class="hero-stat-cell">
-            <span style="color:#ff6666;">${PixelSprites.icon('heart', 14)} 最大生命</span>
-            <span class="hero-stat-val">${stats.maxHp} HP</span>
           </div>
-          <div class="hero-stat-cell">
-            <span style="color:#ffcc44;">${PixelSprites.icon('sword', 14)} 總攻擊力</span>
-            <span class="hero-stat-val">${stats.atk} ATK</span>
-          </div>
-          <div class="hero-stat-cell">
-            <span style="color:#44ddff;">${PixelSprites.icon('shield', 14)} 總防禦力</span>
-            <span class="hero-stat-val">${stats.def} DEF</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- Main Trio Game Modes -->
-      <div class="modes-grid modes-grid-3">
-        <button class="pixel-btn-mode mode-btn-tower" id="btn-mode-tower">
-          ${PixelSprites.icon('tower', 28)}
-          <div>挑戰登塔模式</div>
-          <div class="mode-desc">1000層通天塔・5分升層</div>
-          <span style="font-size:11px; color:#4fe3ff;">目前進度: ${state.towerFloor}F (${state.towerPoints}/5點)</span>
-        </button>
-
-        <button class="pixel-btn-mode mode-btn-dungeon" id="btn-mode-dungeon">
-          ${PixelSprites.icon('skull', 28)}
-          <div>地下城討伐戰</div>
-          <div class="mode-desc">15大固定Boss・耐戰高題量</div>
-          <span style="font-size:11px; color:#ff9999;">目前開放至: B${state.dungeonProgress}F</span>
-        </button>
-
-        <button class="pixel-btn-mode mode-btn-dojo" id="btn-mode-dojo">
-          ${PixelSprites.icon('sword', 28)}
-          <div style="color:var(--gold); font-size:15px; font-weight:bold;">⚔️ 修煉道場 (到場)</div>
-          <div class="mode-desc">自選題庫・無傷切磋・熟練詞彙・無限連擊</div>
-          <span style="font-size:11px; color:#ffe082;">自由練習・單字專修</span>
-        </button>
-      </div>
-
-      <!-- Secondary Hub Navigation -->
-      <div class="hub-sub-grid">
-        <button class="pixel-btn-sub" id="btn-open-tavern">
-          ${PixelSprites.icon('meat', 20)}
-          <span>矮人食堂</span>
-        </button>
-        <button class="pixel-btn-sub" id="btn-open-shop">
-          ${PixelSprites.icon('backpack', 20)}
-          <span>公會商城</span>
-        </button>
-        <button class="pixel-btn-sub" id="btn-open-codex">
-          ${PixelSprites.icon('book', 20)}
-          <span>記憶禁書閣</span>
-        </button>
-        <button class="pixel-btn-sub" id="btn-open-checkin">
-          ${PixelSprites.icon('calendar', 20)}
-          <span>每日到場簽到</span>
-        </button>
-        <button class="pixel-btn-sub btn-lottery-highlight" id="btn-open-lottery">
-          ${PixelSprites.icon('dice', 20)}
-          <span style="color:#ffd700; font-weight:bold;">命運轉盤</span>
-        </button>
-      </div>
-
-      <!-- Daily Habit & Frequent Practice Card -->
-      <div class="pixel-box daily-goals-card">
-        <div class="card-title-row">
-          <span>${PixelSprites.icon('star', 14)} 每日勤學目標</span>
-          <span>今日答對: ${state.dailyGoals.correct} 題</span>
-        </div>
-
-        <div class="goal-item">
-          <span>【今日熱身】累計答對 10 題 (25 G)</span>
-          <button class="claim-btn" id="claim-goal-0" ${state.dailyGoals.correct >= 10 && !state.dailyGoals.claimed[0] ? '' : 'disabled'}>
-            ${state.dailyGoals.claimed[0] ? '已領取' : '領取'}
+          <!-- 劍技木人樁・修煉道場 (到場) -->
+          <button class="cabin-prop-btn prop-btn-dojo" id="btn-mode-dojo">
+            <div class="prop-icon-frame">
+              ${PixelSprites.renderTrainingDummy(42)}
+            </div>
+            <div class="prop-info-col">
+              <div class="prop-title gold-title">⚔️ 劍術木人樁・修煉道場 (到場)</div>
+              <div class="prop-desc">自選題庫・無傷切磋・熟練詞彙・無限連擊</div>
+              <div class="prop-tags-row">
+                <span class="cabin-tag tag-practice">自由練習・單字專修</span>
+                <span class="cabin-tag tag-toeic">多益轉職考驗</span>
+                <span class="cabin-tag tag-gre">GRE神域覺醒</span>
+              </div>
+            </div>
           </button>
         </div>
 
-        <div class="goal-item">
-          <span>【穩定精進】累計答對 25 題 (45 G + 聖水)</span>
-          <button class="claim-btn" id="claim-goal-1" ${state.dailyGoals.correct >= 25 && !state.dailyGoals.claimed[1] ? '' : 'disabled'}>
-            ${state.dailyGoals.claimed[1] ? '已領取' : '領取'}
-          </button>
+        <!-- 3. Cabin Furniture & Supplies (五大機能家具按鈕：可觸摸的實物風格) -->
+        <div class="cabin-section-box">
+          <div class="cabin-section-header">
+            <span>🪑 小屋家具與補給物資 (點擊互動)</span>
+          </div>
+
+          <div class="cabin-furniture-grid">
+            <!-- 矮人食堂 (餐桌) -->
+            <button class="cabin-furniture-card" id="btn-open-tavern" title="矮人食堂：享用美味料理恢復生命">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderTavernTable(28)}
+              </div>
+              <span class="furniture-title">矮人食堂</span>
+              <span class="furniture-desc">餐桌烤肉</span>
+            </button>
+
+            <!-- 公會商城 (行囊寶箱) -->
+            <button class="cabin-furniture-card" id="btn-open-shop" title="公會商城：購置武器、防具與保命道具">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderSupplyChest(28)}
+              </div>
+              <span class="furniture-title">公會商城</span>
+              <span class="furniture-desc">行囊寶箱</span>
+            </button>
+
+            <!-- 記憶禁書閣 (藏書架) -->
+            <button class="cabin-furniture-card" id="btn-open-codex" title="記憶禁書閣：研讀收藏單字與魔物圖鑑">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderBookshelfTome(28)}
+              </div>
+              <span class="furniture-title">記憶禁書閣</span>
+              <span class="furniture-desc">魔法書架</span>
+            </button>
+
+            <!-- 每日簽到 (行事曆) -->
+            <button class="cabin-furniture-card" id="btn-open-checkin" title="每日簽到：在公會羊皮曆書簽到領取獎賞">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderParchmentCalendar(28)}
+              </div>
+              <span class="furniture-title">每日簽到</span>
+              <span class="furniture-desc">公會曆書</span>
+            </button>
+
+            <!-- 命運轉盤 (占卜桌) -->
+            <button class="cabin-furniture-card card-fortune-gold" id="btn-open-lottery" title="命運轉盤：轉動黃金輪盤贏取9999大獎">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderFortuneWheel(28)}
+              </div>
+              <span class="furniture-title gold-text">命運轉盤</span>
+              <span class="furniture-desc gold-sub">占卜桌台</span>
+            </button>
+          </div>
         </div>
 
-        <div class="goal-item">
-          <span>【今日達標】累計答對 45 題 (80 G + 護樓卷)</span>
-          <button class="claim-btn" id="claim-goal-2" ${state.dailyGoals.correct >= 45 && !state.dailyGoals.claimed[2] ? '' : 'disabled'}>
-            ${state.dailyGoals.claimed[2] ? '已領取' : '領取'}
-          </button>
-        </div>
+        <!-- 4. Daily Habit & Frequent Practice Card (公會委託羊皮紙手卷) -->
+        <div class="cabin-quest-scroll">
+          <div class="quest-scroll-header">
+            <span class="quest-scroll-title">📜 冒險者公會每日委託手卷</span>
+            <span class="quest-scroll-count">今日答對: ${state.dailyGoals.correct} 題</span>
+          </div>
 
-        <div style="font-size:11px; color:#a090b8; text-align:center; margin-top:2px;">
-          ${PixelSprites.icon('coin', 12)} 勤學無限賞：每答對 10 題贈 +15 G (目前進度: ${state.endlessPracticeCounter}/10)
+          <div class="quest-scroll-item">
+            <div class="quest-item-text">
+              <span class="quest-name">【熱身委託】答對 10 題</span>
+              <span class="quest-bounty">+25 G</span>
+            </div>
+            <button class="cabin-seal-btn" id="claim-goal-0" ${state.dailyGoals.correct >= 10 && !state.dailyGoals.claimed[0] ? '' : 'disabled'}>
+              ${state.dailyGoals.claimed[0] ? '已達成 ✓' : '火漆領賞'}
+            </button>
+          </div>
+
+          <div class="quest-scroll-item">
+            <div class="quest-item-text">
+              <span class="quest-name">【精進委託】答對 25 題</span>
+              <span class="quest-bounty">+45 G + 聖水</span>
+            </div>
+            <button class="cabin-seal-btn" id="claim-goal-1" ${state.dailyGoals.correct >= 25 && !state.dailyGoals.claimed[1] ? '' : 'disabled'}>
+              ${state.dailyGoals.claimed[1] ? '已達成 ✓' : '火漆領賞'}
+            </button>
+          </div>
+
+          <div class="quest-scroll-item">
+            <div class="quest-item-text">
+              <span class="quest-name">【凱旋達標】答對 45 題</span>
+              <span class="quest-bounty">+80 G + 護樓卷</span>
+            </div>
+            <button class="cabin-seal-btn" id="claim-goal-2" ${state.dailyGoals.correct >= 45 && !state.dailyGoals.claimed[2] ? '' : 'disabled'}>
+              ${state.dailyGoals.claimed[2] ? '已達成 ✓' : '火漆領賞'}
+            </button>
+          </div>
+
+          <div class="quest-scroll-footer">
+            ${PixelSprites.icon('coin', 12)} 勤學無限賞：每答對 10 題贈 +15 G (目前進度: ${state.endlessPracticeCounter}/10)
+          </div>
         </div>
       </div>
     `;

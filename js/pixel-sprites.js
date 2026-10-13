@@ -1973,6 +1973,318 @@ const PixelSprites = (() => {
     `;
   };
 
+  // ==========================================
+  // Adventurer Lodge / Cabin Pixel Props
+  // ==========================================
+
+  // 1. Cozy Stone Fireplace Hearth & Woven Rug (Hero Perch)
+  const renderCabinHearth = () => {
+    return `
+      <svg class="cabin-hearth-svg" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <!-- Stone Chimney & Hearth Masonry -->
+        <rect x="30" y="0" width="140" height="90" fill="#2d2633"/>
+        <rect x="40" y="8" width="120" height="82" fill="#1e1824"/>
+        <!-- Brick details on chimney -->
+        <rect x="35" y="6" width="22" height="8" fill="#443c4c"/>
+        <rect x="62" y="6" width="26" height="8" fill="#383040"/>
+        <rect x="94" y="6" width="30" height="8" fill="#443c4c"/>
+        <rect x="130" y="6" width="25" height="8" fill="#383040"/>
+        <rect x="45" y="18" width="28" height="8" fill="#383040"/>
+        <rect x="80" y="18" width="35" height="8" fill="#443c4c"/>
+        <rect x="122" y="18" width="30" height="8" fill="#383040"/>
+        
+        <!-- Heavy Wooden Hearth Mantelpiece Shelf -->
+        <rect x="20" y="28" width="160" height="8" fill="#5c381e"/>
+        <rect x="22" y="28" width="156" height="2" fill="#845028"/>
+        <rect x="22" y="34" width="156" height="2" fill="#382010"/>
+        <!-- Candle on Mantelpiece -->
+        <rect x="38" y="20" width="4" height="8" fill="#eee8d5"/>
+        <rect x="39" y="18" width="2" height="2" fill="#14121d"/>
+        <circle cx="40" cy="16" r="3" fill="#ffaa22" opacity="0.9"/>
+        <circle cx="40" cy="16" r="1.5" fill="#ffffff"/>
+        <!-- Brass Tankard on Mantelpiece -->
+        <rect x="150" y="20" width="8" height="8" fill="#c89b3c"/>
+        <rect x="156" y="22" width="4" height="4" fill="#a07828"/>
+        <rect x="152" y="20" width="4" height="2" fill="#fff2aa"/>
+
+        <!-- Fireplace Arched Opening -->
+        <rect x="52" y="42" width="96" height="52" fill="#140e16"/>
+        <path d="M 52,56 Q 100,36 148,56 L 148,94 L 52,94 Z" fill="#120c14"/>
+        <rect x="50" y="42" width="6" height="52" fill="#383040"/>
+        <rect x="144" y="42" width="6" height="52" fill="#383040"/>
+        <rect x="50" y="40" width="100" height="4" fill="#4a4054"/>
+
+        <!-- Fireplace Fire Grate & Burning Logs -->
+        <rect x="68" y="86" width="64" height="4" fill="#1c1622"/>
+        <rect x="74" y="82" width="52" height="6" fill="#4d2814"/>
+        <rect x="80" y="79" width="40" height="4" fill="#66361a"/>
+        <!-- Glowing Hot Embers -->
+        <rect x="76" y="85" width="48" height="3" fill="#ff3b14"/>
+        <rect x="82" y="84" width="36" height="2" fill="#ff9922"/>
+
+        <!-- Crackling Pixel Fire Flames -->
+        <polygon points="90,82 100,52 110,82" fill="#ff4d00"/>
+        <polygon points="94,80 100,58 106,80" fill="#ff9900"/>
+        <polygon points="97,78 100,64 103,78" fill="#ffea44"/>
+        <polygon points="82,82 88,62 94,82" fill="#ff5500"/>
+        <polygon points="85,80 88,68 91,80" fill="#ffaa00"/>
+        <polygon points="106,82 112,64 118,82" fill="#ff5500"/>
+        <polygon points="109,80 112,70 115,80" fill="#ffaa00"/>
+        <!-- Rising Sparks / Embers -->
+        <rect x="99" y="46" width="2" height="2" fill="#ffee66" opacity="0.85"/>
+        <rect x="105" y="42" width="2" height="2" fill="#ffaa22" opacity="0.8"/>
+        <rect x="92" y="40" width="2" height="2" fill="#ffee66" opacity="0.75"/>
+
+        <!-- Warm Hearth Stone Base -->
+        <rect x="42" y="94" width="116" height="6" fill="#3e3648"/>
+        <rect x="40" y="94" width="120" height="2" fill="#584e66"/>
+
+        <!-- Adventurer's Woven Hearth Rug (Where the Hero stands) -->
+        <ellipse cx="100" cy="107" rx="68" ry="12" fill="#4d1a1f"/>
+        <ellipse cx="100" cy="107" rx="64" ry="10" fill="#7a242c"/>
+        <ellipse cx="100" cy="107" rx="58" ry="8" fill="#9c2e38"/>
+        <!-- Rug Geometric Gold & Cream Border Trim -->
+        <ellipse cx="100" cy="107" rx="50" ry="6" fill="none" stroke="#d4a34b" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <ellipse cx="100" cy="107" rx="36" ry="4" fill="#631e24"/>
+      </svg>
+    `;
+  };
+
+  // 2. Tower Observation Window with Telescope & Starry Sky
+  const renderTowerWindow = (size = 40) => {
+    return wrapSvg(size, size, `
+      <!-- Stone / Timber Arched Window Frame -->
+      <path d="M 4,14 Q 20,2 36,14 L 36,36 L 4,36 Z" fill="#2d1c12"/>
+      <path d="M 6,15 Q 20,4 34,15 L 34,34 L 6,34 Z" fill="#442a1b"/>
+      <!-- Window Opening to Dark Starry Sky -->
+      <path d="M 8,16 Q 20,7 32,16 L 32,32 L 8,32 Z" fill="#080e1a"/>
+      <!-- Twinkling Stars in Night Sky -->
+      <circle cx="12" cy="14" r="0.75" fill="#ffffff"/>
+      <circle cx="28" cy="12" r="0.75" fill="#ffd700"/>
+      <circle cx="15" cy="22" r="0.75" fill="#88ddff"/>
+      <circle cx="26" cy="20" r="0.75" fill="#ffffff"/>
+      <!-- Distant Illuminated Tower Spire -->
+      <rect x="18" y="13" width="4" height="19" fill="#556677"/>
+      <polygon points="20,8 18,13 22,13" fill="#ffd700"/>
+      <rect x="19" y="16" width="2" height="3" fill="#4fe3ff"/>
+      <rect x="19" y="22" width="2" height="3" fill="#ffd700"/>
+      <rect x="17" y="26" width="6" height="2" fill="#778899"/>
+      <!-- Window Timber Crossbars -->
+      <line x1="8" y1="23" x2="32" y2="23" stroke="#2d1c12" stroke-width="1.5"/>
+      <line x1="20" y1="11" x2="20" y2="32" stroke="#2d1c12" stroke-width="1.5"/>
+      <!-- Brass Astrolabe / Telescope on Sill -->
+      <rect x="4" y="32" width="32" height="4" fill="#5a3820"/>
+      <rect x="4" y="32" width="32" height="1" fill="#7c4e2c"/>
+      <polygon points="12,32 16,28 20,29 16,33" fill="#c89b3c"/>
+      <circle cx="20" cy="29" r="1.5" fill="#ffd700"/>
+      <rect x="14" y="31" width="3" height="3" fill="#886020"/>
+    `, 'pixel-icon pixel-window-tower');
+  };
+
+  // 3. Dungeon Bounty Notice Board with Pinned Wanted Parchments
+  const renderBountyBoard = (size = 40) => {
+    return wrapSvg(size, size, `
+      <!-- Weathered Oak Notice Board Frame -->
+      <rect x="2" y="2" width="36" height="36" fill="#3a2214"/>
+      <rect x="4" y="4" width="32" height="32" fill="#58351f"/>
+      <rect x="5" y="5" width="30" height="30" fill="#6d4227"/>
+      <!-- Iron Corner Brackets & Rivets -->
+      <rect x="2" y="2" width="6" height="6" fill="#383c48"/>
+      <circle cx="4" cy="4" r="1" fill="#8898a8"/>
+      <rect x="32" y="2" width="6" height="6" fill="#383c48"/>
+      <circle cx="36" cy="4" r="1" fill="#8898a8"/>
+      <rect x="2" y="32" width="6" height="6" fill="#383c48"/>
+      <circle cx="4" cy="36" r="1" fill="#8898a8"/>
+      <rect x="32" y="32" width="6" height="6" fill="#383c48"/>
+      <circle cx="36" cy="36" r="1" fill="#8898a8"/>
+      <!-- Pinned Parchment Bounty Posters -->
+      <!-- Poster 1: Main Wanted Notice -->
+      <rect x="8" y="8" width="16" height="20" fill="#d8c298"/>
+      <rect x="9" y="9" width="14" height="18" fill="#e8d6b0"/>
+      <!-- Red Wax Seal with Skull -->
+      <circle cx="16" cy="13" r="3.5" fill="#a82828"/>
+      <rect x="15" y="12" width="2" height="2" fill="#ffffff"/>
+      <!-- Wanted Text Lines -->
+      <line x1="11" y1="19" x2="21" y2="19" stroke="#5a4228" stroke-width="1.5"/>
+      <line x1="12" y1="22" x2="20" y2="22" stroke="#5a4228" stroke-width="1"/>
+      <line x1="13" y1="24" x2="19" y2="24" stroke="#882020" stroke-width="1.5"/>
+      <!-- Poster 2: Smaller note pinned underneath -->
+      <rect x="22" y="16" width="11" height="14" fill="#c4ac80"/>
+      <rect x="23" y="17" width="9" height="12" fill="#d8c298"/>
+      <line x1="24" y1="20" x2="30" y2="20" stroke="#5a4228" stroke-width="1"/>
+      <line x1="24" y1="23" x2="29" y2="23" stroke="#5a4228" stroke-width="1"/>
+      <!-- Iron Pins -->
+      <circle cx="16" cy="8" r="1.5" fill="#20222a"/>
+      <circle cx="27" cy="16" r="1.5" fill="#20222a"/>
+      <polygon points="26,6 29,10 24,11" fill="#90a0b0"/>
+    `, 'pixel-icon pixel-bounty-board');
+  };
+
+  // 4. Combat Training Dummy & Weapon Rack
+  const renderTrainingDummy = (size = 40) => {
+    return wrapSvg(size, size, `
+      <!-- Training Bay Floor & Wood Wall -->
+      <rect x="2" y="2" width="36" height="36" fill="#2a1e16"/>
+      <rect x="4" y="4" width="32" height="32" fill="#483222"/>
+      <!-- Weapon Rack in background -->
+      <rect x="6" y="8" width="3" height="24" fill="#302014"/>
+      <rect x="31" y="8" width="3" height="24" fill="#302014"/>
+      <line x1="6" y1="12" x2="34" y2="12" stroke="#604028" stroke-width="1.5"/>
+      <line x1="6" y1="20" x2="34" y2="20" stroke="#604028" stroke-width="1.5"/>
+      <!-- Crossed Spear & Sword on Rack -->
+      <line x1="8" y1="8" x2="26" y2="26" stroke="#90a0b0" stroke-width="1.5"/>
+      <line x1="32" y1="8" x2="14" y2="26" stroke="#c09040" stroke-width="1.5"/>
+      <!-- Training Dummy (Straw & Wood) -->
+      <!-- Head / Helm (Straw target) -->
+      <rect x="17" y="7" width="6" height="6" fill="#c89b4a"/>
+      <rect x="16" y="9" width="8" height="4" fill="#d8aa5a"/>
+      <rect x="18" y="10" width="4" height="2" fill="#14121d"/>
+      <!-- Cross Pole Body -->
+      <rect x="18" y="13" width="4" height="17" fill="#6a4422"/>
+      <rect x="11" y="15" width="18" height="5" fill="#b88a38"/>
+      <rect x="12" y="16" width="16" height="3" fill="#d8aa5a"/>
+      <!-- Rope Ties around Dummy -->
+      <line x1="12" y1="17" x2="12" y2="19" stroke="#4a3014" stroke-width="1.5"/>
+      <line x1="28" y1="17" x2="28" y2="19" stroke="#4a3014" stroke-width="1.5"/>
+      <rect x="17" y="14" width="6" height="7" fill="#8b5a2b"/>
+      <!-- Practice Shield on Left Arm -->
+      <rect x="9" y="17" width="5" height="7" fill="#884422"/>
+      <rect x="10" y="18" width="3" height="5" fill="#ffd700"/>
+      <!-- Wooden Sword on Right Arm -->
+      <rect x="26" y="12" width="2" height="10" fill="#eeddbb"/>
+      <rect x="25" y="19" width="4" height="2" fill="#885522"/>
+      <!-- Heavy Timber Base -->
+      <rect x="14" y="30" width="12" height="4" fill="#3a2414"/>
+      <rect x="12" y="32" width="16" height="3" fill="#50341e"/>
+    `, 'pixel-icon pixel-training-dummy');
+  };
+
+  // 5. Tavern Dining Table with Roast & Ale
+  const renderTavernTable = (size = 28) => {
+    return wrapSvg(size, size, `
+      <!-- Wooden Dining Tabletop -->
+      <ellipse cx="14" cy="18" rx="12" ry="7" fill="#5c381c"/>
+      <ellipse cx="14" cy="17" rx="11" ry="6" fill="#7a4b26"/>
+      <ellipse cx="14" cy="16" rx="10" ry="5" fill="#935b30"/>
+      <!-- Table Legs -->
+      <rect x="6" y="20" width="3" height="6" fill="#3a2210"/>
+      <rect x="19" y="20" width="3" height="6" fill="#3a2210"/>
+      <!-- Roasted Turkey / Meat on Platter -->
+      <ellipse cx="11" cy="14" rx="5" ry="3" fill="#eeddbb"/>
+      <rect x="8" y="12" width="6" height="4" fill="#a84218"/>
+      <rect x="9" y="11" width="5" height="3" fill="#c45624"/>
+      <rect x="13" y="13" width="4" height="2" fill="#eeddbb"/>
+      <!-- Foaming Ale Tankard -->
+      <rect x="17" y="11" width="5" height="6" fill="#7a441e"/>
+      <rect x="17" y="9" width="5" height="3" fill="#ffffff"/>
+      <rect x="18" y="10" width="4" height="2" fill="#ffea78"/>
+      <rect x="21" y="12" width="2" height="3" fill="#5a3014"/>
+    `, 'pixel-icon');
+  };
+
+  // 6. Open Supply Chest & Adventurer Backpack
+  const renderSupplyChest = (size = 28) => {
+    return wrapSvg(size, size, `
+      <!-- Oak Supply Chest with Brass Fittings -->
+      <rect x="4" y="12" width="16" height="12" fill="#542e12"/>
+      <rect x="5" y="13" width="14" height="10" fill="#7a451e"/>
+      <!-- Open Lid tilted back -->
+      <polygon points="3,12 5,6 19,6 21,12" fill="#8c5024"/>
+      <polygon points="5,11 6,7 18,7 19,11" fill="#663816"/>
+      <!-- Gold & Relics gleaming inside -->
+      <rect x="6" y="11" width="12" height="3" fill="#ffd700"/>
+      <circle cx="10" cy="12" r="1.5" fill="#ffee66"/>
+      <circle cx="14" cy="12" r="1.5" fill="#4fe3ff"/>
+      <!-- Brass Bands & Lock -->
+      <rect x="7" y="13" width="2" height="10" fill="#c89b3c"/>
+      <rect x="15" y="13" width="2" height="10" fill="#c89b3c"/>
+      <rect x="10" y="15" width="4" height="4" fill="#ffd700"/>
+      <circle cx="12" cy="17" r="1" fill="#14121d"/>
+      <!-- Adventurer Leather Backpack leaning on side -->
+      <rect x="18" y="14" width="8" height="10" fill="#6a3b18"/>
+      <rect x="19" y="16" width="6" height="6" fill="#844a20"/>
+      <rect x="21" y="18" width="2" height="2" fill="#ffd700"/>
+    `, 'pixel-icon');
+  };
+
+  // 7. Carved Bookshelf with Potions & Open Grimoire
+  const renderBookshelfTome = (size = 28) => {
+    return wrapSvg(size, size, `
+      <!-- Carved Wooden Bookshelf Frame -->
+      <rect x="3" y="3" width="22" height="22" fill="#3e2412"/>
+      <rect x="5" y="5" width="18" height="18" fill="#5a351a"/>
+      <!-- Shelf Divider -->
+      <rect x="4" y="14" width="20" height="2" fill="#7a4824"/>
+      <!-- Top Shelf: Magic Potion & Colorful Grimoires -->
+      <rect x="7" y="7" width="2" height="7" fill="#b02838"/>
+      <rect x="9" y="6" width="3" height="8" fill="#2858a0"/>
+      <rect x="12" y="7" width="2" height="7" fill="#288840"/>
+      <!-- Glowing Potion Vial -->
+      <rect x="16" y="9" width="3" height="5" fill="#a030d0"/>
+      <rect x="17" y="7" width="1" height="2" fill="#eeddbb"/>
+      <circle cx="17" cy="11" r="1" fill="#ffffff"/>
+      <!-- Bottom Shelf: Open Glowing Arcane Tome on Stand -->
+      <polygon points="6,21 14,17 22,21 14,22" fill="#281a38"/>
+      <!-- Glowing Arcane Pages -->
+      <polygon points="7,20 14,17 14,21 7,21" fill="#eeddbb"/>
+      <polygon points="14,17 21,20 21,21 14,21" fill="#eeddbb"/>
+      <line x1="9" y1="19" x2="13" y2="18" stroke="#7733aa" stroke-width="1"/>
+      <line x1="15" y1="18" x2="19" y2="19" stroke="#7733aa" stroke-width="1"/>
+      <circle cx="14" cy="16" r="2" fill="#00ffff" opacity="0.8"/>
+    `, 'pixel-icon');
+  };
+
+  // 8. Wall Parchment Calendar & Ink Quill
+  const renderParchmentCalendar = (size = 28) => {
+    return wrapSvg(size, size, `
+      <!-- Wall Hanging Rod & String -->
+      <line x1="8" y1="4" x2="14" y2="1" stroke="#3a2214" stroke-width="1"/>
+      <line x1="20" y1="4" x2="14" y2="1" stroke="#3a2214" stroke-width="1"/>
+      <rect x="5" y="4" width="18" height="2" fill="#5a3518"/>
+      <!-- Aged Parchment Sheet -->
+      <rect x="6" y="6" width="16" height="18" fill="#d4be92"/>
+      <rect x="7" y="7" width="14" height="16" fill="#ebd8b0"/>
+      <!-- Red Header Banner -->
+      <rect x="7" y="7" width="14" height="4" fill="#a02828"/>
+      <rect x="9" y="8" width="10" height="2" fill="#ffffff"/>
+      <!-- Calendar Grid & Stamp -->
+      <rect x="9" y="13" width="2" height="2" fill="#3a2412"/>
+      <rect x="13" y="13" width="2" height="2" fill="#3a2412"/>
+      <rect x="17" y="13" width="2" height="2" fill="#3a2412"/>
+      <rect x="9" y="17" width="2" height="2" fill="#3a2412"/>
+      <!-- Today's Golden Star Stamp -->
+      <rect x="13" y="16" width="3" height="3" fill="#ffd700"/>
+      <rect x="14" y="17" width="1" height="1" fill="#ffffff"/>
+      <!-- Inkwell & Feather Quill -->
+      <rect x="19" y="18" width="4" height="4" fill="#20222a"/>
+      <line x1="22" y1="18" x2="26" y2="10" stroke="#4fe3ff" stroke-width="1.5"/>
+      <polygon points="26,10 25,13 27,12" fill="#ffffff"/>
+    `, 'pixel-icon');
+  };
+
+  // 9. Fortune Velvet Table & Golden Roulette Wheel
+  const renderFortuneWheel = (size = 28) => {
+    return wrapSvg(size, size, `
+      <!-- Velvet Covered Fortune Table -->
+      <ellipse cx="14" cy="20" rx="12" ry="6" fill="#3d1b4a"/>
+      <ellipse cx="14" cy="19" rx="11" ry="5" fill="#58246a"/>
+      <!-- Golden Roulette Wheel -->
+      <circle cx="14" cy="12" r="9" fill="#24102c" stroke="#c89b3c" stroke-width="1.5"/>
+      <circle cx="14" cy="12" r="7.5" fill="#14081c"/>
+      <!-- Colorful Wheel Sectors -->
+      <path d="M 14,12 L 14,4.5 A 7.5,7.5 0 0,1 21.5,12 Z" fill="#c82828"/>
+      <path d="M 14,12 L 21.5,12 A 7.5,7.5 0 0,1 14,19.5 Z" fill="#2888c8"/>
+      <path d="M 14,12 L 14,19.5 A 7.5,7.5 0 0,1 6.5,12 Z" fill="#28a848"/>
+      <path d="M 14,12 L 6.5,12 A 7.5,7.5 0 0,1 14,4.5 Z" fill="#e0a020"/>
+      <!-- Wheel Center & Top Pointer -->
+      <circle cx="14" cy="12" r="2.5" fill="#ffd700"/>
+      <polygon points="14,3 12,6 16,6" fill="#ffd700"/>
+      <!-- Sparkling Red Dice -->
+      <rect x="2" y="15" width="4" height="4" fill="#d02838"/>
+      <circle cx="4" cy="17" r="0.75" fill="#ffffff"/>
+    `, 'pixel-icon');
+  };
+
   return {
     icon: (name, size) => (icons[name] ? icons[name](size) : icons.coin(size)),
     renderHero,
@@ -1980,6 +2292,15 @@ const PixelSprites = (() => {
     renderMinion,
     renderFood,
     renderScroll,
-    renderMedievalBackdrop
+    renderMedievalBackdrop,
+    renderCabinHearth,
+    renderTowerWindow,
+    renderBountyBoard,
+    renderTrainingDummy,
+    renderTavernTable,
+    renderSupplyChest,
+    renderBookshelfTome,
+    renderParchmentCalendar,
+    renderFortuneWheel
   };
 })();

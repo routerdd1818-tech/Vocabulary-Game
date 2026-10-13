@@ -234,173 +234,492 @@ body {
 }
 
 /* ==========================================================================
-   Lobby / Camp View
+   Adventurer's Cozy Lodge (冒險者溫馨木屋) - Complete Pixel Theme
    ========================================================================== */
-.hero-stage-card {
-  padding: 16px;
+.cabin-lodge-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
+  background-color: #2b180d;
+  /* Authentic repeating rustic timber wood plank wall pattern with warm firelight glow */
+  background-image:
+    radial-gradient(circle at 50% 100px, rgba(255, 150, 40, 0.28) 0%, rgba(200, 80, 20, 0.12) 45%, transparent 75%),
+    radial-gradient(circle at 20% 320px, rgba(255, 170, 50, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 320px, rgba(255, 170, 50, 0.08) 0%, transparent 50%),
+    repeating-linear-gradient(180deg,
+      #351e12 0px, #351e12 3px,
+      #482b1b 3px, #482b1b 32px,
+      #28150c 32px, #28150c 35px
+    );
+  border: 4px solid #5a361c;
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 0 24px rgba(0, 0, 0, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.7);
+  position: relative;
+}
+
+/* 1. Fireplace Hearth Stage & Hero Perch */
+.cabin-hearth-card {
+  background: linear-gradient(180deg, #241610 0%, #1a0f0a 100%);
+  border: 3px solid #6b4021;
+  border-radius: 4px;
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  background: linear-gradient(180deg, #241c38 0%, #1c152d 100%);
-  border-color: #554477;
+  gap: 10px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 200, 120, 0.2),
+    0 4px 0 #120804;
+  position: relative;
 }
 
-.avatar-wrapper {
+.cabin-hearth-scene {
   position: relative;
+  width: 100%;
+  max-width: 280px;
+  height: 120px;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 8px;
-  background: radial-gradient(circle, #3d2c5e 0%, transparent 70%);
+  align-items: flex-end;
 }
 
-.hero-speech-bubble {
-  width: 100%;
-  background: #2b2242;
-  border: 2px solid #6b5394;
-  padding: 10px 12px;
-  position: relative;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #f5eeff;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-}
-
-.speech-pointer {
+.cabin-hearth-svg {
   position: absolute;
-  top: -8px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(255, 120, 20, 0.45));
+}
+
+.cabin-hero-perch {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.7));
+}
+.cabin-hero-perch:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+.cabin-hero-perch:active {
+  transform: translateY(1px);
+}
+
+.cabin-class-plaque-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.cabin-plaque-btn {
+  background: linear-gradient(180deg, #442817 0%, #2e1a0f 100%);
+  border: 2px solid #8c582c;
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 0 #180d07, inset 0 1px 0 rgba(255,220,150,0.25);
+  transition: all 0.1s ease;
+}
+.cabin-plaque-btn:hover {
+  border-color: #ffd700;
+  background: linear-gradient(180deg, #58331d 0%, #3a2213 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #180d07;
+}
+.cabin-plaque-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #180d07;
+}
+.cabin-plaque-btn.novice-plaque {
+  border-color: #9c7348;
+  color: #f0debb;
+  background: linear-gradient(180deg, #382416 0%, #24160c 100%);
+}
+
+.cabin-speech-bubble {
+  width: 100%;
+  background: #25160e;
+  border: 2px solid #6e4423;
+  padding: 8px 12px;
+  position: relative;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #faeed7;
+  border-radius: 4px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  text-align: center;
+}
+.cabin-speech-pointer {
+  position: absolute;
+  top: -7px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid #6b5394;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #6e4423;
 }
 
-.hero-stats-grid {
+.cabin-stats-row {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  text-align: center;
 }
 
-.hero-stat-cell {
-  background: #181324;
-  border: 1px solid #3d3055;
-  padding: 6px;
+.cabin-stat-plaque {
+  background: linear-gradient(180deg, #332014 0%, #20130a 100%);
+  border: 2px solid #54331a;
+  border-radius: 4px;
+  padding: 6px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  font-size: 11px;
+  gap: 3px;
+  box-shadow: 0 2px 0 #120904, inset 0 1px 0 rgba(255,200,120,0.15);
 }
-
-.hero-stat-val {
+.cabin-stat-label {
+  font-size: 11px;
+  color: #d8c2a4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cabin-stat-val {
   font-weight: bold;
   font-size: 13px;
+  color: #ffffff;
+}
+.stat-hp .cabin-stat-val { color: #ff8888; }
+.stat-atk .cabin-stat-val { color: #ffcc55; }
+.stat-def .cabin-stat-val { color: #55ddff; }
+
+/* 2. Cabin Section Dividers */
+.cabin-section-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Lobby Main Mode Buttons */
-.modes-grid {
+.cabin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: bold;
+  color: #eed6b0;
+  padding: 2px 4px;
+  border-bottom: 2px solid #54331b;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Cabin Main Expedition Facility Props */
+.cabin-props-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.pixel-btn-mode {
-  background: #2c2244;
-  border: 3px solid #5d4682;
-  padding: 14px 10px;
+.cabin-prop-btn {
+  background: linear-gradient(180deg, #3a2416 0%, #26160d 100%);
+  border: 3px solid #684224;
+  border-radius: 4px;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 4px 0 #140a04, inset 0 1px 0 rgba(255,220,150,0.2);
+  transition: all 0.08s ease;
+  position: relative;
+  overflow: hidden;
+}
+.cabin-prop-btn:hover {
+  border-color: #ffd700;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #140a04;
+}
+.cabin-prop-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #140a04;
+}
+
+.prop-btn-tower {
+  border-color: #3b5874;
+  background: linear-gradient(180deg, #223447 0%, #152230 100%);
+}
+.prop-btn-tower:hover {
+  border-color: #4fe3ff;
+}
+
+.prop-btn-dungeon {
+  border-color: #743434;
+  background: linear-gradient(180deg, #3d2024 0%, #271215 100%);
+}
+.prop-btn-dungeon:hover {
+  border-color: #ff6666;
+}
+
+.prop-btn-dojo {
+  width: 100%;
+  border-color: #8a5a22;
+  background: linear-gradient(180deg, #3e2816 0%, #28170b 100%);
+  margin-top: 2px;
+}
+.prop-btn-dojo:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25), 0 6px 0 #140a04;
+}
+
+.prop-icon-frame {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+
+.prop-info-col {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: #ffffff;
+  gap: 2px;
+  min-width: 0;
+}
+
+.prop-title {
+  font-size: 13px;
   font-weight: bold;
-  text-align: center;
-  box-shadow: 0 4px 0 #140e22;
-  transition: transform 0.05s ease;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prop-title.gold-title {
+  color: #ffd700;
+  font-size: 14px;
 }
 
-.pixel-btn-mode:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #140e22;
+.prop-sub-desc {
+  font-size: 10px;
+  color: #b8a690;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.mode-btn-tower {
-  border-color: #00aacc;
-  background: linear-gradient(180deg, #183344 0%, #102230 100%);
+.prop-badge {
+  font-size: 10px;
+  font-weight: bold;
+  margin-top: 2px;
 }
-.mode-btn-dungeon {
-  border-color: #cc4433;
-  background: linear-gradient(180deg, #3d1c22 0%, #2b1116 100%);
+.badge-tower { color: #4fe3ff; }
+.badge-dungeon { color: #ff9999; }
+
+.prop-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
 }
 
-.mode-desc {
-  font-size: 11px;
-  font-weight: normal;
-  color: var(--text-muted);
+.cabin-tag {
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.tag-practice {
+  background: #3d2810;
+  border: 1px solid #c89b3c;
+  color: #ffd700;
+}
+.tag-toeic {
+  background: #18283a;
+  border: 1px solid #3b6ea0;
+  color: #77c8ff;
+}
+.tag-gre {
+  background: #2a1638;
+  border: 1px solid #7c449c;
+  color: #e0a0ff;
 }
 
-.hub-sub-grid {
+/* 3. Cabin Touchable Furniture Props (5 Items) */
+.cabin-furniture-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
-@media (max-width: 520px) {
-  .hub-sub-grid {
+@media (max-width: 480px) {
+  .cabin-furniture-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.pixel-btn-sub {
-  background: #231b34;
-  border: 2px solid #43335e;
+.cabin-furniture-card {
+  background: linear-gradient(180deg, #362013 0%, #24140a 100%);
+  border: 2px solid #583319;
+  border-radius: 4px;
   padding: 8px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   cursor: pointer;
-  font-size: 11px;
-  color: var(--text-main);
-  text-align: center;
+  box-shadow: 0 4px 0 #140904, inset 0 1px 0 rgba(255,210,140,0.15);
+  transition: all 0.08s ease;
 }
-.pixel-btn-sub:active {
-  background: #171124;
+.cabin-furniture-card:hover {
+  border-color: #ffaa33;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #140904;
+}
+.cabin-furniture-card:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #140904;
 }
 
-/* Daily Goals Card */
-.daily-goals-card {
-  padding: 12px;
+.furniture-sprite-wrap {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.25);
+  border-radius: 3px;
+}
+
+.furniture-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ebd6b5;
+}
+
+.furniture-desc {
+  font-size: 9px;
+  color: #a48e78;
+}
+
+.card-fortune-gold {
+  border-color: #8c6a24;
+  background: linear-gradient(180deg, #3c1e30 0%, #25101e 100%);
+}
+.card-fortune-gold:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255,215,0,0.3), 0 6px 0 #140904;
+}
+.gold-text { color: #ffd700 !important; }
+.gold-sub { color: #ffe599 !important; }
+
+/* 4. Daily Habit Quest Scroll */
+.cabin-quest-scroll {
+  background: linear-gradient(180deg, #2c1a11 0%, #1e1109 100%);
+  border: 3px solid #633b1e;
+  border-radius: 4px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: 0 4px 0 #120803, inset 0 1px 0 rgba(255,220,150,0.15);
 }
 
-.card-title-row {
+.quest-scroll-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #4a2c16;
+  padding-bottom: 6px;
+}
+.quest-scroll-title {
   font-size: 12px;
   font-weight: bold;
-  color: var(--gold);
+  color: #ffd700;
+}
+.quest-scroll-count {
+  font-size: 11px;
+  color: #d8c2a4;
 }
 
-.goal-item {
+.quest-scroll-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #151120;
-  border: 1px solid #35284d;
+  background: #20120a;
+  border: 1px solid #442714;
+  border-radius: 3px;
   padding: 6px 8px;
-  font-size: 12px;
+}
+.quest-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.quest-name {
+  font-size: 11px;
+  color: #faeed7;
+  font-weight: 500;
+}
+.quest-bounty {
+  font-size: 10px;
+  color: #ffd700;
+}
+
+.cabin-seal-btn {
+  background: linear-gradient(180deg, #8a2424 0%, #5c1414 100%);
+  border: 1px solid #b83838;
+  color: #ffeded;
+  padding: 4px 8px;
+  font-weight: bold;
+  font-size: 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #3a0d0d;
+  transition: all 0.08s;
+}
+.cabin-seal-btn:hover {
+  background: linear-gradient(180deg, #aa3232 0%, #701919 100%);
+  transform: translateY(-1px);
+}
+.cabin-seal-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+.cabin-seal-btn:disabled {
+  background: #332018;
+  border-color: #4a2e20;
+  color: #705848;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.quest-scroll-footer {
+  font-size: 11px;
+  color: #a8947e;
+  text-align: center;
+  margin-top: 2px;
 }
 
 .claim-btn {
