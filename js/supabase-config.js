@@ -9,7 +9,7 @@ const SUPABASE_CONFIG = {
   DEFAULT_URL: "https://lzuvzdbdrtsevmgchckp.supabase.co",
   
   // 您的 Supabase Public Anon Key (可以在 Supabase Project Settings -> API 找到)
-  DEFAULT_ANON_KEY: "",
+  DEFAULT_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dXZ6ZGJkcnRzZXZtZ2NoY2twIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NzQ1MDcsImV4cCI6MjEwNzQ1MDUwN30.tGx7iwTuzwCniFLmf-H13bDBzVCM4amZwESiZz6isaQ",
 
   // 儲存於 localStorage 的 Key
   STORAGE_KEY_URL: "word_dungeon_supabase_url",
