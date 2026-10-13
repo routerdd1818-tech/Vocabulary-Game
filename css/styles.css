@@ -347,11 +347,16 @@ body {
   color: var(--text-muted);
 }
 
-/* Secondary Hub Navigation */
 .hub-sub-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+@media (max-width: 520px) {
+  .hub-sub-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .pixel-btn-sub {
@@ -1426,4 +1431,268 @@ body {
   border: 1px solid #30374c;
   color: #d6deee;
 }
+
+/* ==========================================================================
+   Goblin Dungeon Fate Lottery / Roulette Modal (3x3 Grid)
+   ========================================================================== */
+.btn-lottery-highlight {
+  border-color: #ffd700 !important;
+  background: linear-gradient(180deg, #382448 0%, #1e122b 100%) !important;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+.btn-lottery-highlight:hover {
+  background: linear-gradient(180deg, #4f3366 0%, #2b1a3e 100%) !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.55);
+}
+
+.lottery-modal-dialog {
+  max-width: 520px;
+  background: #171322;
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.35), inset 0 0 25px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lottery-pity-banner {
+  background: #231b32;
+  border: 1px solid #4a3b68;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.lottery-pity-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lottery-pity-highlight {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.lottery-pity-rate {
+  color: #55e6ff;
+  font-weight: bold;
+}
+
+.lottery-grid-3x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, auto);
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.roulette-tile {
+  background: #15131e;
+  border: 2px solid #353046;
+  min-height: 74px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  transition: all 0.08s ease;
+  user-select: none;
+}
+
+.roulette-tile-jackpot {
+  background: linear-gradient(180deg, #3d2c14 0%, #20160a 100%);
+  border: 2px solid #ffd700;
+  box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.25);
+}
+
+.roulette-tile-prize {
+  border-color: #5c4e78;
+}
+
+.roulette-tile-dud {
+  opacity: 0.85;
+}
+
+.roulette-tile.active {
+  background: #ffd700 !important;
+  border-color: #ffffff !important;
+  color: #14121d !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 16px #ffd700, inset 0 0 6px #ffffff;
+  z-index: 5;
+}
+
+.roulette-tile.active .tile-text-gold,
+.roulette-tile.active .tile-text-desc,
+.roulette-tile.active .tile-badge {
+  color: #14121d !important;
+  border-color: #14121d !important;
+  background: transparent !important;
+}
+
+.tile-icon-box {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-name-text {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.tile-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: #252036;
+  border: 1px solid #484062;
+  color: #bfaedc;
+}
+
+.tile-text-gold {
+  color: #ffd700;
+}
+
+/* Center cell of the 3x3 grid (Row 2, Column 2) */
+.roulette-center-cell {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+  background: #1b1629;
+  border: 2px solid #4d3d6b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  text-align: center;
+  gap: 4px;
+}
+
+.roulette-spin-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  background: linear-gradient(180deg, #d83a3a 0%, #991c1c 100%);
+  border: 2px solid #ffaa44;
+  color: #ffffff;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.roulette-spin-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f04e4e 0%, #b82525 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 170, 68, 0.6);
+}
+
+.roulette-spin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #666;
+}
+
+/* Taunts & Results Section */
+.roulette-feedback-box {
+  background: #151120;
+  border: 1px solid #3d3156;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 58px;
+}
+
+.roulette-taunt-quote {
+  font-size: 12px;
+  color: #ff9999;
+  font-weight: bold;
+  line-height: 1.45;
+  background: #25121c;
+  border-left: 4px solid #ff4444;
+  padding: 6px 10px;
+}
+
+.roulette-win-banner {
+  font-size: 12px;
+  color: #ffd700;
+  font-weight: bold;
+  line-height: 1.45;
+  background: #2a2412;
+  border-left: 4px solid #ffd700;
+  padding: 6px 10px;
+}
+
+.roulette-expulsion-box {
+  font-size: 12px;
+  color: #ff5555;
+  font-weight: bold;
+  line-height: 1.45;
+  background: #331111;
+  border: 2px dashed #ff3333;
+  padding: 8px 10px;
+  animation: shakeAlert 0.4s ease;
+}
+
+@keyframes shakeAlert {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+}
+
+.lottery-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.lottery-spin-again-btn {
+  flex: 1.4;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  background: #992222;
+  border: 2px solid #ffd700;
+  color: #ffffff;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lottery-spin-again-btn:hover:not(:disabled) {
+  background: #b82828;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.lottery-exit-btn {
+  flex: 1;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  background: #272336;
+  border: 2px solid #4a445e;
+  color: #d2cbe0;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.lottery-exit-btn:hover {
+  background: #38324e;
+  color: #ffffff;
+  border-color: #7a7298;
+}
+
 

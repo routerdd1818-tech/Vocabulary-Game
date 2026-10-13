@@ -178,6 +178,18 @@ const AudioManager = (() => {
       setTimeout(() => playTone(369.99, 'sawtooth', 0.2, 0.2), 180);
       setTimeout(() => playTone(329.63, 'sawtooth', 0.2, 0.2), 360);
       setTimeout(() => playTone(261.63, 'sawtooth', 0.5, 0.25), 540);
+    },
+
+    rouletteTick: () => {
+      if (muted) return;
+      playTone(880, 'square', 0.03, 0.08);
+    },
+
+    jackpot: () => {
+      if (muted) return;
+      [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 'square', 0.18, 0.22), idx * 80);
+      });
     }
   };
 

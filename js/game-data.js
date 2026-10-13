@@ -489,5 +489,38 @@ const GAME_CONFIG = {
     { name: '暗影行者・克洛德', floor: 512, accuracy: 91.8, streak: 45, weapon: 'w4', quote: '堅持每天背，地牢也能走成平地。' },
     { name: '北歐遊俠・英格麗', floor: 360, accuracy: 89.5, streak: 31, weapon: 'w3', quote: '防禦裝備備齊，爬塔掉層不怕！' },
     { name: '初階見習生・小莫', floor: 78, accuracy: 82.0, streak: 7, weapon: 'w2', quote: '今天也要努力完成每日目標！' }
-  ]
+  ],
+
+  // Goblin Dungeon Lottery / Fate Roulette (30 Gold, 9999 Gold Jackpot)
+  LOTTERY: {
+    cost: 30,
+    baseWinRate: 0.05,
+    pityIncrement: 0.035,
+    maxPityRate: 0.88,
+    jackpotInitialWeight: 0.015,
+    slots: [
+      { id: 0, type: 'prize', tier: 'jackpot', name: '遠古巨龍金庫', rewardText: '9999 金幣', icon: 'trophy', gold: 9999, desc: '【特獎】傳說巨龍寶庫 9999 金幣！！' },
+      { id: 1, type: 'dud', name: '破舊草鞋', rewardText: '謝謝惠顧', icon: 'cross', desc: '除了泥巴什麼也沒有。' },
+      { id: 2, type: 'prize', tier: 'major', name: '王國騎士賞金', rewardText: '500 金幣', icon: 'coin', gold: 500, desc: '【二獎】沉甸甸的王國金幣袋！' },
+      { id: 3, type: 'dud', name: '發霉黑麵包', rewardText: '謝謝惠顧', icon: 'skull', desc: '硬得跟石頭一樣，根本不能吃。' },
+      { id: 4, type: 'prize', tier: 'rare', name: '神聖護樓卷軸', rewardText: '護樓卷 x1 + 100 G', icon: 'scroll', gold: 100, item: 'guard_scroll', itemCount: 1, desc: '【三獎】保命神器與百枚金幣！' },
+      { id: 5, type: 'dud', name: '哥布林欠條', rewardText: '謝謝惠顧', icon: 'cross', desc: '白紙一張，上面寫著下次再來。' },
+      { id: 6, type: 'prize', tier: 'medium', name: '精煉生命聖水', rewardText: '聖水 x2 + 50 G', icon: 'potion', gold: 50, item: 'potion', itemCount: 2, desc: '【四獎】兩瓶甘泉聖水與旅費！' },
+      { id: 7, type: 'prize', tier: 'minor', name: '安慰小錢包', rewardText: '30 金幣 (保本)', icon: 'coin', gold: 30, desc: '【五獎】剛好拿回本次抽獎本金！' }
+    ],
+    taunts: [
+      '「噗嗤！空空如也！但是——哪有賭徒天天輸？下把肯定爆 9999 金幣！」',
+      '「又沒中！哥布林莊家把你的金幣塞進口袋狂笑：哪有賭徒天天輸？再來一把翻盤啊！」',
+      '「手氣這麼背還敢來賭？哪有賭徒天天輸，下一把就是巨龍寶藏了啦！」',
+      '「幸運女神今天請假！但哪有賭徒天天輸？連輸幾把後大獎機率已經飆升，現在放棄前面都白送了！」',
+      '「莊家數著金幣大笑：感謝勇者贊助！不過哪有賭徒天天輸？再來一次保證轉運！」',
+      '「哎呀！就差一格！哪有賭徒天天輸？下一把不抽走 9999 G 怎麼對得起自己！」',
+      '「哥布林拍拍你的肩膀：嘿嘿，哪有賭徒天天輸？連輸是為了迎接觸底大爆發！」'
+    ],
+    expulsions: [
+      '【哥布林莊家】怒斥：「身無分文的窮鬼也配坐在這？！滾去地下城打怪背單字賺夠 30 金幣再來！」',
+      '【哥布林賭徒】哄堂大笑：「輸得連一條褲衩都不剩了！警衛，把這個窮光蛋扔回營地去！」',
+      '【哥布林守衛】拔刀驅趕：「沒錢還想賴在賭桌前？快滾！口袋有 30 金幣再回來做夢！」'
+    ]
+  }
 };

@@ -42,7 +42,9 @@ const App = (() => {
     },
     endlessPracticeCounter: 0,
     checkinClaimedDate: '',
-    checkinDayIndex: 0
+    checkinDayIndex: 0,
+    lotteryPity: 0,
+    lotteryTotalSpins: 0
   });
 
   // Global App State
@@ -484,6 +486,10 @@ const App = (() => {
           ${PixelSprites.icon('calendar', 20)}
           <span>七日簽到</span>
         </button>
+        <button class="pixel-btn-sub btn-lottery-highlight" id="btn-open-lottery">
+          ${PixelSprites.icon('dice', 20)}
+          <span style="color:#ffd700; font-weight:bold;">命運轉盤</span>
+        </button>
       </div>
 
       <!-- Daily Habit & Frequent Practice Card -->
@@ -531,6 +537,7 @@ const App = (() => {
     document.getElementById('btn-open-shop').onclick = () => renderShopView('equip');
     document.getElementById('btn-open-codex').onclick = () => renderCodexView('bestiary');
     document.getElementById('btn-open-checkin').onclick = () => showCheckinModal();
+    document.getElementById('btn-open-lottery').onclick = () => showLotteryModal();
 
     // Claim daily goals
     document.getElementById('claim-goal-0').onclick = () => claimDailyGoal(0);
@@ -2288,6 +2295,7 @@ const App = (() => {
     if (data.leave_pass_expires) state.leavePassExpires = data.leave_pass_expires;
     if (data.hero_class) state.heroClass = data.hero_class;
     if (data.inventory && data.inventory._heroClass) state.heroClass = data.inventory._heroClass;
+    if (data.inventory && data.inventory._lotteryPity !== undefined) state.lotteryPity = data.inventory._lotteryPity;
 
     saveState();
     updateHUD();
@@ -2465,6 +2473,349 @@ const App = (() => {
     saveState();
     updateHUD();
     showCheckinModal();
+  };
+
+  // ==========================================
+  // VIEW: Goblin Dungeon Fate Lottery / 3x3 Roulette
+  // ==========================================
+  let isLotterySpinning = false;
+  let currentLotterySlot = 0;
+
+  const showLotteryModal = () => {
+    const cfg = GAME_CONFIG.LOTTERY;
+    const currentPity = state.lotteryPity || 0;
+    const currentWinRatePct = Math.min(95, Math.round((cfg.baseWinRate + Math.min(cfg.maxPityRate, currentPity * cfg.pityIncrement)) * 100));
+
+    // Positions mapping for 3x3 perimeter grid (clockwise: 0->1->2->3->4->5->6->7)
+    const slotGridPos = {
+      0: 'grid-column: 1; grid-row: 1;',
+      1: 'grid-column: 2; grid-row: 1;',
+      2: 'grid-column: 3; grid-row: 1;',
+      3: 'grid-column: 3; grid-row: 2;',
+      4: 'grid-column: 3; grid-row: 3;',
+      5: 'grid-column: 2; grid-row: 3;',
+      6: 'grid-column: 1; grid-row: 3;',
+      7: 'grid-column: 1; grid-row: 2;'
+    };
+
+    const tilesHtml = cfg.slots.map(slot => {
+      const isJackpot = slot.tier === 'jackpot';
+      const isPrize = slot.type === 'prize';
+      const posStyle = slotGridPos[slot.id];
+      const isActive = slot.id === (currentLotterySlot % 8);
+
+      return `
+        <div class="roulette-tile ${isJackpot ? 'roulette-tile-jackpot' : isPrize ? 'roulette-tile-prize' : 'roulette-tile-dud'} ${isActive ? 'active' : ''}" 
+             id="slot-tile-${slot.id}" 
+             style="${posStyle}">
+          <div class="tile-icon-box">
+            ${PixelSprites.icon(slot.icon, isJackpot ? 22 : 18)}
+          </div>
+          <div class="tile-name-text ${isJackpot ? 'tile-text-gold' : ''}">
+            ${slot.rewardText}
+          </div>
+          <span class="tile-badge ${isJackpot ? 'tile-text-gold' : ''}">
+            ${isJackpot ? '★ 傳說特獎' : slot.name}
+          </span>
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog lottery-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>${PixelSprites.icon('dice', 18)} 哥布林地下賭場・命運轉盤</span>
+            <span style="font-size:12px; color:var(--gold);">${PixelSprites.icon('coin', 12)} 持有: <span id="lottery-current-gold">${state.gold}</span> G</span>
+          </div>
+
+          <!-- Pity Tracker Banner -->
+          <div class="lottery-pity-banner">
+            <div class="lottery-pity-title-row">
+              <span>幸運轉運值 (累積未中): <span class="lottery-pity-highlight" id="lottery-pity-count-text">${currentPity} 次</span></span>
+              <span>當前預估中獎率: <span class="lottery-pity-rate" id="lottery-pity-rate-text">${currentWinRatePct}%</span></span>
+            </div>
+            <div style="font-size:10px; color:#a090b8;">
+              ⚡ 初始中獎率極低 (5%)！每次未中獎，下把中獎機率永久提升 <span style="color:#55e6ff;">+3.5%</span>！抽中任一獎勵後重置。
+            </div>
+          </div>
+
+          <!-- 3x3 Classic Arcade Roulette Grid -->
+          <div class="lottery-grid-3x3">
+            ${tilesHtml}
+
+            <!-- Center Cell: Spin Controls -->
+            <div class="roulette-center-cell" id="roulette-center-cell">
+              <button class="roulette-spin-btn" id="roulette-spin-btn" onclick="App.spinLottery()" ${state.gold < cfg.cost ? 'style="background:#552222; border-color:#884444;"' : ''}>
+                ${state.gold < cfg.cost ? `金幣不足！(需 ${cfg.cost} G)` : `啟動輪盤 (${cfg.cost} G)`}
+              </button>
+              <div style="font-size:10px; color:#ffd700; margin-top:2px;">
+                ${PixelSprites.icon('trophy', 10)} 最高 9999 金幣
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback & Taunt Area -->
+          <div class="roulette-feedback-box" id="lottery-feedback-box">
+            <div style="font-size:11px; color:#d2c8e6; text-align:center;">
+              「哥布林莊家獰笑：『30 金幣試一把！萬一中了 9999 金幣，老子當場破產！』」
+            </div>
+          </div>
+
+          <!-- Permanent Exit Button (Always Present) -->
+          <button class="lottery-exit-btn" id="lottery-permanent-exit-btn" onclick="App.closeModal()">
+            🚪 離開賭場・返回營地
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const spinLottery = () => {
+    if (isLotterySpinning) return;
+
+    const cfg = GAME_CONFIG.LOTTERY;
+    const cost = cfg.cost || 30;
+
+    // Check if player has enough gold
+    if (state.gold < cost) {
+      handleLotteryEviction();
+      return;
+    }
+
+    // Deduct cost
+    state.gold -= cost;
+    state.lotteryTotalSpins = (state.lotteryTotalSpins || 0) + 1;
+    saveState();
+    updateHUD();
+
+    const currentGoldEl = document.getElementById('lottery-current-gold');
+    if (currentGoldEl) currentGoldEl.textContent = state.gold;
+
+    isLotterySpinning = true;
+
+    // Disable spin button during animation
+    const spinBtn = document.getElementById('roulette-spin-btn');
+    if (spinBtn) {
+      spinBtn.disabled = true;
+      spinBtn.innerText = '⚡ 命運轉動中...';
+    }
+    const spinAgainBtn = document.getElementById('lottery-spin-again-btn');
+    if (spinAgainBtn) spinAgainBtn.disabled = true;
+
+    const feedbackBox = document.getElementById('lottery-feedback-box');
+    if (feedbackBox) {
+      feedbackBox.innerHTML = `
+        <div style="font-size:11px; color:#ffd700; text-align:center; padding:4px 0;">
+          ⚡ 輪盤急速飛轉中……巨龍寶庫 9999 金幣正在招手！
+        </div>
+      `;
+    }
+
+    // Determine target slot using Pity algorithm
+    const currentPity = state.lotteryPity || 0;
+    const baseWinRate = cfg.baseWinRate || 0.05;
+    const bonusRate = Math.min(cfg.maxPityRate, currentPity * cfg.pityIncrement);
+    const totalWinRate = Math.min(0.95, baseWinRate + bonusRate);
+
+    const isWinner = Math.random() < totalWinRate;
+    let targetSlotId = 1;
+    let wonPrize = null;
+
+    if (isWinner) {
+      // Chance for 9999G scales with pity
+      const jackpotWeight = Math.min(0.25, (cfg.jackpotInitialWeight || 0.015) + currentPity * 0.008);
+      if (Math.random() < jackpotWeight) {
+        targetSlotId = 0; // Jackpot 9999 G!
+      } else {
+        // Pick among other prize slots: 2 (500G), 4 (Scroll+100G), 6 (Potion+50G), 7 (30G)
+        const prizeSlots = [2, 4, 6, 7];
+        targetSlotId = prizeSlots[Math.floor(Math.random() * prizeSlots.length)];
+      }
+      wonPrize = cfg.slots.find(s => s.id === targetSlotId);
+      state.lotteryPity = 0; // Reset pity on win!
+    } else {
+      // Pick among dud slots: 1, 3, 5
+      const dudSlots = [1, 3, 5];
+      targetSlotId = dudSlots[Math.floor(Math.random() * dudSlots.length)];
+      state.lotteryPity = currentPity + 1; // Increment pity on miss!
+    }
+
+    // Spinning Animation
+    const currentPos = currentLotterySlot % 8;
+    const minRotations = 3; // 24 steps
+    const stepsToTarget = (targetSlotId - currentPos + 8) % 8;
+    const totalSteps = minRotations * 8 + stepsToTarget;
+
+    let stepCount = 0;
+    let currentStepDelay = 50;
+
+    const stepSpin = () => {
+      // Un-highlight previous slot
+      const prevTile = document.getElementById(`slot-tile-${currentLotterySlot}`);
+      if (prevTile) prevTile.classList.remove('active');
+
+      // Move to next slot clockwise
+      currentLotterySlot = (currentLotterySlot + 1) % 8;
+      const nextTile = document.getElementById(`slot-tile-${currentLotterySlot}`);
+      if (nextTile) nextTile.classList.add('active');
+
+      // Tick sound
+      AudioManager.play('rouletteTick');
+
+      stepCount++;
+
+      if (stepCount >= totalSteps) {
+        // Finalize spin on landed tile
+        finalizeLotterySpin(isWinner, wonPrize);
+      } else {
+        // Smooth deceleration curve towards the target
+        const remaining = totalSteps - stepCount;
+        if (remaining <= 6) {
+          currentStepDelay += 45;
+        } else if (remaining <= 12) {
+          currentStepDelay += 20;
+        }
+        setTimeout(stepSpin, currentStepDelay);
+      }
+    };
+
+    setTimeout(stepSpin, currentStepDelay);
+  };
+
+  const finalizeLotterySpin = (isWinner, wonPrize) => {
+    isLotterySpinning = false;
+    saveState();
+    updateHUD();
+
+    const currentGoldEl = document.getElementById('lottery-current-gold');
+    if (currentGoldEl) currentGoldEl.textContent = state.gold;
+
+    const cfg = GAME_CONFIG.LOTTERY;
+    const currentPity = state.lotteryPity || 0;
+    const nextWinRatePct = Math.min(95, Math.round((cfg.baseWinRate + Math.min(cfg.maxPityRate, currentPity * cfg.pityIncrement)) * 100));
+
+    // Update pity banner in modal
+    const pityCountEl = document.getElementById('lottery-pity-count-text');
+    if (pityCountEl) pityCountEl.textContent = `${currentPity} 次`;
+    const pityRateEl = document.getElementById('lottery-pity-rate-text');
+    if (pityRateEl) pityRateEl.textContent = `${nextWinRatePct}%`;
+
+    const feedbackBox = document.getElementById('lottery-feedback-box');
+    const centerCell = document.getElementById('roulette-center-cell');
+
+    if (isWinner && wonPrize) {
+      // Distribute rewards
+      if (wonPrize.gold) state.gold += wonPrize.gold;
+      if (wonPrize.item) {
+        state.inventory[wonPrize.item] = (state.inventory[wonPrize.item] || 0) + (wonPrize.itemCount || 1);
+      }
+      saveState();
+      updateHUD();
+
+      if (currentGoldEl) currentGoldEl.textContent = state.gold;
+
+      if (wonPrize.tier === 'jackpot') {
+        AudioManager.play('jackpot');
+        showToast('【天降橫財】狂賀！！勇者抽中遠古巨龍金庫 9999 金幣！！');
+      } else {
+        AudioManager.play('victory');
+        showToast(`恭喜中獎！獲得 ${wonPrize.name} (${wonPrize.rewardText})！`);
+      }
+
+      if (feedbackBox) {
+        feedbackBox.innerHTML = `
+          <div class="roulette-win-banner">
+            ${wonPrize.tier === 'jackpot' ? '🏆【奇蹟降臨！！】' : '🎉【恭喜中獎！！】'}
+            抽中【${wonPrize.name}】（${wonPrize.rewardText}）！<br>
+            <span style="font-size:10px; color:#b0e0ff;">幸運轉運值已重置為 0，獎勵已存入背包！</span>
+          </div>
+          <div class="lottery-action-row">
+            <button class="lottery-spin-again-btn" id="lottery-spin-again-btn" onclick="App.spinLottery()">
+              🌟 乘勝追擊・再抽一次 (${cfg.cost} G)
+            </button>
+            <button class="lottery-exit-btn" onclick="App.closeModal()">
+              🚪 離開賭場・返回營地
+            </button>
+          </div>
+        `;
+      }
+    } else {
+      // Missed / Dud: Taunt!
+      AudioManager.play('defeat');
+      const randomTaunt = cfg.taunts[Math.floor(Math.random() * cfg.taunts.length)];
+
+      if (feedbackBox) {
+        feedbackBox.innerHTML = `
+          <div class="roulette-taunt-quote">
+            ${randomTaunt}
+          </div>
+          <div style="font-size:10px; color:#a090b8; text-align:center; margin-top:2px;">
+            🔥 當前連輸未中: ${currentPity} 次 | 下次中獎率已飆升至 <span style="color:#55e6ff; font-weight:bold;">${nextWinRatePct}%</span>！
+          </div>
+          <div class="lottery-action-row">
+            <button class="lottery-spin-again-btn" id="lottery-spin-again-btn" onclick="App.spinLottery()">
+              🎯 哪有賭徒天天輸・再抽一次 (${cfg.cost} G)
+            </button>
+            <button class="lottery-exit-btn" onclick="App.closeModal()">
+              🚪 離開賭場・返回營地
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Re-enable center button if visible
+    if (centerCell) {
+      centerCell.innerHTML = `
+        <button class="roulette-spin-btn" id="roulette-spin-btn" onclick="App.spinLottery()" ${state.gold < cfg.cost ? 'style="background:#552222; border-color:#884444;"' : ''}>
+          ${state.gold < cfg.cost ? `金幣不足！(需 ${cfg.cost} G)` : `啟動輪盤 (${cfg.cost} G)`}
+        </button>
+        <span style="font-size:10px; color:var(--gold);">${PixelSprites.icon('coin', 10)} 持有: ${state.gold} G</span>
+      `;
+    }
+  };
+
+  const handleLotteryEviction = () => {
+    AudioManager.play('floorDown');
+    const cfg = GAME_CONFIG.LOTTERY;
+    const expulsionLine = cfg.expulsions[Math.floor(Math.random() * cfg.expulsions.length)];
+
+    const feedbackBox = document.getElementById('lottery-feedback-box');
+    if (feedbackBox) {
+      feedbackBox.innerHTML = `
+        <div class="roulette-expulsion-box">
+          ${expulsionLine}<br>
+          <span style="font-size:10px; color:#ffaaaa;">【警衛正在將你丟出門外……即將回到營地】</span>
+        </div>
+        <div class="lottery-action-row">
+          <button class="lottery-exit-btn" onclick="App.closeModal()" style="border-color:#ff4444; color:#ff8888;">
+            🚪 自行離開賭場
+          </button>
+        </div>
+      `;
+    }
+
+    const centerCell = document.getElementById('roulette-center-cell');
+    if (centerCell) {
+      centerCell.innerHTML = `
+        <div style="font-size:11px; color:#ff5555; font-weight:bold;">
+          ⚠️ 逐客令已發佈
+        </div>
+        <span style="font-size:10px; color:#ff9999;">金幣不足 ${cfg.cost} G</span>
+      `;
+    }
+
+    // Evict player back to lobby after 1.5 seconds
+    setTimeout(() => {
+      const modal = document.getElementById('modal-overlay');
+      if (modal) {
+        closeModal();
+        showToast('你因囊中羞澀被哥布林賭場轟出門外！快去打怪賺取金幣吧！');
+      }
+    }, 1500);
   };
 
   // Victory & Defeat Modals
@@ -2645,6 +2996,8 @@ const App = (() => {
     equipItem,
     buyConsumable,
     claimCheckin,
+    showLotteryModal,
+    spinLottery,
     changeHeroName,
     exportSyncCode,
     importSyncCode,

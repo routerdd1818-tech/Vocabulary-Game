@@ -218,7 +218,26 @@ const PixelSprites = (() => {
       <rect x="10" y="4" width="2" height="2" fill="#dd4444"/>
       <rect x="12" y="6" width="2" height="2" fill="#dd4444"/>
       <rect x="10" y="8" width="2" height="2" fill="#dd4444"/>
-    `, `pixel-icon`)
+    `, `pixel-icon`),
+
+    dice: (size = 16) => wrapSvg(16, 16, `
+      <rect x="2" y="2" width="12" height="12" fill="#a02828"/>
+      <rect x="3" y="3" width="10" height="10" fill="#d83a3a"/>
+      <rect x="4" y="4" width="2" height="2" fill="#ffffff"/>
+      <rect x="10" y="4" width="2" height="2" fill="#ffffff"/>
+      <rect x="7" y="7" width="2" height="2" fill="#ffffff"/>
+      <rect x="4" y="10" width="2" height="2" fill="#ffffff"/>
+      <rect x="10" y="10" width="2" height="2" fill="#ffffff"/>
+    `, `pixel-icon pixel-dice-icon`),
+
+    wheel: (size = 16) => wrapSvg(16, 16, `
+      <circle cx="8" cy="8" r="6.5" fill="#2d2242" stroke="#c89b3c" stroke-width="1.5"/>
+      <rect x="7" y="2" width="2" height="12" fill="#ffd700"/>
+      <rect x="2" y="7" width="12" height="2" fill="#ffd700"/>
+      <circle cx="8" cy="8" r="2.5" fill="#ff4444"/>
+      <circle cx="8" cy="8" r="1" fill="#ffffff"/>
+      <polygon points="8,0 6,3 10,3" fill="#ffffff"/>
+    `, `pixel-icon pixel-wheel-icon`)
   };
 
   // Dynamic Multi-Class & Multi-Tier Equipment Pixel Hero Paper Doll (64x64)

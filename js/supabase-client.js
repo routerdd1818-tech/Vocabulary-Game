@@ -171,7 +171,10 @@ const SupabaseClient = (() => {
         equipped_relic: state.equippedRelic,
         owned_weapons: state.ownedWeapons,
         owned_armors: state.ownedArmors,
-        inventory: Object.assign({}, state.inventory, { _heroClass: state.heroClass || 'knight' }),
+        inventory: Object.assign({}, state.inventory, {
+          _heroClass: state.heroClass || 'knight',
+          _lotteryPity: state.lotteryPity || 0
+        }),
         dungeon_progress: state.dungeonProgress,
         dungeon_first_cleared: state.dungeonFirstCleared,
         vocab_stats: state.vocabStats,
