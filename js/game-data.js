@@ -12,6 +12,70 @@ const GAME_CONFIG = {
     timeBonus: 0
   },
 
+  // Medieval Hero Classes / Forms
+  HERO_CLASSES: [
+    {
+      id: 'knight',
+      name: '聖堂聖騎士',
+      title: '堅毅鋼鐵之壁',
+      icon: 'shield',
+      badge: '重裝防禦',
+      bonusDesc: '基礎防禦 +8，生命上限 +30',
+      bonus: { def: 8, hp: 30, atk: 0, timeBonus: 0, goldMultiplier: 0 },
+      desc: '身披重裝板甲與十字戰袍，右手堅毅利刃、左手十字紋章大盾，代表忠誠與守護。'
+    },
+    {
+      id: 'mage',
+      name: '秘術大法師',
+      title: '真理星辰引導者',
+      icon: 'star',
+      badge: '時限增長',
+      bonusDesc: '作答時限 +1.5 秒，基礎攻擊 +8',
+      bonus: { def: 0, hp: 0, atk: 8, timeBonus: 1.5, goldMultiplier: 0 },
+      desc: '頭戴高頂星紋法師帽，身披奧術星塵法袍，懸浮魔導書與水晶魔杖，掌控時空與詞源。'
+    },
+    {
+      id: 'ranger',
+      name: '翠林巡林客',
+      title: '疾風之影獵手',
+      icon: 'sword',
+      badge: '敏捷賞金',
+      bonusDesc: '基礎攻擊 +14，戰鬥金幣 +15%',
+      bonus: { def: 0, hp: 0, atk: 14, timeBonus: 0, goldMultiplier: 0.15 },
+      desc: '佩戴巡林羽飾兜帽與精靈斗篷，背負羽箭長筒，手持獵風長弓，敏捷靈巧百發百中。'
+    },
+    {
+      id: 'berserker',
+      name: '維京狂戰士',
+      title: '怒火破山之斧',
+      icon: 'skull',
+      badge: '極致攻擊',
+      bonusDesc: '基礎攻擊 +22，生命上限 -10',
+      bonus: { def: -2, hp: -10, atk: 22, timeBonus: 0, goldMultiplier: 0 },
+      desc: '頭頂雄偉維京角盔，披覆巨熊毛皮肩甲，手持巨大雙刃開山巨斧，以狂暴攻勢摧毀一切。'
+    },
+    {
+      id: 'valkyrie',
+      name: '天馬女武神',
+      title: '英靈神殿之翼',
+      icon: 'crown',
+      badge: '神聖高血',
+      bonusDesc: '生命上限 +60，基礎防禦 +6',
+      bonus: { def: 6, hp: 60, atk: 0, timeBonus: 0, goldMultiplier: 0 },
+      desc: '頭戴天馬銀翼羽冠，金色披風迎風飄揚，手握神聖破魔長矛，兼具優雅與神威。'
+    },
+    {
+      id: 'reaper',
+      name: '暗影獵魔者',
+      title: '死線潛行夜刃',
+      icon: 'key',
+      badge: '刺殺暴擊',
+      bonusDesc: '基礎攻擊 +16，時限 +0.8 秒',
+      bonus: { def: 0, hp: 10, atk: 16, timeBonus: 0.8, goldMultiplier: 0 },
+      desc: '身著暗影夜行蒙面風衣，雙持劇毒黑曜石短刃，神出鬼沒直擊怪物要害。'
+    }
+  ],
+
   // 15 Dungeon Bosses
   DUNGEON_BOSSES: [
     {

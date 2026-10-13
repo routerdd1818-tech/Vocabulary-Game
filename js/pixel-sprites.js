@@ -221,8 +221,8 @@ const PixelSprites = (() => {
     `, `pixel-icon`)
   };
 
-  // Dynamic Pixel Hero Paper Doll (64x64)
-  const renderHero = (expression = 'happy', weaponTier = 1, armorTier = 1, relicTier = 0) => {
+  // Dynamic Multi-Class Pixel Hero Paper Doll (64x64)
+  const renderHero = (expression = 'happy', weaponTier = 1, armorTier = 1, relicTier = 0, heroClass = 'knight') => {
     // Colors by armor tier
     const armorColors = [
       { main: '#504030', trim: '#706050', helm: '#302820' }, // T0 Cloth
@@ -236,13 +236,13 @@ const PixelSprites = (() => {
 
     // Weapon colors & blade pixels
     const weaponDef = [
-      { blade: '#605040', hilt: '#302010' }, // T0
-      { blade: '#8b6914', hilt: '#503810' }, // T1 Wood
-      { blade: '#d0d8e8', hilt: '#c89b3c' }, // T2 Steel
-      { blade: '#ff4422', hilt: '#ffd700' }, // T3 Flame
-      { blade: '#44ddff', hilt: '#ffffff' }, // T4 Frost
-      { blade: '#ffff33', hilt: '#3388ff' }, // T5 Thunder
-      { blade: '#ffffff', hilt: '#ffd700' }  // T6 Excalibur
+      { blade: '#605040', hilt: '#302010', glow: '#a08060' }, // T0
+      { blade: '#8b6914', hilt: '#503810', glow: '#d4af37' }, // T1 Wood
+      { blade: '#d0d8e8', hilt: '#c89b3c', glow: '#ffffff' }, // T2 Steel
+      { blade: '#ff4422', hilt: '#ffd700', glow: '#ffaa44' }, // T3 Flame
+      { blade: '#44ddff', hilt: '#ffffff', glow: '#aaeebb' }, // T4 Frost
+      { blade: '#ffff33', hilt: '#3388ff', glow: '#4fe3ff' }, // T5 Thunder
+      { blade: '#ffffff', hilt: '#ffd700', glow: '#fcd736' }  // T6 Excalibur
     ][Math.min(weaponTier, 6)];
 
     // Relic Aura
@@ -257,105 +257,323 @@ const PixelSprites = (() => {
       `;
       if (relicTier === 4) { // Eternal Crown Halo
         relicSvg += `
-          <rect x="26" y="8" width="12" height="3" fill="#ffd700"/>
-          <rect x="24" y="6" width="3" height="3" fill="#ffd700"/>
-          <rect x="30" y="5" width="4" height="4" fill="#ffffff"/>
-          <rect x="37" y="6" width="3" height="3" fill="#ffd700"/>
+          <rect x="26" y="6" width="12" height="3" fill="#ffd700"/>
+          <rect x="24" y="4" width="3" height="3" fill="#ffd700"/>
+          <rect x="30" y="3" width="4" height="4" fill="#ffffff"/>
+          <rect x="37" y="4" width="3" height="3" fill="#ffd700"/>
         `;
       }
     }
 
-    // Face / Expression pixels
+    // Common Expression Elements (Used across classes when face visible)
     let faceSvg = '';
     if (expression === 'happy') {
       faceSvg = `
-        <!-- Skin -->
-        <rect x="26" y="20" width="12" height="12" fill="#ffd2aa"/>
-        <!-- Eyes (Happy Stars/Sparkles) -->
+        <rect x="26" y="20" width="12" height="11" fill="#ffd2aa"/>
         <rect x="28" y="23" width="2" height="3" fill="#14121d"/>
-        <rect x="27" y="24" width="4" height="1" fill="#14121d"/>
         <rect x="34" y="23" width="2" height="3" fill="#14121d"/>
-        <rect x="33" y="24" width="4" height="1" fill="#14121d"/>
-        <!-- Rosy Cheeks -->
-        <rect x="27" y="27" width="2" height="2" fill="#ff7777"/>
-        <rect x="35" y="27" width="2" height="2" fill="#ff7777"/>
-        <!-- Big Smile -->
-        <rect x="30" y="28" width="4" height="2" fill="#992222"/>
+        <rect x="27" y="26" width="2" height="2" fill="#ff7777"/>
+        <rect x="35" y="26" width="2" height="2" fill="#ff7777"/>
+        <rect x="30" y="27" width="4" height="2" fill="#992222"/>
       `;
-    } else if (expression === 'hungry') { // 1~2 days away
+    } else if (expression === 'hungry') {
       faceSvg = `
-        <rect x="26" y="20" width="12" height="12" fill="#ecd0b0"/>
-        <!-- Blue Sweat Drop on forehead -->
+        <rect x="26" y="20" width="12" height="11" fill="#ecd0b0"/>
         <rect x="27" y="18" width="2" height="3" fill="#44aaff"/>
-        <!-- Sad Slanted Eyes -->
         <rect x="28" y="24" width="3" height="2" fill="#222233"/>
         <rect x="33" y="24" width="3" height="2" fill="#222233"/>
-        <!-- Quivering Mouth -->
-        <rect x="30" y="28" width="4" height="1" fill="#663333"/>
-        <rect x="29" y="29" width="2" height="1" fill="#663333"/>
-        <rect x="33" y="29" width="2" height="1" fill="#663333"/>
+        <rect x="30" y="27" width="4" height="1" fill="#663333"/>
       `;
-    } else if (expression === 'sarcastic') { // 3~6 days away (Dark circles & deadpan)
+    } else if (expression === 'sarcastic') {
       faceSvg = `
-        <rect x="26" y="20" width="12" height="12" fill="#e0c8b0"/>
-        <!-- Purple Dark Circles -->
+        <rect x="26" y="20" width="12" height="11" fill="#e0c8b0"/>
         <rect x="27" y="25" width="4" height="2" fill="#775588"/>
         <rect x="33" y="25" width="4" height="2" fill="#775588"/>
-        <!-- Half-closed Deadpan Eyes -->
         <rect x="28" y="24" width="3" height="1" fill="#14121d"/>
         <rect x="34" y="24" width="3" height="1" fill="#14121d"/>
-        <!-- Flat Contemptuous Mouth -->
-        <rect x="30" y="29" width="5" height="1" fill="#442222"/>
+        <rect x="30" y="28" width="5" height="1" fill="#442222"/>
       `;
-    } else if (expression === 'ghost') { // 7+ days away (Pale spirit)
+    } else if (expression === 'ghost') {
       faceSvg = `
-        <rect x="26" y="20" width="12" height="12" fill="#d0e0e8"/>
-        <!-- Floating Soul Spirit Top -->
+        <rect x="26" y="20" width="12" height="11" fill="#d0e0e8"/>
         <rect x="38" y="10" width="6" height="6" fill="#aaddff" opacity="0.8"/>
-        <rect x="42" y="8" width="4" height="4" fill="#aaddff" opacity="0.6"/>
-        <!-- Empty Hollow Black Eyes -->
         <rect x="28" y="23" width="3" height="3" fill="#112233"/>
         <rect x="33" y="23" width="3" height="3" fill="#112233"/>
-        <!-- Wavy Ghost Mouth -->
-        <rect x="30" y="28" width="4" height="3" fill="#112233"/>
+        <rect x="30" y="27" width="4" height="2" fill="#112233"/>
       `;
     } else { // Vacation / Sunglasses
       faceSvg = `
-        <rect x="26" y="20" width="12" height="12" fill="#ffd2aa"/>
-        <!-- Cool Pixel Sunglasses -->
-        <rect x="27" y="23" width="10" height="4" fill="#111111"/>
-        <rect x="28" y="24" width="3" height="2" fill="#335577"/>
-        <rect x="33" y="24" width="3" height="2" fill="#335577"/>
-        <!-- Chill Smile -->
-        <rect x="30" y="29" width="4" height="1" fill="#662222"/>
+        <rect x="26" y="20" width="12" height="11" fill="#ffd2aa"/>
+        <rect x="27" y="22" width="10" height="4" fill="#111111"/>
+        <rect x="28" y="23" width="3" height="2" fill="#335577"/>
+        <rect x="33" y="23" width="3" height="2" fill="#335577"/>
+        <rect x="30" y="28" width="4" height="1" fill="#662222"/>
+      `;
+    }
+
+    let classBodySvg = '';
+
+    if (heroClass === 'mage') {
+      // 🧙‍♂️ 秘術大法師: 高頂尖角星紋法師帽、奧術星空法袍、懸浮符文魔導書、水晶魔杖
+      classBodySvg = `
+        <!-- Wizard Hat Plume & Brim -->
+        <polygon points="32,2 26,16 38,16" fill="#2d2459"/>
+        <rect x="24" y="15" width="16" height="4" fill="#1c1538"/>
+        <rect x="30" y="14" width="4" height="3" fill="#ffd700"/>
+        <!-- Long White Wizard Hair/Beard -->
+        <rect x="24" y="19" width="3" height="14" fill="#e8edf5"/>
+        <rect x="37" y="19" width="3" height="14" fill="#e8edf5"/>
+        <rect x="29" y="28" width="6" height="6" fill="#e8edf5"/>
+        ${faceSvg}
+        <!-- Flowing Arcane Robe -->
+        <rect x="24" y="31" width="16" height="24" fill="#251f45"/>
+        <rect x="28" y="32" width="8" height="23" fill="#362d66"/>
+        <rect x="31" y="34" width="2" height="21" fill="#ffd700"/>
+        <rect x="27" y="42" width="10" height="3" fill="#ffd700"/>
+        <!-- Robe Sleeves -->
+        <rect x="20" y="33" width="5" height="10" fill="#251f45"/>
+        <rect x="39" y="33" width="5" height="10" fill="#251f45"/>
+        <rect x="21" y="42" width="3" height="3" fill="#ffd2aa"/>
+        <rect x="40" y="42" width="3" height="3" fill="#ffd2aa"/>
+        <!-- Robe Hem & Boots -->
+        <rect x="22" y="54" width="20" height="3" fill="#ffd700"/>
+        <rect x="26" y="56" width="4" height="4" fill="#120e24"/>
+        <rect x="34" y="56" width="4" height="4" fill="#120e24"/>
+        <!-- Left: Floating Arcane Grimoire Spellbook -->
+        <g>
+          <rect x="12" y="34" width="8" height="10" fill="#662233"/>
+          <rect x="13" y="35" width="6" height="8" fill="#eef2ff"/>
+          <line x1="16" y1="35" x2="16" y2="43" stroke="#662233" stroke-width="1"/>
+          <!-- Sparkles -->
+          <rect x="14" y="31" width="2" height="2" fill="#4fe3ff"/>
+          <rect x="19" y="33" width="2" height="2" fill="#ffe766"/>
+        </g>
+        <!-- Right: Arcane Crystal Staff -->
+        <g>
+          <rect x="44" y="16" width="3" height="40" fill="#5c381e"/>
+          <circle cx="45" cy="14" r="5" fill="${weaponDef.glow}"/>
+          <circle cx="45" cy="14" r="3" fill="#ffffff"/>
+        </g>
+      `;
+    } else if (heroClass === 'ranger') {
+      // 🏹 翠林巡林客: 巡林兜帽、羽飾、背負箭筒、精靈輕甲、手持長弓
+      classBodySvg = `
+        <!-- Forest Archer Hood -->
+        <rect x="25" y="14" width="14" height="7" fill="#2d5932"/>
+        <rect x="23" y="17" width="3" height="13" fill="#2d5932"/>
+        <rect x="38" y="17" width="3" height="13" fill="#2d5932"/>
+        <!-- White Feather on Hood -->
+        <polygon points="23,12 25,18 22,18" fill="#ffffff"/>
+        ${faceSvg}
+        <!-- Leather Jerkin & Forest Cloak -->
+        <rect x="24" y="31" width="16" height="16" fill="#3a6b3e"/>
+        <rect x="28" y="32" width="8" height="15" fill="#5c4028"/>
+        <!-- Back Cloak Tips -->
+        <rect x="21" y="34" width="4" height="14" fill="#224426"/>
+        <rect x="39" y="34" width="4" height="14" fill="#224426"/>
+        <!-- Hands with Archer Bracers -->
+        <rect x="21" y="42" width="3" height="4" fill="#5c4028"/>
+        <rect x="40" y="40" width="3" height="4" fill="#ffd2aa"/>
+        <!-- Legs & Tall Boots -->
+        <rect x="26" y="47" width="5" height="11" fill="#4a5238"/>
+        <rect x="33" y="47" width="5" height="11" fill="#4a5238"/>
+        <rect x="25" y="57" width="6" height="4" fill="#332415"/>
+        <rect x="33" y="57" width="6" height="4" fill="#332415"/>
+        <!-- Left Shoulder: Quiver with Arrows -->
+        <g>
+          <rect x="18" y="24" width="4" height="12" fill="#6b4423"/>
+          <line x1="18" y1="21" x2="20" y2="24" stroke="#ffffff" stroke-width="1.5"/>
+          <line x1="21" y1="20" x2="21" y2="24" stroke="#ffffff" stroke-width="1.5"/>
+        </g>
+        <!-- Right Hand: Recurve Longbow -->
+        <g>
+          <path d="M 46,12 Q 52,32 46,52" fill="none" stroke="#7a481e" stroke-width="2.5"/>
+          <line x1="46" y1="13" x2="46" y2="51" stroke="#ffffff" stroke-width="1" stroke-dasharray="2,1"/>
+          <!-- Nocked Arrow -->
+          <line x1="40" y1="32" x2="50" y2="32" stroke="#d0d0e0" stroke-width="1.5"/>
+          <polygon points="50,30 54,32 50,34" fill="#a0a0b0"/>
+        </g>
+      `;
+    } else if (heroClass === 'berserker') {
+      // ⚔️ 維京狂戰士: 維京巨角骨盔、野獸厚毛皮披肩、肌肉戰紋、雙手巨斧
+      classBodySvg = `
+        <!-- Viking Horned Helm -->
+        <rect x="25" y="15" width="14" height="6" fill="#5a606e"/>
+        <!-- Huge Curved Ivory Horns -->
+        <polygon points="22,18 16,8 24,14" fill="#f0ece1"/>
+        <polygon points="42,18 48,8 40,14" fill="#f0ece1"/>
+        <!-- Forehead Band with Studs -->
+        <rect x="25" y="19" width="14" height="3" fill="#383d47"/>
+        <rect x="28" y="19" width="2" height="3" fill="#ffd700"/>
+        <rect x="34" y="19" width="2" height="3" fill="#ffd700"/>
+        ${faceSvg}
+        <!-- Red War Paint Streaks -->
+        <line x1="28" y1="24" x2="28" y2="28" stroke="#cc2222" stroke-width="1.5"/>
+        <line x1="35" y1="24" x2="35" y2="28" stroke="#cc2222" stroke-width="1.5"/>
+        <!-- Heavy Bear Fur Mantle over Shoulders -->
+        <rect x="20" y="30" width="24" height="6" fill="#4a3018"/>
+        <rect x="18" y="33" width="7" height="9" fill="#5c3d20"/>
+        <rect x="39" y="33" width="7" height="9" fill="#5c3d20"/>
+        <!-- Muscular Torso & Belt -->
+        <rect x="25" y="36" width="14" height="11" fill="#e8be92"/>
+        <rect x="24" y="45" width="16" height="4" fill="#301808"/>
+        <rect x="30" y="45" width="4" height="4" fill="#ffd700"/>
+        <!-- Legs & Fur Boots -->
+        <rect x="26" y="49" width="5" height="8" fill="#3a2212"/>
+        <rect x="33" y="49" width="5" height="8" fill="#3a2212"/>
+        <rect x="25" y="56" width="6" height="6" fill="#4a3018"/>
+        <rect x="33" y="56" width="6" height="6" fill="#4a3018"/>
+        <!-- Both Hands Wielding Giant Double-bitted Battleaxe -->
+        <g>
+          <!-- Axe Haft -->
+          <rect x="42" y="14" width="3" height="44" fill="#5a3d24"/>
+          <!-- Double Axe Blades -->
+          <polygon points="43,18 53,12 55,24 43,24" fill="${weaponDef.blade}"/>
+          <polygon points="42,18 34,14 33,24 42,24" fill="${weaponDef.blade}"/>
+          <polygon points="43,24 53,30 43,26" fill="${weaponDef.blade}"/>
+          <!-- Blade Highlights -->
+          <line x1="53" y1="12" x2="55" y2="24" stroke="#ffffff" stroke-width="1"/>
+          <line x1="34" y1="14" x2="33" y2="24" stroke="#ffffff" stroke-width="1"/>
+        </g>
+      `;
+    } else if (heroClass === 'valkyrie') {
+      // 👑 天馬女武神: 天馬展翼羽冠、金光板甲、飄逸鮮紅長披風、神聖長矛與金屬圓盾
+      classBodySvg = `
+        <!-- Flowing Scarlet Cape in Background -->
+        <polygon points="22,34 14,58 24,58" fill="#991828"/>
+        <polygon points="42,34 50,58 40,58" fill="#991828"/>
+        <!-- Winged Tiara / Helm -->
+        <rect x="25" y="16" width="14" height="4" fill="#ffd700"/>
+        <!-- Left & Right Winged Feathers -->
+        <polygon points="24,14 17,6 23,20" fill="#f0f4ff"/>
+        <polygon points="40,14 47,6 41,20" fill="#f0f4ff"/>
+        <!-- Golden Warrior Hair -->
+        <rect x="23" y="18" width="3" height="15" fill="#f0c430"/>
+        <rect x="38" y="18" width="3" height="15" fill="#f0c430"/>
+        ${faceSvg}
+        <!-- Golden Cuirass Breastplate -->
+        <rect x="24" y="31" width="16" height="16" fill="#d4af37"/>
+        <rect x="27" y="33" width="10" height="12" fill="#fae06b"/>
+        <rect x="31" y="35" width="2" height="8" fill="#ffffff"/>
+        <!-- Hands with Gold Gauntlets -->
+        <rect x="20" y="40" width="4" height="4" fill="#d4af37"/>
+        <rect x="40" y="40" width="4" height="4" fill="#d4af37"/>
+        <!-- Golden Greaves & Boots -->
+        <rect x="26" y="47" width="5" height="10" fill="#e8edf5"/>
+        <rect x="33" y="47" width="5" height="10" fill="#e8edf5"/>
+        <rect x="25" y="57" width="6" height="5" fill="#d4af37"/>
+        <rect x="33" y="57" width="6" height="5" fill="#d4af37"/>
+        <!-- Left Arm: Holy Golden Buckler Round Shield -->
+        <g>
+          <circle cx="18" cy="42" r="7" fill="#d4af37"/>
+          <circle cx="18" cy="42" r="5" fill="#fae06b"/>
+          <circle cx="18" cy="42" r="2" fill="#3388ff"/>
+        </g>
+        <!-- Right Hand: Holy Lance / Spear -->
+        <g>
+          <rect x="44" y="8" width="2" height="50" fill="#c49b30"/>
+          <!-- Golden Spearhead -->
+          <polygon points="45,2 41,12 49,12" fill="#ffd700"/>
+          <polygon points="45,4 43,10 47,10" fill="#ffffff"/>
+          <!-- Crimson Pennant -->
+          <polygon points="45,12 40,16 45,19" fill="#cc2222"/>
+        </g>
+      `;
+    } else if (heroClass === 'reaper') {
+      // 🗡️ 暗影獵魔者: 暗夜忍者兜帽面罩、幽紫刺客雙眸、黑夜風衣、雙持淬毒匕首
+      classBodySvg = `
+        <!-- Shadow Cowl & Cape -->
+        <polygon points="24,14 16,56 24,56" fill="#181524"/>
+        <polygon points="40,14 48,56 40,56" fill="#181524"/>
+        <!-- Dark Cowl Head -->
+        <rect x="24" y="14" width="16" height="8" fill="#181a24"/>
+        <rect x="23" y="17" width="3" height="15" fill="#181a24"/>
+        <rect x="38" y="17" width="3" height="15" fill="#181a24"/>
+        <!-- Assassin Mask (Covering mouth) -->
+        <rect x="26" y="20" width="12" height="11" fill="#1a1c28"/>
+        <!-- Glowing Piercing Violet Assassin Eyes -->
+        <rect x="28" y="23" width="3" height="2" fill="#cc44ff"/>
+        <rect x="33" y="23" width="3" height="2" fill="#cc44ff"/>
+        <rect x="29" y="23" width="1" height="1" fill="#ffffff"/>
+        <rect x="34" y="23" width="1" height="1" fill="#ffffff"/>
+        <!-- Shadow Longcoat -->
+        <rect x="24" y="31" width="16" height="18" fill="#202332"/>
+        <rect x="28" y="33" width="8" height="14" fill="#141620"/>
+        <rect x="26" y="44" width="12" height="2" fill="#6a358c"/>
+        <!-- Hands & Dark Bracers -->
+        <rect x="20" y="40" width="4" height="4" fill="#181a24"/>
+        <rect x="40" y="40" width="4" height="4" fill="#181a24"/>
+        <!-- Dark Boots -->
+        <rect x="26" y="49" width="5" height="9" fill="#161822"/>
+        <rect x="33" y="49" width="5" height="9" fill="#161822"/>
+        <rect x="25" y="58" width="6" height="4" fill="#0d0e14"/>
+        <rect x="33" y="58" width="6" height="4" fill="#0d0e14"/>
+        <!-- Dual Reverse-Grip Poisoned Daggers -->
+        <!-- Left Dagger -->
+        <g>
+          <rect x="18" y="38" width="2" height="4" fill="#503520"/>
+          <polygon points="19,42 16,54 21,50" fill="#2d323f"/>
+          <line x1="16" y1="48" x2="16" y2="54" stroke="#44dd66" stroke-width="1.5"/>
+        </g>
+        <!-- Right Dagger -->
+        <g>
+          <rect x="44" y="38" width="2" height="4" fill="#503520"/>
+          <polygon points="45,42 42,54 47,50" fill="#2d323f"/>
+          <line x1="42" y1="48" x2="42" y2="54" stroke="#44dd66" stroke-width="1.5"/>
+        </g>
+      `;
+    } else {
+      // 🛡️ 聖堂騎士 (預設 / Knight): 十字巨盔、紅羽冠、板甲十字戰袍、大面十字風箏盾、騎士長劍
+      classBodySvg = `
+        <!-- Crusader Great Helm -->
+        <rect x="24" y="14" width="16" height="17" fill="${armorColors.helm}"/>
+        <!-- Helmet Shading & Cross Visor Slits -->
+        <rect x="25" y="15" width="14" height="3" fill="#3e4458"/>
+        <!-- Red Helmet Plume Feather -->
+        <polygon points="32,8 30,14 34,14" fill="#cc2222"/>
+        <polygon points="34,7 32,13 36,13" fill="#ff4444"/>
+        <!-- Gold Cross Slit -->
+        <rect x="31" y="21" width="2" height="8" fill="#ffd700"/>
+        <rect x="27" y="23" width="10" height="2" fill="#ffd700"/>
+        <rect x="28" y="24" width="2" height="1" fill="#111111"/>
+        <rect x="34" y="24" width="2" height="1" fill="#111111"/>
+        <!-- Body & Crusader Cross Tabard -->
+        <rect x="24" y="31" width="16" height="17" fill="#e8edf5"/>
+        <rect x="22" y="33" width="3" height="8" fill="${armorColors.main}"/>
+        <rect x="39" y="33" width="3" height="8" fill="${armorColors.main}"/>
+        <!-- Holy Red Cross on Chest -->
+        <rect x="31" y="33" width="2" height="13" fill="#cc2222"/>
+        <rect x="27" y="36" width="10" height="2" fill="#cc2222"/>
+        <!-- Hands & Gauntlets -->
+        <rect x="21" y="41" width="3" height="4" fill="#6e788c"/>
+        <rect x="40" y="41" width="3" height="4" fill="#6e788c"/>
+        <!-- Legs & Greaves -->
+        <rect x="26" y="48" width="5" height="10" fill="#2c303f"/>
+        <rect x="33" y="48" width="5" height="10" fill="#2c303f"/>
+        <rect x="25" y="58" width="6" height="4" fill="#1a1c26"/>
+        <rect x="33" y="58" width="6" height="4" fill="#1a1c26"/>
+        <!-- Left Hand: Crusader Kite Shield -->
+        <g>
+          <path d="M 12,32 L 22,32 L 20,48 L 12,40 Z" fill="#e8edf5" stroke="#33384a" stroke-width="1"/>
+          <!-- Shield Red Cross -->
+          <line x1="16" y1="32" x2="16" y2="44" stroke="#cc2222" stroke-width="2"/>
+          <line x1="12" y1="36" x2="21" y2="36" stroke="#cc2222" stroke-width="2"/>
+          <!-- Gold Rim -->
+          <line x1="12" y1="32" x2="22" y2="32" stroke="#ffd700" stroke-width="1.5"/>
+        </g>
+        <!-- Right Hand: Arming Sword -->
+        <g>
+          <rect x="43" y="39" width="3" height="3" fill="${weaponDef.hilt}"/>
+          <rect x="41" y="37" width="7" height="2" fill="#ffd700"/>
+          <rect x="44" y="21" width="3" height="16" fill="${weaponDef.blade}"/>
+          <polygon points="44,21 47,21 45.5,17" fill="${weaponDef.blade}"/>
+        </g>
       `;
     }
 
     return wrapSvg(64, 64, `
       ${relicSvg}
-      <!-- Helmet / Hair -->
-      <rect x="25" y="15" width="14" height="6" fill="${armorColors.helm}"/>
-      <rect x="24" y="17" width="2" height="10" fill="${armorColors.helm}"/>
-      <rect x="38" y="17" width="2" height="10" fill="${armorColors.helm}"/>
-      ${faceSvg}
-      <!-- Body & Armor -->
-      <rect x="24" y="32" width="16" height="16" fill="${armorColors.main}"/>
-      <rect x="28" y="34" width="8" height="12" fill="${armorColors.trim}"/>
-      <rect x="22" y="34" width="4" height="8" fill="${armorColors.main}"/>
-      <rect x="38" y="34" width="4" height="8" fill="${armorColors.main}"/>
-      <!-- Hands -->
-      <rect x="22" y="42" width="3" height="4" fill="#ffd2aa"/>
-      <rect x="39" y="42" width="3" height="4" fill="#ffd2aa"/>
-      <!-- Legs & Boots -->
-      <rect x="26" y="48" width="5" height="10" fill="#2a2038"/>
-      <rect x="33" y="48" width="5" height="10" fill="#2a2038"/>
-      <rect x="25" y="58" width="6" height="4" fill="#14121d"/>
-      <rect x="33" y="58" width="6" height="4" fill="#14121d"/>
-      <!-- Weapon in Right Hand -->
-      <rect x="42" y="38" width="3" height="3" fill="${weaponDef.hilt}"/>
-      <rect x="43" y="24" width="3" height="14" fill="${weaponDef.blade}"/>
-      <rect x="42" y="22" width="5" height="3" fill="${weaponDef.blade}"/>
-      <rect x="44" y="18" width="2" height="5" fill="${weaponDef.blade}"/>
+      ${classBodySvg}
     `, 'pixel-hero-sprite');
   };
 
@@ -883,12 +1101,195 @@ const PixelSprites = (() => {
     `, 'pixel-scroll-sprite');
   };
 
+  // Medieval Battle Duel Arena Backdrop (320x140)
+  const renderMedievalBackdrop = (mode = 'dungeon', stageId = 1, towerFloor = 1) => {
+    if (mode === 'dungeon') {
+      // Medieval Castle Dungeon Keep
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Deep Dungeon Stone Wall -->
+          <rect width="320" height="140" fill="#101218"/>
+          
+          <!-- Medieval Masonry Stone Blocks -->
+          <rect x="0" y="0" width="76" height="24" fill="#181a24"/>
+          <rect x="0" y="0" width="76" height="2" fill="#292d3e"/>
+          <rect x="80" y="0" width="76" height="24" fill="#151720"/>
+          <rect x="80" y="0" width="76" height="2" fill="#252938"/>
+          <rect x="160" y="0" width="76" height="24" fill="#181a24"/>
+          <rect x="160" y="0" width="76" height="2" fill="#292d3e"/>
+          <rect x="240" y="0" width="80" height="24" fill="#151720"/>
+          <rect x="240" y="0" width="80" height="2" fill="#252938"/>
+
+          <rect x="0" y="26" width="36" height="24" fill="#151720"/>
+          <rect x="40" y="26" width="76" height="24" fill="#1c1e2a"/>
+          <rect x="120" y="26" width="76" height="24" fill="#151720"/>
+          <rect x="200" y="26" width="76" height="24" fill="#1c1e2a"/>
+          <rect x="280" y="26" width="40" height="24" fill="#151720"/>
+
+          <rect x="0" y="52" width="76" height="24" fill="#181a24"/>
+          <rect x="80" y="52" width="76" height="24" fill="#1c1e2a"/>
+          <rect x="160" y="52" width="76" height="24" fill="#181a24"/>
+          <rect x="240" y="52" width="80" height="24" fill="#1c1e2a"/>
+
+          <!-- Gothic Pointed Stone Arch in background center -->
+          <path d="M 110,105 L 110,40 Q 160,8 210,40 L 210,105 Z" fill="#0b0c12" stroke="#2c3040" stroke-width="4"/>
+          <!-- Dungeon Iron Grating inside arch -->
+          <line x1="130" y1="35" x2="130" y2="105" stroke="#1d202b" stroke-width="2"/>
+          <line x1="150" y1="24" x2="150" y2="105" stroke="#1d202b" stroke-width="2"/>
+          <line x1="170" y1="24" x2="170" y2="105" stroke="#1d202b" stroke-width="2"/>
+          <line x1="190" y1="35" x2="190" y2="105" stroke="#1d202b" stroke-width="2"/>
+          <line x1="110" y1="55" x2="210" y2="55" stroke="#1d202b" stroke-width="2"/>
+          <line x1="110" y1="75" x2="210" y2="75" stroke="#1d202b" stroke-width="2"/>
+          <line x1="110" y1="95" x2="210" y2="95" stroke="#1d202b" stroke-width="2"/>
+
+          <!-- Medieval Heraldic Royal Tapestry in Center Arch -->
+          <rect x="145" y="32" width="30" height="42" fill="#6b1d28"/>
+          <polygon points="145,74 160,84 175,74" fill="#6b1d28"/>
+          <!-- Gold Trim on Banner -->
+          <rect x="145" y="30" width="30" height="2" fill="#d4af37"/>
+          <line x1="145" y1="32" x2="145" y2="74" stroke="#d4af37" stroke-width="1"/>
+          <line x1="175" y1="32" x2="175" y2="74" stroke="#d4af37" stroke-width="1"/>
+          <!-- Gold Lion Crest -->
+          <rect x="156" y="44" width="8" height="10" fill="#ffd700"/>
+          <rect x="154" y="48" width="12" height="3" fill="#ffd700"/>
+          <rect x="158" y="40" width="4" height="4" fill="#ffd700"/>
+          <rect x="157" y="56" width="6" height="4" fill="#ffd700"/>
+
+          <!-- Hanging Dungeon Chains from Ceiling -->
+          <g fill="#2e3344">
+            <!-- Left Chain -->
+            <rect x="74" y="0" width="4" height="6"/>
+            <rect x="75" y="6" width="2" height="5"/>
+            <rect x="74" y="11" width="4" height="6"/>
+            <rect x="75" y="17" width="2" height="5"/>
+            <circle cx="76" cy="27" r="4" fill="none" stroke="#2e3344" stroke-width="2"/>
+            <!-- Right Chain -->
+            <rect x="244" y="0" width="4" height="6"/>
+            <rect x="245" y="6" width="2" height="5"/>
+            <rect x="244" y="11" width="4" height="6"/>
+            <rect x="245" y="17" width="2" height="5"/>
+            <circle cx="246" cy="25" r="4" fill="none" stroke="#2e3344" stroke-width="2"/>
+          </g>
+
+          <!-- Left Cast-iron Torch Sconce on Pillar -->
+          <g class="torch-anim-left">
+            <rect x="28" y="45" width="4" height="16" fill="#3a3d4c"/>
+            <rect x="32" y="42" width="8" height="3" fill="#282a36"/>
+            <rect x="38" y="38" width="6" height="8" fill="#4a3525"/>
+            <!-- Animated Torch Flame -->
+            <rect x="39" y="31" width="5" height="7" fill="#ff4400" class="torch-fire-outer"/>
+            <rect x="40" y="28" width="4" height="7" fill="#ff9900" class="torch-fire-mid"/>
+            <rect x="41" y="26" width="2" height="4" fill="#ffff66" class="torch-fire-inner"/>
+            <circle cx="41" cy="32" r="18" fill="rgba(255,140,20,0.2)" class="torch-glow"/>
+          </g>
+
+          <!-- Right Cast-iron Torch Sconce on Pillar -->
+          <g class="torch-anim-right">
+            <rect x="288" y="45" width="4" height="16" fill="#3a3d4c"/>
+            <rect x="280" y="42" width="8" height="3" fill="#282a36"/>
+            <rect x="276" y="38" width="6" height="8" fill="#4a3525"/>
+            <!-- Animated Torch Flame -->
+            <rect x="276" y="31" width="5" height="7" fill="#ff4400" class="torch-fire-outer"/>
+            <rect x="276" y="28" width="4" height="7" fill="#ff9900" class="torch-fire-mid"/>
+            <rect x="277" y="26" width="2" height="4" fill="#ffff66" class="torch-fire-inner"/>
+            <circle cx="279" cy="32" r="18" fill="rgba(255,140,20,0.2)" class="torch-glow"/>
+          </g>
+
+          <!-- Medieval Flagstone Floor (Perspective) -->
+          <rect x="0" y="105" width="320" height="35" fill="#181a24"/>
+          <!-- Stone Floor Tiles -->
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#33384a" stroke-width="2"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#252837" stroke-width="1.5"/>
+          <line x1="0" y1="132" x2="320" y2="132" stroke="#202330" stroke-width="1"/>
+          
+          <line x1="45" y1="105" x2="35" y2="140" stroke="#252837" stroke-width="1.5"/>
+          <line x1="105" y1="105" x2="95" y2="140" stroke="#252837" stroke-width="1.5"/>
+          <line x1="165" y1="105" x2="160" y2="140" stroke="#252837" stroke-width="1.5"/>
+          <line x1="225" y1="105" x2="230" y2="140" stroke="#252837" stroke-width="1.5"/>
+          <line x1="285" y1="105" x2="295" y2="140" stroke="#252837" stroke-width="1.5"/>
+        </svg>
+      `;
+    } else {
+      // Medieval Tower High Battlement & Night Sky
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Midnight Castle Sky -->
+          <rect width="320" height="140" fill="#0b0f1a"/>
+
+          <!-- Medieval Midnight Crescent Moon & Stars -->
+          <path d="M 40,20 A 10,10 0 0 0 48,32 A 8,8 0 0 1 40,20 Z" fill="#ffeebb"/>
+          <rect x="75" y="14" width="2" height="2" fill="#e0f0ff" opacity="0.8"/>
+          <rect x="120" y="20" width="2" height="2" fill="#ffffff" opacity="0.6"/>
+          <rect x="190" y="15" width="2" height="2" fill="#ffd0aa" opacity="0.9"/>
+          <rect x="235" y="24" width="2" height="2" fill="#ffffff" opacity="0.7"/>
+          <rect x="280" y="16" width="2" height="2" fill="#e0f0ff" opacity="0.8"/>
+
+          <!-- Distant Gothic Spire Silhouettes -->
+          <polygon points="135,50 140,22 145,50" fill="#141a2a"/>
+          <polygon points="175,55 180,30 185,55" fill="#141a2a"/>
+
+          <!-- High Castle Rampart Archways -->
+          <path d="M 0,90 L 0,35 Q 40,20 80,35 L 80,90 Z" fill="#151b2a" stroke="#2c3750" stroke-width="3"/>
+          <path d="M 80,90 L 80,35 Q 160,10 240,35 L 240,90 Z" fill="#121826" stroke="#2c3750" stroke-width="3"/>
+          <path d="M 240,90 L 240,35 Q 280,20 320,35 L 320,90 Z" fill="#151b2a" stroke="#2c3750" stroke-width="3"/>
+
+          <!-- Castle Battlements / Stone Crenellations -->
+          <rect x="90" y="70" width="16" height="22" fill="#232b3e"/>
+          <rect x="120" y="70" width="16" height="22" fill="#232b3e"/>
+          <rect x="150" y="70" width="16" height="22" fill="#232b3e"/>
+          <rect x="180" y="70" width="16" height="22" fill="#232b3e"/>
+          <rect x="210" y="70" width="16" height="22" fill="#232b3e"/>
+          <rect x="85" y="88" width="150" height="6" fill="#1c2333"/>
+
+          <!-- Medieval Tower Gonfalon Imperial Banner -->
+          <polygon points="150,30 170,30 170,68 160,78 150,68" fill="#1c3b6e"/>
+          <rect x="148" y="28" width="24" height="3" fill="#d4af37"/>
+          <rect x="158" y="44" width="4" height="12" fill="#ffd700"/>
+          <rect x="154" y="48" width="12" height="4" fill="#ffd700"/>
+
+          <!-- Left Tower Iron Brazier -->
+          <g class="torch-anim-left">
+            <rect x="36" y="85" width="12" height="8" fill="#30384a"/>
+            <polygon points="34,85 50,85 46,75 38,75" fill="#424c64"/>
+            <rect x="38" y="68" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/>
+            <rect x="39" y="64" width="6" height="8" fill="#ffaa00" class="torch-fire-mid"/>
+            <rect x="41" y="60" width="2" height="5" fill="#ffffff" class="torch-fire-inner"/>
+            <circle cx="42" cy="70" r="16" fill="rgba(255,160,40,0.22)" class="torch-glow"/>
+          </g>
+
+          <!-- Right Tower Iron Brazier -->
+          <g class="torch-anim-right">
+            <rect x="272" y="85" width="12" height="8" fill="#30384a"/>
+            <polygon points="270,85 286,85 282,75 274,75" fill="#424c64"/>
+            <rect x="274" y="68" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/>
+            <rect x="275" y="64" width="6" height="8" fill="#ffaa00" class="torch-fire-mid"/>
+            <rect x="277" y="60" width="2" height="5" fill="#ffffff" class="torch-fire-inner"/>
+            <circle cx="278" cy="70" r="16" fill="rgba(255,160,40,0.22)" class="torch-glow"/>
+          </g>
+
+          <!-- Stone Parapet Observation Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#181e2b"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#36425c" stroke-width="2"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#252e42" stroke-width="1.5"/>
+          <line x1="0" y1="132" x2="320" y2="132" stroke="#1d2434" stroke-width="1"/>
+
+          <line x1="45" y1="105" x2="35" y2="140" stroke="#252e42" stroke-width="1.5"/>
+          <line x1="105" y1="105" x2="95" y2="140" stroke="#252e42" stroke-width="1.5"/>
+          <line x1="165" y1="105" x2="160" y2="140" stroke="#252e42" stroke-width="1.5"/>
+          <line x1="225" y1="105" x2="230" y2="140" stroke="#252e42" stroke-width="1.5"/>
+          <line x1="285" y1="105" x2="295" y2="140" stroke="#252e42" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+  };
+
   return {
     icon: (name, size) => (icons[name] ? icons[name](size) : icons.coin(size)),
     renderHero,
     renderBoss,
     renderMinion,
     renderFood,
-    renderScroll
+    renderScroll,
+    renderMedievalBackdrop
   };
 })();

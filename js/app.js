@@ -9,6 +9,7 @@ const App = (() => {
   // Default State Factory (Ensures clean state isolation between accounts)
   const getDefaultState = (heroName = '單字勇者') => ({
     heroName: heroName,
+    heroClass: 'knight',
     currentHp: 120,
     gold: 60,
     streak: 1,
@@ -128,6 +129,20 @@ const App = (() => {
   const getHeroStats = () => {
     const base = Object.assign({}, GAME_CONFIG.HERO_BASE);
 
+    // Hero Class / Form Specialty Perks
+    const heroClassId = state.heroClass || 'knight';
+    const currentClass = GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === heroClassId) : null;
+    let classGoldBonus = 0;
+    if (currentClass && currentClass.bonus) {
+      base.maxHp += currentClass.bonus.hp || 0;
+      base.atk += currentClass.bonus.atk || 0;
+      base.def += currentClass.bonus.def || 0;
+      base.timeBonus += currentClass.bonus.timeBonus || 0;
+      if (currentClass.bonus.goldMultiplier) {
+        classGoldBonus = currentClass.bonus.goldMultiplier;
+      }
+    }
+
     // Weapon
     const weapon = GAME_CONFIG.EQUIPMENT.weapons.find(w => w.id === state.equippedWeapon);
     if (weapon) {
@@ -154,7 +169,7 @@ const App = (() => {
     }
 
     // Timed Buff
-    let goldMultiplier = 1.0;
+    let goldMultiplier = 1.0 + classGoldBonus;
     if (state.activeBuff && state.activeBuff.expiresAt > Date.now()) {
       if (state.activeBuff.type === 'atk') base.atk = Math.round(base.atk * (1 + state.activeBuff.val));
       if (state.activeBuff.type === 'def') base.def = Math.round(base.def * (1 + state.activeBuff.val));
@@ -400,8 +415,16 @@ const App = (() => {
     const html = `
       <!-- Hero Camp Stage Card -->
       <div class="pixel-box hero-stage-card">
-        <div class="avatar-wrapper">
-          ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier)}
+        <div class="avatar-wrapper" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄型態">
+          ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'knight')}
+        </div>
+
+        <div class="hero-class-bar">
+          <button class="hero-class-switch-btn" onclick="App.showClassSelectModal()">
+            ${PixelSprites.icon('crown', 14)}
+            <span>型態：${(GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === (state.heroClass || 'knight')) : null)?.name || '聖堂聖騎士'}</span>
+            <span style="color:var(--gold); font-size:10px;">[切換]</span>
+          </button>
         </div>
 
         <div class="hero-speech-bubble">
@@ -850,8 +873,12 @@ const App = (() => {
 
         ${towerBlockHtml}
 
-        <!-- Combat Duel Stage -->
-        <div class="duel-stage" id="duel-stage">
+        <!-- Medieval Combat Duel Stage -->
+        <div class="duel-stage ${battle.mode === 'dungeon' ? 'stage-medieval-dungeon' : 'stage-medieval-tower'}" id="duel-stage">
+          <div class="medieval-arena-backdrop">
+            ${PixelSprites.renderMedievalBackdrop(battle.mode, battle.stageId, state.towerFloor)}
+          </div>
+
           <!-- Hero Unit -->
           <div class="fighter-unit" id="hero-unit">
             <div id="hero-floating-box"></div>
@@ -859,7 +886,7 @@ const App = (() => {
             <div class="fighter-mini-hp">
               <div class="mini-hp-fill" style="width: ${(state.currentHp / heroStats.maxHp) * 100}%;"></div>
             </div>
-            ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0)}
+            ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0, state.heroClass || 'knight')}
           </div>
 
           <!-- Enemy Unit -->
@@ -2146,6 +2173,8 @@ const App = (() => {
     if (data.vocab_stats) state.vocabStats = data.vocab_stats;
     if (data.bestiary_unlocked) state.bestiaryUnlocked = data.bestiary_unlocked;
     if (data.leave_pass_expires) state.leavePassExpires = data.leave_pass_expires;
+    if (data.hero_class) state.heroClass = data.hero_class;
+    if (data.inventory && data.inventory._heroClass) state.heroClass = data.inventory._heroClass;
 
     saveState();
     updateHUD();
@@ -2172,6 +2201,70 @@ const App = (() => {
       showToast('暱稱已更新！');
       renderLeaderboardModal();
     }
+  };
+
+  // Modal: Select Medieval Hero Class / Character Form
+  const showClassSelectModal = () => {
+    const currentClassId = state.heroClass || 'knight';
+    const heroWeapon = GAME_CONFIG.EQUIPMENT.weapons.find(w => w.id === state.equippedWeapon);
+    const heroArmor = GAME_CONFIG.EQUIPMENT.armors.find(a => a.id === state.equippedArmor);
+    const heroRelic = GAME_CONFIG.EQUIPMENT.relics.find(r => r.id === state.equippedRelic);
+    const wTier = heroWeapon ? heroWeapon.tier : 1;
+    const aTier = heroArmor ? heroArmor.tier : 1;
+    const rTier = heroRelic ? heroRelic.tier : 0;
+
+    const cardsHtml = (GAME_CONFIG.HERO_CLASSES || []).map(cls => {
+      const isSelected = cls.id === currentClassId;
+      return `
+        <div class="hero-class-card ${isSelected ? 'selected' : ''}" onclick="App.selectHeroClass('${cls.id}')">
+          <div class="class-preview-box">
+            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, cls.id)}
+          </div>
+          <div class="class-info-box">
+            <div class="class-title-row">
+              <span class="class-name-text">${cls.name} <span style="font-size:10px; color:var(--text-muted);">(${cls.title})</span></span>
+              <span class="class-badge-pill">${cls.badge}</span>
+            </div>
+            <div class="class-desc-text">${cls.desc}</div>
+            <div class="class-perk-text">⚡ 特性加成：${cls.bonusDesc}</div>
+          </div>
+          <div>
+            <button class="claim-btn" style="padding:6px 10px; font-size:11px;" onclick="event.stopPropagation(); App.selectHeroClass('${cls.id}')">
+              ${isSelected ? '當前型態' : '選擇出戰'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog modal-dialog-gold" style="max-width:500px;" onclick="event.stopPropagation()">
+          <div class="modal-title">${PixelSprites.icon('crown', 16)} 選擇勇者職業型態 (中世紀英雄姿態)</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+            自由切換中世紀戰鬥姿態！每種型態擁有獨特的點陣外觀、武器裝束與專屬能力加成：
+          </div>
+          <div class="items-list-container" style="max-height:360px; display:flex; flex-direction:column; gap:8px;">
+            ${cardsHtml}
+          </div>
+          <button class="modal-close-btn" onclick="App.closeModal()">關閉</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const selectHeroClass = (classId) => {
+    const classObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    if (!classObj) return;
+
+    state.heroClass = classId;
+    saveState();
+    updateHUD();
+    renderLobbyView();
+    closeModal();
+    showToast(`已切換職業姿態為【${classObj.name}】！特性：${classObj.bonusDesc}`);
   };
 
   const exportSyncCode = () => {
@@ -2446,6 +2539,8 @@ const App = (() => {
     closeModalAndLobby,
     renderLeaderboardModal,
     showAuthModal,
+    showClassSelectModal,
+    selectHeroClass,
     handleLogin,
     handleSignup,
     handleLogout,

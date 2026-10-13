@@ -21,6 +21,7 @@ create table if not exists public.profiles (
   owned_armors text[] default array['a1'],
   owned_relics text[] default array[]::text[],
   inventory jsonb default '{"potion": 2, "guard_scroll": 1}'::jsonb,
+  hero_class text default 'knight',
   dungeon_progress integer default 1,
   dungeon_first_cleared integer[] default array[]::integer[],
   vocab_stats jsonb default '{}'::jsonb,
