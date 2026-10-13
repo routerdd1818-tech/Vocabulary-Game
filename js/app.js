@@ -7,9 +7,11 @@ const App = (() => {
   const STORAGE_KEY = 'word_dungeon_save_v1';
 
   // Default State Factory (Ensures clean state isolation between accounts)
-  const getDefaultState = (heroName = '單字勇者', heroClass = 'knight') => ({
+  const getDefaultState = (heroName = '單字勇者', heroClass = 'novice') => ({
     heroName: heroName,
-    heroClass: heroClass || 'knight',
+    heroClass: heroClass || 'novice',
+    unlockedClasses: [],
+    classAwakening: {},
     currentHp: 120,
     gold: 60,
     streak: 1,
@@ -123,6 +125,11 @@ const App = (() => {
       state.isAdmin = (window.SupabaseClient && SupabaseClient.isAdmin()) || state.isAdmin || false;
       if (!Array.isArray(state.bookmarkedWords)) state.bookmarkedWords = [];
       if (!Array.isArray(state.mistakeWords)) state.mistakeWords = [];
+      if (!Array.isArray(state.unlockedClasses)) {
+        state.unlockedClasses = (state.heroClass && state.heroClass !== 'novice') ? [state.heroClass] : [];
+      }
+      if (!state.heroClass) state.heroClass = 'novice';
+      if (!state.classAwakening || typeof state.classAwakening !== 'object') state.classAwakening = {};
     } catch (e) {
       console.error('Load failed', e);
       state = getDefaultState();
@@ -139,17 +146,35 @@ const App = (() => {
   const getHeroStats = () => {
     const base = Object.assign({}, GAME_CONFIG.HERO_BASE);
 
-    // Hero Class / Form Specialty Perks
-    const heroClassId = state.heroClass || 'knight';
-    const currentClass = GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === heroClassId) : null;
+    // Hero Class / Form Specialty Perks & Awakening
+    const heroClassId = state.heroClass || 'novice';
     let classGoldBonus = 0;
-    if (currentClass && currentClass.bonus) {
-      base.maxHp += currentClass.bonus.hp || 0;
-      base.atk += currentClass.bonus.atk || 0;
-      base.def += currentClass.bonus.def || 0;
-      base.timeBonus += currentClass.bonus.timeBonus || 0;
-      if (currentClass.bonus.goldMultiplier) {
-        classGoldBonus = currentClass.bonus.goldMultiplier;
+
+    if (heroClassId !== 'novice') {
+      const currentClass = GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === heroClassId) : null;
+      if (currentClass && currentClass.bonus) {
+        base.maxHp += currentClass.bonus.hp || 0;
+        base.atk += currentClass.bonus.atk || 0;
+        base.def += currentClass.bonus.def || 0;
+        base.timeBonus += currentClass.bonus.timeBonus || 0;
+        if (currentClass.bonus.goldMultiplier) {
+          classGoldBonus += currentClass.bonus.goldMultiplier;
+        }
+      }
+
+      // Add Awakening Ranks bonus (Rank 1 to 5)
+      const awakeningRank = (state.classAwakening && state.classAwakening[heroClassId]) || 0;
+      if (awakeningRank > 0 && GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses[heroClassId]) {
+        const bonusObj = GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses[heroClassId][awakeningRank];
+        if (bonusObj) {
+          base.maxHp += bonusObj.hp || 0;
+          base.atk += bonusObj.atk || 0;
+          base.def += bonusObj.def || 0;
+          base.timeBonus += bonusObj.timeBonus || 0;
+          if (bonusObj.goldMultiplier) {
+            classGoldBonus += bonusObj.goldMultiplier;
+          }
+        }
       }
     }
 
@@ -329,7 +354,7 @@ const App = (() => {
           categoryLabel: `Tier ${tier}`,
           sentence: `The party discussed the significance of ______ during their rest.`,
           sentenceTarget: found.word,
-          sentenceZh: `提示：請依據語境選出適合單字【${found.meaning}】。`
+          sentenceZh: `請依據語境選出適合單字【${found.meaning}】。`
         };
       }
     }
@@ -391,6 +416,12 @@ const App = (() => {
       const targetIds = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])]));
       pool = getAllTrackedVocabList(targetIds);
       if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 8);
+    } else if (battle.mode === 'dojo_class_trial') {
+      pool = getDojoVocabPool('toeic');
+      if (pool.length === 0) pool = getTierVocabPool(10);
+    } else if (battle.mode === 'dojo_awakening_trial') {
+      pool = getDojoVocabPool('gre');
+      if (pool.length === 0) pool = getTierVocabPool(14);
     } else if (battle.mode === 'dojo') {
       pool = getDojoVocabPool(battle.dojoCategory || 'all');
     } else {
@@ -443,7 +474,16 @@ const App = (() => {
   const generateQuestion = (tier) => {
     const vocab = pickVocab(tier);
     const type = Math.floor(Math.random() * 4) + 1;
-    const tierPool = battle.mode === 'dojo' ? getDojoVocabPool(battle.dojoCategory || 'all') : getTierVocabPool(tier);
+    let tierPool;
+    if (battle.mode === 'dojo_class_trial') {
+      tierPool = getDojoVocabPool('toeic');
+    } else if (battle.mode === 'dojo_awakening_trial') {
+      tierPool = getDojoVocabPool('gre');
+    } else if (battle.mode === 'dojo') {
+      tierPool = getDojoVocabPool(battle.dojoCategory || 'all');
+    } else {
+      tierPool = getTierVocabPool(tier);
+    }
 
     let qData = {
       type: type,
@@ -512,7 +552,7 @@ const App = (() => {
           'Mastering this ______ is essential for survival in this perilous floor.'
         ];
         sentence = templates[Math.floor(Math.random() * templates.length)];
-        sentenceZh = `提示：依據語境與【${vocab.meaning}】之意，選出正確單字填入空格。`;
+        sentenceZh = `依據語境與【${vocab.meaning}】之意選出正確單字填入空格。`;
       }
 
       let choices = [];
@@ -690,16 +730,28 @@ const App = (() => {
     const html = `
       <!-- Hero Camp Stage Card -->
       <div class="pixel-box hero-stage-card">
-        <div class="avatar-wrapper" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄型態">
-          ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'knight')}
+        <div class="avatar-wrapper" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄姿態與神域覺醒">
+          ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
         </div>
 
         <div class="hero-class-bar">
-          <button class="hero-class-switch-btn" onclick="App.showClassSelectModal()">
-            ${PixelSprites.icon('crown', 14)}
-            <span>型態：${(GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === (state.heroClass || 'knight')) : null)?.name || '聖堂聖騎士'}</span>
-            <span style="color:var(--gold); font-size:10px;">[切換]</span>
-          </button>
+          ${state.heroClass === 'novice' ? `
+            <button class="hero-class-pill novice-pill" onclick="App.showClassSelectModal()">
+              ${PixelSprites.icon('quill', 12)}
+              <span>🔰 見習村民 (點此前往道場多益轉職)</span>
+            </button>
+          ` : `
+            <button class="hero-class-pill" onclick="App.showClassSelectModal()">
+              ${PixelSprites.icon('crown', 12)}
+              <span>【${(GAME_CONFIG.HERO_CLASSES ? GAME_CONFIG.HERO_CLASSES.find(c => c.id === state.heroClass) : null)?.name || '未知職業'}】</span>
+              ${((state.classAwakening && state.classAwakening[state.heroClass]) || 0) > 0 ? `
+                <span class="awakening-stars-tag">★x${state.classAwakening[state.heroClass]}</span>
+              ` : `
+                <span style="color:#ba68c8; font-size:10px;">[未覺醒]</span>
+              `}
+              <span style="color:var(--gold); font-size:10px; margin-left:3px;">[姿態/覺醒]</span>
+            </button>
+          `}
         </div>
 
         <div class="hero-speech-bubble">
@@ -953,6 +1005,17 @@ const App = (() => {
             在道場中可無壓力自由修煉單字，每題答對皆賺取金幣與連擊，答錯不致命並自動收錄至錯題簿：
           </div>
 
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+            <div style="background:#201435; border:1px solid #7744aa; border-radius:4px; padding:8px; text-align:center; cursor:pointer;" onclick="App.showClassSelectModal()">
+              <div style="font-weight:bold; color:#ffd700; font-size:12px;">⚔️ 多益轉職考核</div>
+              <div style="font-size:10px; color:#c0a0e0; margin-top:2px;">通關獲得中世紀高級職業</div>
+            </div>
+            <div style="background:#1b2238; border:1px solid #4477aa; border-radius:4px; padding:8px; text-align:center; cursor:pointer;" onclick="App.showAwakeningModal()">
+              <div style="font-weight:bold; color:#4fe3ff; font-size:12px;">✨ GRE 神域覺醒</div>
+              <div style="font-size:10px; color:#a0c0e0; margin-top:2px;">5階突破・能力躍升與神環</div>
+            </div>
+          </div>
+
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button class="dojo-tier-card" onclick="App.startDojoMode('elementary')">
               <div style="font-weight:bold; color:#77ffaa; font-size:13px;">📗 基礎與生活日常 (國中小 Level 1-3)</div>
@@ -1072,6 +1135,12 @@ const App = (() => {
     if (battle.mode === 'dungeon') {
       const boss = GAME_CONFIG.DUNGEON_BOSSES.find(b => b.id === battle.stageId);
       tier = boss ? boss.tier : 1;
+    } else if (battle.mode === 'dojo_class_trial') {
+      tier = 10;
+    } else if (battle.mode === 'dojo_awakening_trial') {
+      tier = 14;
+    } else if (battle.mode === 'dojo') {
+      tier = 1;
     } else if (battle.mode === 'review') {
       tier = 1;
     } else {
@@ -1159,8 +1228,7 @@ const App = (() => {
       // Type 2: Sentence Cloze
       questionBodyHtml = `
         <div class="sentence-prompt">
-          <div>${q.vocab.sentence.replace('______', '<span class="sentence-blank">______</span>')}</div>
-          <div class="sentence-zh-hint">${q.vocab.sentenceZh}</div>
+          <div class="sentence-cloze-text">${q.vocab.sentence.replace('______', '<span class="sentence-blank">______</span>')}</div>
         </div>
         <div class="choices-grid-2x2">
           ${q.choices.map(choice => `
@@ -1251,6 +1319,28 @@ const App = (() => {
           <span style="color:#4fe3ff; font-weight:bold;">${state.towerPoints} / 5 積分</span>
         </div>
       `;
+    } else if (battle.mode === 'dojo_class_trial') {
+      const targetClass = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === battle.targetClassId);
+      const className = targetClass ? targetClass.name : '職業';
+      stageBannerHtml = `
+        <div class="stage-banner-bar">
+          <span class="stage-banner-tag dojo-tag">${PixelSprites.icon('shield', 12)} 道場轉職考驗 (多益難度)</span>
+          <span class="stage-banner-title">晉升【${className}】資格試煉</span>
+          <span style="color:#ffd700; font-weight:bold;">合格: ${battle.trialCorrectCount || 0} / 5 (失誤: ${(battle.trialMistakes || 0)} / 2)</span>
+        </div>
+      `;
+    } else if (battle.mode === 'dojo_awakening_trial') {
+      const targetClass = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === battle.targetClassId);
+      const className = targetClass ? targetClass.name : '職業';
+      const rank = battle.targetRank || 1;
+      const req = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements[rank]) || { requiredCorrect: 5, maxMistakes: 2 };
+      stageBannerHtml = `
+        <div class="stage-banner-bar">
+          <span class="stage-banner-tag" style="background:#4a154b; color:#f0a3ff; border:1px solid #c058f8;">${PixelSprites.icon('gem', 12)} 神域覺醒試煉 (GRE難度)</span>
+          <span class="stage-banner-title">【${className}】第 ${rank} 階覺醒</span>
+          <span style="color:#f0a3ff; font-weight:bold;">合格: ${battle.trialCorrectCount || 0} / ${req.requiredCorrect} (失誤: ${(battle.trialMistakes || 0)} / ${req.maxMistakes})</span>
+        </div>
+      `;
     } else if (battle.mode === 'dojo') {
       const catLabels = {
         elementary: '基礎生活 (國中小 1-3)',
@@ -1288,9 +1378,9 @@ const App = (() => {
         ${towerBlockHtml}
 
         <!-- Medieval Combat Duel Stage -->
-        <div class="duel-stage ${battle.mode === 'dungeon' ? 'stage-medieval-dungeon' : battle.mode === 'dojo' ? 'stage-medieval-dojo' : 'stage-medieval-tower'}" id="duel-stage">
+        <div class="duel-stage ${battle.mode === 'dungeon' ? 'stage-medieval-dungeon' : (battle.mode === 'tower' ? 'stage-medieval-tower' : 'stage-medieval-dojo')}" id="duel-stage">
           <div class="medieval-arena-backdrop">
-            ${PixelSprites.renderMedievalBackdrop(battle.mode, battle.stageId, state.towerFloor)}
+            ${PixelSprites.renderMedievalBackdrop(battle.mode === 'dojo_class_trial' || battle.mode === 'dojo_awakening_trial' ? 'dojo' : battle.mode, battle.stageId, state.towerFloor)}
           </div>
 
           <!-- Hero Unit -->
@@ -1300,7 +1390,7 @@ const App = (() => {
             <div class="fighter-mini-hp">
               <div class="mini-hp-fill" style="width: ${(state.currentHp / heroStats.maxHp) * 100}%;"></div>
             </div>
-            ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0, state.heroClass || 'knight')}
+            ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
           </div>
 
           <!-- Enemy Unit -->
@@ -1524,6 +1614,32 @@ const App = (() => {
     // Reduce Enemy HP
     battle.enemyCurrentHp = Math.max(0, battle.enemyCurrentHp - damage);
 
+    if (battle.mode === 'dojo_class_trial') {
+      battle.trialCorrectCount = (battle.trialCorrectCount || 0) + 1;
+      AudioManager.play('coin');
+      showFloatingText('hero-floating-box', `試煉合格 ${battle.trialCorrectCount}/5`, 'dmg-heal');
+      if (battle.trialCorrectCount >= 5) {
+        setTimeout(() => onClassTrialSuccess(battle.targetClassId), 500);
+      } else {
+        setTimeout(() => loadNextQuestion(), 700);
+      }
+      return;
+    }
+
+    if (battle.mode === 'dojo_awakening_trial') {
+      const rank = battle.targetRank || 1;
+      const req = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements[rank]) || { requiredCorrect: 5, maxMistakes: 2 };
+      battle.trialCorrectCount = (battle.trialCorrectCount || 0) + 1;
+      AudioManager.play('coin');
+      showFloatingText('hero-floating-box', `覺醒合格 ${battle.trialCorrectCount}/${req.requiredCorrect}`, 'dmg-heal');
+      if (battle.trialCorrectCount >= req.requiredCorrect) {
+        setTimeout(() => onAwakeningTrialSuccess(battle.targetClassId, rank), 500);
+      } else {
+        setTimeout(() => loadNextQuestion(), 700);
+      }
+      return;
+    }
+
     if (battle.mode === 'dojo') {
       state.gold += 2;
       AudioManager.play('coin');
@@ -1569,6 +1685,42 @@ const App = (() => {
 
   // Enemy Attack Calculation
   const executeEnemyAttack = (feedbackMsg) => {
+    if (battle.mode === 'dojo_class_trial') {
+      battle.trialMistakes = (battle.trialMistakes || 0) + 1;
+      showFloatingText('hero-floating-box', `失誤 ${battle.trialMistakes}/2`, 'dmg-hero');
+      AudioManager.play('playerHurt');
+      if (battle.trialMistakes > 2) {
+        battle.trialFailed = true;
+        setTimeout(() => {
+          showCorrectionModal(battle.currentQuestion, feedbackMsg || '道場考官講評 (已超過最大容錯)');
+        }, 400);
+      } else {
+        setTimeout(() => {
+          showCorrectionModal(battle.currentQuestion, feedbackMsg || '道場考官講評');
+        }, 400);
+      }
+      return;
+    }
+
+    if (battle.mode === 'dojo_awakening_trial') {
+      const rank = battle.targetRank || 1;
+      const req = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements[rank]) || { requiredCorrect: 5, maxMistakes: 2 };
+      battle.trialMistakes = (battle.trialMistakes || 0) + 1;
+      showFloatingText('hero-floating-box', `失誤 ${battle.trialMistakes}/${req.maxMistakes}`, 'dmg-hero');
+      AudioManager.play('playerHurt');
+      if (battle.trialMistakes > req.maxMistakes) {
+        battle.trialFailed = true;
+        setTimeout(() => {
+          showCorrectionModal(battle.currentQuestion, feedbackMsg || '神域法則試煉反噬 (已超過最大容錯)');
+        }, 400);
+      } else {
+        setTimeout(() => {
+          showCorrectionModal(battle.currentQuestion, feedbackMsg || '神域法則試煉反噬');
+        }, 400);
+      }
+      return;
+    }
+
     if (battle.mode === 'dojo') {
       battle.combo = 0;
       showFloatingText('hero-floating-box', '木人格擋！', 'dmg-hero');
@@ -2107,16 +2259,17 @@ const App = (() => {
       const wTier = heroWeapon ? heroWeapon.tier : 1;
       const aTier = heroArmor ? heroArmor.tier : 1;
       const rTier = heroRelic ? heroRelic.tier : 0;
-      const curClassObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === (state.heroClass || 'knight'));
+      const curClassObj = state.heroClass === 'novice' ? GAME_CONFIG.NOVICE_CLASS : ((GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === state.heroClass) || GAME_CONFIG.NOVICE_CLASS);
+      const curAwakeningRank = (state.classAwakening && state.classAwakening[state.heroClass]) || 0;
 
       itemsHtml += `
         <div class="pixel-box shop-fitting-preview">
           <div class="fitting-sprite-box">
-            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, state.heroClass || 'knight')}
+            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, state.heroClass || 'novice', curAwakeningRank)}
           </div>
           <div class="fitting-info-col">
             <div class="fitting-title-row">
-              <span class="fitting-hero-title">${state.heroName}・【${curClassObj?.name || '聖堂聖騎士'}】</span>
+              <span class="fitting-hero-title">${state.heroName}・【${curClassObj?.name || '見習村民'}】${curAwakeningRank > 0 ? ` ★x${curAwakeningRank}` : ''}</span>
               <button class="fitting-switch-class-btn" onclick="App.showClassSelectModal()">更換姿態</button>
             </div>
             <div class="fitting-gear-row">
@@ -2750,27 +2903,14 @@ const App = (() => {
                 </div>
 
                 <div class="auth-form-group">
-                  <label class="auth-label">選擇初始職業型態 (中世紀英雄姿態)</label>
-                  <div class="gate-class-selector-grid" id="gate-class-grid">
-                    ${(GAME_CONFIG.HERO_CLASSES || []).map(cls => `
-                      <div class="gate-class-card ${cls.id === gateSelectedHeroClass ? 'selected' : ''}" id="gate-card-${cls.id}" onclick="App.selectGateClass('${cls.id}')">
-                        <div class="gate-class-mini-sprite">
-                          ${PixelSprites.renderHero('happy', 1, 1, 0, cls.id)}
-                        </div>
-                        <div class="gate-class-title">${cls.name}</div>
-                        <div class="gate-class-badge">${cls.badge}</div>
-                      </div>
-                    `).join('')}
-                  </div>
-                  <div id="gate-class-detail" class="gate-class-detail-box">
-                    ${(() => {
-                      const cur = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === gateSelectedHeroClass) || (GAME_CONFIG.HERO_CLASSES || [])[0];
-                      return cur ? `
-                        <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
-                        <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
-                        <div class="gate-detail-desc">${cur.desc}</div>
-                      ` : '';
-                    })()}
+                  <label class="auth-label">初始身份：【見習村民】(初心者路人)</label>
+                  <div style="background:#140e22; border:1px solid #5a4430; padding:10px; border-radius:4px; display:flex; gap:10px; align-items:center;">
+                    <div style="width:48px; height:48px; background:#0c0914; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      ${PixelSprites.renderHero('happy', 1, 1, 0, 'novice', 0)}
+                    </div>
+                    <div style="font-size:11px; color:#eeddbb; line-height:1.5;">
+                      <strong>⚠️ 公會考核守則：</strong> 所有新晉勇者皆從「見習村民」啟程，身著粗布衣並持練習木棒。進入遊戲後前往【道場】通過【多益職場商務】考核，方能解鎖聖騎士、大魔導士等高級職業！
+                    </div>
                   </div>
                 </div>
 
@@ -2873,7 +3013,7 @@ const App = (() => {
     const password = document.getElementById('gate-password')?.value;
     const username = document.getElementById('gate-username')?.value?.trim();
     const heroName = document.getElementById('gate-heroname')?.value?.trim() || '單字勇者';
-    const chosenClass = gateSelectedHeroClass || 'knight';
+    const chosenClass = 'novice';
     const btn = document.getElementById('btn-gate-submit');
 
     if (!email || !password || !username) {
@@ -2904,8 +3044,10 @@ const App = (() => {
         }
       }
 
-      state = getDefaultState(heroName, chosenClass);
-      state.heroClass = chosenClass;
+      state = getDefaultState(heroName, 'novice');
+      state.heroClass = 'novice';
+      state.unlockedClasses = [];
+      state.classAwakening = {};
       state.isAdmin = SupabaseClient.isAdmin();
       saveState();
       try {
@@ -2960,30 +3102,17 @@ const App = (() => {
               <input type="text" id="auth-username" placeholder="使用者帳號 (例如: hero99)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <input type="text" id="auth-heroname" value="${state.heroName}" placeholder="勇者稱號 (例如: 單字大師)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
 
-              <div style="font-size:11px; color:#ffd700; margin-top:4px;">選擇初始職業型態：</div>
-              <div class="gate-class-selector-grid" id="modal-class-grid">
-                ${(GAME_CONFIG.HERO_CLASSES || []).map(cls => `
-                  <div class="gate-class-card ${cls.id === gateSelectedHeroClass ? 'selected' : ''}" id="modal-card-${cls.id}" onclick="App.selectGateClass('${cls.id}')">
-                    <div class="gate-class-mini-sprite">
-                      ${PixelSprites.renderHero('happy', 1, 1, 0, cls.id)}
-                    </div>
-                    <div class="gate-class-title">${cls.name}</div>
-                    <div class="gate-class-badge">${cls.badge}</div>
-                  </div>
-                `).join('')}
-              </div>
-              <div id="modal-class-detail" class="gate-class-detail-box">
-                ${(() => {
-                  const cur = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === gateSelectedHeroClass) || (GAME_CONFIG.HERO_CLASSES || [])[0];
-                  return cur ? `
-                    <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
-                    <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
-                    <div class="gate-detail-desc">${cur.desc}</div>
-                  ` : '';
-                })()}
+              <div style="font-size:11px; color:#eeddbb; margin-top:6px; background:#181024; border:1px solid #5a4430; padding:8px; border-radius:4px; display:flex; gap:8px; align-items:center;">
+                <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:#0c0914; flex-shrink:0;">
+                  ${PixelSprites.renderHero('happy', 1, 1, 0, 'novice', 0)}
+                </div>
+                <div>
+                  <strong>初始身份：【見習村民】</strong><br>
+                  所有初心冒險者皆以見習村民出發，需前往【道場】通過【多益職場商務】考核方能轉職為高階職業！
+                </div>
               </div>
 
-              <button class="claim-btn" style="padding:8px;" onclick="App.handleSignup()">建立帳號並登入</button>
+              <button class="claim-btn" style="padding:8px; margin-top:8px;" onclick="App.handleSignup()">建立帳號並登入</button>
             ` : `
               <div style="font-size:12px; color:var(--text-muted);">
                 填入您的 Supabase 專案網址與 Public Anon Key（可於 Supabase Dashboard -> Project Settings -> API 複製）：
@@ -3056,9 +3185,10 @@ const App = (() => {
         }
       }
 
-      const chosenClass = gateSelectedHeroClass || 'knight';
-      state = getDefaultState(heroname || '單字勇者', chosenClass);
-      state.heroClass = chosenClass;
+      state = getDefaultState(heroname || '單字勇者', 'novice');
+      state.heroClass = 'novice';
+      state.unlockedClasses = [];
+      state.classAwakening = {};
       state.isAdmin = SupabaseClient.isAdmin();
       saveState();
       try {
@@ -3148,6 +3278,13 @@ const App = (() => {
       state.mistakeWords = data.mistake_words;
     }
 
+    if (data.inventory && Array.isArray(data.inventory._unlockedClasses)) {
+      state.unlockedClasses = data.inventory._unlockedClasses;
+    }
+    if (data.inventory && data.inventory._classAwakening && typeof data.inventory._classAwakening === 'object') {
+      state.classAwakening = data.inventory._classAwakening;
+    }
+
     saveState(false);
     updateHUD();
     renderLobbyView();
@@ -3175,9 +3312,14 @@ const App = (() => {
     }
   };
 
-  // Modal: Select Medieval Hero Class / Character Form
+  // ==========================================
+  // Class Trial (TOEIC) & Class Awakening (GRE)
+  // ==========================================
+
+  // Modal: Select Medieval Hero Class / Character Form (Enforcing Dojo Trial)
   const showClassSelectModal = () => {
-    const currentClassId = state.heroClass || 'knight';
+    const currentClassId = state.heroClass || 'novice';
+    const unlockedList = Array.isArray(state.unlockedClasses) ? state.unlockedClasses : [];
     const heroWeapon = GAME_CONFIG.EQUIPMENT.weapons.find(w => w.id === state.equippedWeapon);
     const heroArmor = GAME_CONFIG.EQUIPMENT.armors.find(a => a.id === state.equippedArmor);
     const heroRelic = GAME_CONFIG.EQUIPMENT.relics.find(r => r.id === state.equippedRelic);
@@ -3185,25 +3327,75 @@ const App = (() => {
     const aTier = heroArmor ? heroArmor.tier : 1;
     const rTier = heroRelic ? heroRelic.tier : 0;
 
+    // Novice card at the top
+    const isNovice = currentClassId === 'novice';
+    const noviceCardHtml = `
+      <div class="class-trial-card ${isNovice ? 'active-class' : ''}">
+        <div class="class-mini-preview">
+          ${PixelSprites.renderHero('happy', 1, 1, 0, 'novice', 0)}
+        </div>
+        <div class="class-trial-info">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-weight:bold; color:#eeddbb; font-size:13px;">見習村民 (初始路人姿態)</span>
+            <span class="trial-badge ${isNovice ? 'badge-active' : 'badge-unlocked'}">${isNovice ? '當前身分' : '基礎姿態'}</span>
+          </div>
+          <div style="font-size:10px; color:#a09080;">初始樸實無華的路人姿態，身著粗麻布衣，手持見習木棒。需至道場通過多益考核方可獲得高階英雄職業！</div>
+        </div>
+        <div>
+          ${isNovice ? `
+            <button class="claim-btn" style="padding:6px 10px; font-size:11px;" onclick="App.showDojoSelectModal()">前往道場轉職</button>
+          ` : `
+            <button class="secondary-btn" style="padding:5px 8px; font-size:10px;" onclick="App.selectHeroClass('novice')">切換回村民</button>
+          `}
+        </div>
+      </div>
+    `;
+
     const cardsHtml = (GAME_CONFIG.HERO_CLASSES || []).map(cls => {
+      const isUnlocked = unlockedList.includes(cls.id);
       const isSelected = cls.id === currentClassId;
+      const rank = (state.classAwakening && state.classAwakening[cls.id]) || 0;
+
       return `
-        <div class="hero-class-card ${isSelected ? 'selected' : ''}" onclick="App.selectHeroClass('${cls.id}')">
-          <div class="class-preview-box">
-            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, cls.id)}
+        <div class="class-trial-card ${isSelected ? 'active-class' : !isUnlocked ? 'locked' : ''}">
+          <div class="class-mini-preview">
+            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, cls.id, rank)}
           </div>
-          <div class="class-info-box">
-            <div class="class-title-row">
-              <span class="class-name-text">${cls.name} <span style="font-size:10px; color:var(--text-muted);">(${cls.title})</span></span>
-              <span class="class-badge-pill">${cls.badge}</span>
+          <div class="class-trial-info">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-weight:bold; color:${isSelected ? 'var(--gold)' : '#fff'}; font-size:13px;">
+                ${cls.name} <span style="font-size:10px; color:var(--text-muted);">(${cls.title})</span>
+                ${rank > 0 ? `<span class="awakening-stars-tag">★x${rank}</span>` : ''}
+              </span>
+              <span class="trial-badge ${isSelected ? 'badge-active' : isUnlocked ? 'badge-unlocked' : 'badge-locked'}">
+                ${isSelected ? '當前出戰' : isUnlocked ? '已轉職解鎖' : '未解鎖'}
+              </span>
             </div>
-            <div class="class-desc-text">${cls.desc}</div>
-            <div class="class-perk-text">⚡ 特性加成：${cls.bonusDesc}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${cls.desc}</div>
+            <div style="font-size:10px; color:#ffdd66;">⚡ 特性加成：${cls.bonusDesc}</div>
+            ${isUnlocked ? `
+              <div style="font-size:10px; color:#ba68c8;">
+                ✨ 神域覺醒：${rank > 0 ? `已達成第 ${rank} 階 (${'★'.repeat(rank)})` : '尚未覺醒 (可進行 GRE 試煉)'}
+              </div>
+            ` : `
+              <div style="font-size:10px; color:#ff8888;">
+                🔒 轉職條件：需至道場通過【TOEIC 多益商務】5 題考核 (容錯 <= 2)
+              </div>
+            `}
           </div>
-          <div>
-            <button class="claim-btn" style="padding:6px 10px; font-size:11px;" onclick="event.stopPropagation(); App.selectHeroClass('${cls.id}')">
-              ${isSelected ? '當前型態' : '選擇出戰'}
-            </button>
+          <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            ${isUnlocked ? `
+              <button class="claim-btn" style="padding:5px 8px; font-size:10px; width:100%;" onclick="App.selectHeroClass('${cls.id}')">
+                ${isSelected ? '當前型態' : '選擇出戰'}
+              </button>
+              <button class="secondary-btn" style="padding:4px 8px; font-size:10px; width:100%;" onclick="App.showAwakeningModal('${cls.id}')">
+                神域覺醒
+              </button>
+            ` : `
+              <button class="claim-btn" style="padding:6px 10px; font-size:11px; background:#4a2266; border-color:#9944dd;" onclick="App.startClassTrial('${cls.id}')">
+                多益考核轉職
+              </button>
+            `}
           </div>
         </div>
       `;
@@ -3211,15 +3403,16 @@ const App = (() => {
 
     const modalHtml = `
       <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
-        <div class="modal-dialog modal-dialog-gold" style="max-width:500px;" onclick="event.stopPropagation()">
-          <div class="modal-title">${PixelSprites.icon('crown', 16)} 選擇勇者職業型態 (中世紀英雄姿態)</div>
+        <div class="modal-dialog modal-dialog-gold" style="max-width:520px;" onclick="event.stopPropagation()">
+          <div class="modal-title">${PixelSprites.icon('crown', 16)} 英雄姿態與轉職聖所 (道場考核制度)</div>
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
-            自由切換中世紀戰鬥姿態！每種型態擁有獨特的點陣外觀、武器裝束與專屬能力加成：
+            ⚠️ 英雄公會守則：初心冒險者皆為見習村民，必須通過道場【TOEIC 多益職場商務】考核方能獲得職業！各職業更可進行 5 階【GRE】神域覺醒！
           </div>
           <div class="items-list-container" style="max-height:360px; display:flex; flex-direction:column; gap:8px;">
+            ${noviceCardHtml}
             ${cardsHtml}
           </div>
-          <button class="modal-close-btn" onclick="App.closeModal()">關閉</button>
+          <button class="modal-close-btn" style="margin-top:8px;" onclick="App.closeModal()">關閉</button>
         </div>
       </div>
     `;
@@ -3228,6 +3421,23 @@ const App = (() => {
   };
 
   const selectHeroClass = (classId) => {
+    if (classId === 'novice') {
+      state.heroClass = 'novice';
+      saveState();
+      updateHUD();
+      renderLobbyView();
+      closeModal();
+      showToast('已切換為【見習村民】姿態！');
+      return;
+    }
+
+    const unlockedList = Array.isArray(state.unlockedClasses) ? state.unlockedClasses : [];
+    if (!unlockedList.includes(classId)) {
+      alert('尚未解鎖此職業！請先通過道場多益轉職考核！');
+      startClassTrial(classId);
+      return;
+    }
+
     const classObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
     if (!classObj) return;
 
@@ -3237,6 +3447,320 @@ const App = (() => {
     renderLobbyView();
     closeModal();
     showToast(`已切換職業姿態為【${classObj.name}】！特性：${classObj.bonusDesc}`);
+  };
+
+  // Launch TOEIC Dojo Class Trial
+  const startClassTrial = (classId) => {
+    closeModal();
+    const classObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    if (!classObj) return;
+
+    battle.active = true;
+    battle.mode = 'dojo_class_trial';
+    battle.targetClassId = classId;
+    battle.trialCorrectCount = 0;
+    battle.trialMistakes = 0;
+    battle.trialFailed = false;
+    battle.enemyName = `多益考官・${classObj.name}導師`;
+    battle.enemyMaxHp = 99999;
+    battle.enemyCurrentHp = 99999;
+    battle.enemyAtk = 0;
+    battle.enemyDef = 4;
+    battle.timeLimit = 15.0;
+    battle.bossTrait = null;
+    battle.minionKey = 'orc_grunt';
+    battle.combo = 0;
+    battle.correctInSession = 0;
+    battle.totalInSession = 0;
+    battle.currentTurn = 1;
+    battle.timeReductionNext = 0;
+    battle.burnTurns = 0;
+
+    AudioManager.play('click');
+    loadNextQuestion();
+    showToast(`⚔️ 正在進行【${classObj.name}】道場轉職多益考核！需答對 5 題！`);
+  };
+
+  const onClassTrialSuccess = (classId) => {
+    battle.active = false;
+    clearInterval(battle.timerId);
+    AudioManager.play('victory');
+
+    if (!Array.isArray(state.unlockedClasses)) state.unlockedClasses = [];
+    if (!state.unlockedClasses.includes(classId)) {
+      state.unlockedClasses.push(classId);
+    }
+    state.heroClass = classId;
+    state.gold += 80;
+    saveState();
+    updateHUD();
+    renderLobbyView();
+
+    showClassTrialResultModal(true, classId);
+  };
+
+  const showClassTrialResultModal = (success, classId) => {
+    battle.active = false;
+    clearInterval(battle.timerId);
+    const cls = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    const clsName = cls ? cls.name : '職業';
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog modal-dialog-gold" style="max-width:440px; text-align:center;" onclick="event.stopPropagation()">
+          <div style="font-size:32px; margin-bottom:8px;">
+            ${success ? PixelSprites.icon('crown', 36) : PixelSprites.icon('skull', 36)}
+          </div>
+          <div class="modal-title" style="color:${success ? 'var(--gold)' : '#ff6666'};">
+            ${success ? `🏆 轉職合格！正式晉升【${clsName}】！` : `❌ 道場考核未通過！`}
+          </div>
+
+          <div style="margin:12px auto; width:64px; height:64px; display:flex; align-items:center; justify-content:center; background:#120e1c; border:2px solid ${success ? '#ffd700' : '#664444'};">
+            ${PixelSprites.renderHero(success ? 'happy' : 'hurt', 1, 1, 0, success ? classId : 'novice', 0)}
+          </div>
+
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;">
+            ${success ? `
+              恭喜勇者！您已通過嚴苛的多益職場商務考核，正式晉升為<strong>【${clsName}】</strong>！<br>
+              獲得轉職賞金 <strong>+80 金幣</strong>！<br>
+              <div style="color:#ffd700; margin-top:4px;">⚡ 特性加成已激活：${cls ? cls.bonusDesc : ''}</div>
+              <div style="color:#ba68c8; font-size:11px; margin-top:4px;">💡 現在您可在修煉道場或型態介面進行「五階神域 GRE 覺醒」！</div>
+            ` : `
+              多益商務試煉要求答對 5 題且失誤不超過 2 次。<br>
+              本次考核累計失誤超過限制。別灰心，修煉道場隨時為您敞開，重整旗鼓再來！
+            `}
+          </div>
+
+          <div style="display:flex; gap:8px; justify-content:center;">
+            ${success ? `
+              <button class="claim-btn" onclick="App.closeModal(); App.renderLobbyView();">回大廳整裝出發</button>
+              <button class="secondary-btn" onclick="App.showAwakeningModal('${classId}')">查看神域覺醒</button>
+            ` : `
+              <button class="claim-btn" onclick="App.startClassTrial('${classId}')">再次挑戰考核</button>
+              <button class="secondary-btn" onclick="App.closeModal(); App.renderLobbyView();">返回大廳</button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  // Launch GRE Class Awakening Trial (Tier 1-5)
+  const startAwakeningTrial = (classId, targetRank) => {
+    closeModal();
+    const classObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    if (!classObj) return;
+
+    const currentRank = (state.classAwakening && state.classAwakening[classId]) || 0;
+    const rank = targetRank || (currentRank + 1);
+    if (rank > 5) {
+      showToast('此職業已達到最高第五階神域真姿！');
+      return;
+    }
+
+    const req = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements && GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements[rank]) || { requiredCorrect: 5, maxMistakes: 2, timeLimit: 18.0 };
+
+    battle.active = true;
+    battle.mode = 'dojo_awakening_trial';
+    battle.targetClassId = classId;
+    battle.targetRank = rank;
+    battle.trialCorrectCount = 0;
+    battle.trialMistakes = 0;
+    battle.trialFailed = false;
+    battle.enemyName = `神域法則幻影・第 ${rank} 階守護者`;
+    battle.enemyMaxHp = 99999;
+    battle.enemyCurrentHp = 99999;
+    battle.enemyAtk = 0;
+    battle.enemyDef = 6;
+    battle.timeLimit = req.timeLimit;
+    battle.bossTrait = null;
+    battle.minionKey = 'wraith';
+    battle.combo = 0;
+    battle.correctInSession = 0;
+    battle.totalInSession = 0;
+    battle.currentTurn = 1;
+    battle.timeReductionNext = 0;
+    battle.burnTurns = 0;
+
+    AudioManager.play('click');
+    loadNextQuestion();
+    showToast(`✨ 正在挑戰【${classObj.name}】第 ${rank} 階神域 GRE 覺醒試煉！`);
+  };
+
+  const onAwakeningTrialSuccess = (classId, rank) => {
+    battle.active = false;
+    clearInterval(battle.timerId);
+    AudioManager.play('victory');
+
+    if (!state.classAwakening || typeof state.classAwakening !== 'object') state.classAwakening = {};
+    state.classAwakening[classId] = rank;
+    state.gold += 120 + rank * 20;
+    saveState();
+    updateHUD();
+    renderLobbyView();
+
+    showAwakeningTrialResultModal(true, classId, rank);
+  };
+
+  const showAwakeningTrialResultModal = (success, classId, rank) => {
+    battle.active = false;
+    clearInterval(battle.timerId);
+    const cls = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    const clsName = cls ? cls.name : '職業';
+    const tierMeta = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.tiers && GAME_CONFIG.CLASS_AWAKENING_CONFIG.tiers[rank]) || { name: `第 ${rank} 階覺醒`, auraName: '神域威能' };
+    const bonus = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses[classId]) ? GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses[classId][rank] : null;
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog modal-dialog-gold" style="max-width:440px; text-align:center;" onclick="event.stopPropagation()">
+          <div style="font-size:32px; margin-bottom:8px;">
+            ${success ? PixelSprites.icon('gem', 36) : PixelSprites.icon('skull', 36)}
+          </div>
+          <div class="modal-title" style="color:${success ? '#f0a3ff' : '#ff6666'};">
+            ${success ? `✨ 突破界限！【${clsName}】${tierMeta.name}達成！` : `❌ 神域試煉未通過！`}
+          </div>
+
+          <div style="margin:12px auto; width:64px; height:64px; display:flex; align-items:center; justify-content:center; background:#120e1c; border:2px solid ${success ? '#c058f8' : '#664444'};">
+            ${PixelSprites.renderHero(success ? 'happy' : 'hurt', 1, 1, 0, classId, success ? rank : Math.max(0, rank - 1))}
+          </div>
+
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;">
+            ${success ? `
+              神域法則共鳴！您的【${clsName}】已正式覺醒至 <strong>${tierMeta.name}</strong>（${'★'.repeat(rank)}）！<br>
+              獲得靈光獎勵 <strong>+${120 + rank * 20} 金幣</strong>！<br>
+              <div style="color:#ffd700; margin-top:4px;">⚡ 覺醒光環：${tierMeta.auraName}</div>
+              ${bonus ? `<div style="color:#77ffaa; font-size:11px;">能力值躍升：+${bonus.hp} HP, +${bonus.atk} ATK, +${bonus.def} DEF${bonus.timeBonus ? `, +${bonus.timeBonus}s 作答寬裕` : ''}</div>` : ''}
+            ` : `
+              GRE 高階殿堂試煉極其嚴苛，本次試煉失誤超出了法則耐受限度。<br>
+              持續磨練單字造詣，隨時可再次挑戰神域覺醒！
+            `}
+          </div>
+
+          <div style="display:flex; gap:8px; justify-content:center;">
+            ${success ? `
+              <button class="claim-btn" onclick="App.closeModal(); App.renderLobbyView();">回大廳顯耀姿態</button>
+              ${rank < 5 ? `<button class="secondary-btn" onclick="App.showAwakeningModal('${classId}')">邁向下一階覺醒</button>` : ''}
+            ` : `
+              <button class="claim-btn" onclick="App.startAwakeningTrial('${classId}', ${rank})">再次挑戰本階</button>
+              <button class="secondary-btn" onclick="App.closeModal(); App.renderLobbyView();">返回大廳</button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  // Modal: 5-Tier GRE Class Awakening Shrine
+  const showAwakeningModal = (classId) => {
+    let targetClassId = classId || state.heroClass;
+    if (targetClassId === 'novice') {
+      const firstUnlocked = (state.unlockedClasses || [])[0];
+      if (firstUnlocked) {
+        targetClassId = firstUnlocked;
+      } else {
+        alert('您目前仍是見習村民！請先前往道場通過多益考核解鎖任意進階職業，方可進行神域覺醒！');
+        showClassSelectModal();
+        return;
+      }
+    }
+
+    const cls = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === targetClassId) || (GAME_CONFIG.HERO_CLASSES || [])[0];
+    const currentRank = (state.classAwakening && state.classAwakening[cls.id]) || 0;
+    const bonusesArr = (GAME_CONFIG.CLASS_AWAKENING_CONFIG && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses && GAME_CONFIG.CLASS_AWAKENING_CONFIG.bonuses[cls.id]) || [];
+
+    const tierCardsHtml = [1, 2, 3, 4, 5].map(rank => {
+      const meta = GAME_CONFIG.CLASS_AWAKENING_CONFIG.tiers[rank];
+      const req = GAME_CONFIG.CLASS_AWAKENING_CONFIG.requirements[rank];
+      const bonus = bonusesArr[rank] || { hp: 0, atk: 0, def: 0 };
+      const isCompleted = currentRank >= rank;
+      const isCurrentTarget = currentRank === (rank - 1);
+      const isLocked = currentRank < (rank - 1);
+
+      let cardClass = 'awakening-tier-card';
+      if (isCompleted) cardClass += ' completed';
+      else if (isCurrentTarget) cardClass += ' current-target';
+      else cardClass += ' locked-tier';
+
+      return `
+        <div class="${cardClass}">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-weight:bold; color:${isCompleted ? '#77ffaa' : isCurrentTarget ? '#ffd700' : '#887799'}; font-size:12px;">
+                ${meta.name} (${'★'.repeat(rank)})
+              </span>
+              <span style="font-size:10px; color:#c090e0;">${meta.auraName}</span>
+            </div>
+            <div style="font-size:10px; color:#b0c0d0; margin-top:2px;">
+              ⚡ 能力提升：+${bonus.hp} HP, +${bonus.atk} ATK, +${bonus.def} DEF${bonus.timeBonus ? `, +${bonus.timeBonus}s 答題時限` : ''}${bonus.goldMultiplier ? `, +${Math.round(bonus.goldMultiplier * 100)}% 金幣` : ''}
+            </div>
+            <div style="font-size:10px; color:#ff9999; margin-top:1px;">
+              📜 GRE考核：需連續答對 ${req.requiredCorrect} 題 (容許失誤最多 ${req.maxMistakes} 次，時限 ${req.timeLimit}s)
+            </div>
+          </div>
+          <div>
+            ${isCompleted ? `
+              <span style="color:#77ffaa; font-size:11px; font-weight:bold;">已覺醒 ✓</span>
+            ` : isCurrentTarget ? `
+              <button class="claim-btn" style="padding:6px 10px; font-size:11px;" onclick="App.startAwakeningTrial('${cls.id}', ${rank})">
+                挑戰覺醒
+              </button>
+            ` : `
+              <span style="color:#776688; font-size:10px;">需先達上一階</span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog modal-dialog-gold" style="max-width:520px;" onclick="event.stopPropagation()">
+          <div class="modal-title">${PixelSprites.icon('gem', 16)} 【${cls.name}】五階神域 GRE 覺醒聖殿</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+            藉由 GRE 高階殿堂單字試煉打破潛能桎梏！每次覺醒均大幅提升專屬能力值並顯化全新神祇光環：
+          </div>
+
+          <!-- Class Switcher Tabs if multiple unlocked -->
+          <div style="display:flex; gap:6px; margin-bottom:8px; overflow-x:auto;">
+            ${(state.unlockedClasses || []).map(uId => {
+              const uCls = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === uId);
+              if (!uCls) return '';
+              const r = (state.classAwakening && state.classAwakening[uId]) || 0;
+              return `
+                <button class="tab-btn ${uId === cls.id ? 'active' : ''}" style="font-size:10px; padding:4px 8px;" onclick="App.showAwakeningModal('${uId}')">
+                  ${uCls.name} (${r}階)
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; background:#140e22; border:1px solid #4a346e; padding:8px; border-radius:4px; margin-bottom:10px;">
+            <div style="width:56px; height:56px; display:flex; align-items:center; justify-content:center; background:#0c0914;">
+              ${PixelSprites.renderHero('happy', 1, 1, 0, cls.id, currentRank)}
+            </div>
+            <div>
+              <div style="font-weight:bold; color:var(--gold); font-size:13px;">
+                【${cls.name}】當前位階：${currentRank === 0 ? '尚未覺醒' : `${GAME_CONFIG.CLASS_AWAKENING_CONFIG.tiers[currentRank].name} (${'★'.repeat(currentRank)})`}
+              </div>
+              <div style="font-size:11px; color:#c0a0e0;">${cls.desc}</div>
+            </div>
+          </div>
+
+          <div class="items-list-container" style="max-height:300px; display:flex; flex-direction:column; gap:4px;">
+            ${tierCardsHtml}
+          </div>
+
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+            <button class="secondary-btn" onclick="App.showClassSelectModal()">返回職業選單</button>
+            <button class="modal-close-btn" onclick="App.closeModal()">關閉</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
   };
 
   const exportSyncCode = () => {
@@ -3903,6 +4427,9 @@ const App = (() => {
     showAuthModal,
     showClassSelectModal,
     selectHeroClass,
+    startClassTrial,
+    startAwakeningTrial,
+    showAwakeningModal,
     selectGateClass,
     handleLogin,
     handleSignup,

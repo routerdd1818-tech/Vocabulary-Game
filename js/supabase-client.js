@@ -421,7 +421,9 @@ const SupabaseClient = (() => {
           current_hp: 120,
           streak: 1,
           inventory: {
-            _heroClass: 'knight',
+            _heroClass: 'novice',
+            _unlockedClasses: [],
+            _classAwakening: {},
             _lotteryPity: 0,
             _accountEmail: formattedEmail,
             _bookmarkedWords: [],
@@ -535,7 +537,9 @@ const SupabaseClient = (() => {
 
     try {
       const inventoryData = Object.assign({}, state.inventory || {}, {
-        _heroClass: state.heroClass || 'knight',
+        _heroClass: state.heroClass || 'novice',
+        _unlockedClasses: state.unlockedClasses || [],
+        _classAwakening: state.classAwakening || {},
         _lotteryPity: state.lotteryPity || 0,
         _bookmarkedWords: state.bookmarkedWords || [],
         _mistakeWords: state.mistakeWords || [],

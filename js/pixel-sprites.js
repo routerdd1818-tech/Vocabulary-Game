@@ -301,10 +301,65 @@ const PixelSprites = (() => {
   };
 
   // Dynamic Multi-Class & Multi-Tier Equipment Pixel Hero Paper Doll (64x64)
-  const renderHero = (expression = 'happy', weaponTier = 1, armorTier = 1, relicTier = 0, heroClass = 'knight') => {
+  const renderHero = (expression = 'happy', weaponTier = 1, armorTier = 1, relicTier = 0, heroClass = 'novice', awakeningRank = 0) => {
     const aTier = Math.max(1, Math.min(6, parseInt(armorTier) || 1));
     const wTier = Math.max(1, Math.min(6, parseInt(weaponTier) || 1));
     const rTier = Math.max(0, Math.min(4, parseInt(relicTier) || 0));
+    const aRank = Math.max(0, Math.min(5, parseInt(awakeningRank) || 0));
+
+    // Class Awakening Aura (Rank 1 to 5)
+    let awakeningSvg = '';
+    if (aRank >= 1 && heroClass !== 'novice') {
+      if (aRank === 1) {
+        awakeningSvg = `
+          <rect x="22" y="56" width="3" height="3" fill="#ffd700" opacity="0.8"/>
+          <rect x="39" y="56" width="3" height="3" fill="#ffd700" opacity="0.8"/>
+          <rect x="18" y="44" width="2" height="2" fill="#ffe066" opacity="0.7"/>
+          <rect x="44" y="44" width="2" height="2" fill="#ffe066" opacity="0.7"/>
+          <circle cx="32" cy="58" r="16" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>
+        `;
+      } else if (aRank === 2) {
+        awakeningSvg = `
+          <ellipse cx="32" cy="40" rx="24" ry="12" fill="none" stroke="#4fe3ff" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
+          <rect x="8" y="38" width="4" height="4" fill="#4fe3ff"/>
+          <rect x="52" y="38" width="4" height="4" fill="#4fe3ff"/>
+          <rect x="24" y="54" width="3" height="3" fill="#77ffbb"/>
+          <rect x="37" y="54" width="3" height="3" fill="#77ffbb"/>
+        `;
+      } else if (aRank === 3) {
+        awakeningSvg = `
+          <circle cx="32" cy="34" r="26" fill="none" stroke="#ffaa44" stroke-width="2" stroke-dasharray="6,2" opacity="0.7"/>
+          <circle cx="32" cy="34" r="22" fill="none" stroke="#ffd700" stroke-width="1" opacity="0.5"/>
+          <polygon points="32,6 30,10 34,10" fill="#ffd700"/>
+          <polygon points="32,62 30,58 34,58" fill="#ffd700"/>
+          <polygon points="4,34 8,32 8,36" fill="#ffaa44"/>
+          <polygon points="60,34 56,32 56,36" fill="#ffaa44"/>
+        `;
+      } else if (aRank === 4) {
+        awakeningSvg = `
+          <polygon points="20,32 6,14 16,38" fill="#e066ff" opacity="0.6"/>
+          <polygon points="44,32 58,14 48,38" fill="#e066ff" opacity="0.6"/>
+          <polygon points="22,34 10,24 18,42" fill="#ffd700" opacity="0.5"/>
+          <polygon points="42,34 54,24 46,42" fill="#ffd700" opacity="0.5"/>
+          <circle cx="32" cy="34" r="28" fill="none" stroke="#e066ff" stroke-width="2" stroke-dasharray="5,2" opacity="0.8"/>
+        `;
+      } else if (aRank === 5) {
+        awakeningSvg = `
+          <circle cx="32" cy="32" r="30" fill="none" stroke="#ffd700" stroke-width="2.5" opacity="0.85"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.7"/>
+          <polygon points="18,30 2,8 14,40" fill="#ffd700" opacity="0.75"/>
+          <polygon points="46,30 62,8 50,40" fill="#ffd700" opacity="0.75"/>
+          <polygon points="20,28 6,16 16,36" fill="#ffffff" opacity="0.85"/>
+          <polygon points="44,28 58,16 48,36" fill="#ffffff" opacity="0.85"/>
+          <ellipse cx="32" cy="8" rx="14" ry="4" fill="none" stroke="#ffd700" stroke-width="2"/>
+          <rect x="30" y="5" width="4" height="4" fill="#ffffff"/>
+          <circle cx="12" cy="18" r="2" fill="#ffffff"/>
+          <circle cx="52" cy="18" r="2" fill="#ffffff"/>
+          <circle cx="20" cy="54" r="2" fill="#ffd700"/>
+          <circle cx="44" cy="54" r="2" fill="#ffd700"/>
+        `;
+      }
+    }
 
     // Armor Themes (T1~T6)
     const armorTheme = [
@@ -726,9 +781,9 @@ const PixelSprites = (() => {
           <line x1="41" y1="46" x2="41" y2="53" stroke="${weaponTheme.glow}" stroke-width="1.5"/>
         </g>
       `;
-    } else {
+    } else if (heroClass === 'knight') {
       // ==========================================
-      // 🛡️ 聖堂聖騎士 (Knight / Default)
+      // 🛡️ 聖堂聖騎士 (Knight)
       // ==========================================
       const plumeColor = aTier === 1 ? '#775533' : aTier === 2 ? '#2255aa' : aTier === 3 ? '#ffd700' : aTier === 4 ? '#9933ee' : aTier === 5 ? '#ee2222' : '#ffffff';
 
@@ -792,10 +847,61 @@ const PixelSprites = (() => {
           ${wTier >= 3 ? `<rect x="44.5" y="16" width="2" height="2" fill="${weaponTheme.glow}"/>` : ''}
         </g>
       `;
+    } else {
+      // ==========================================
+      // 🔰 見習村民 / 路人見習生 (Novice / Villager - 路人)
+      // ==========================================
+      classBodySvg = `
+        <!-- Messy Rookie Traveler Hair (Brown / Straw) -->
+        <polygon points="25,18 23,12 30,13" fill="#6d4827"/>
+        <polygon points="30,13 32,8 37,13" fill="#6d4827"/>
+        <polygon points="36,13 41,11 39,18" fill="#6d4827"/>
+        <rect x="25" y="14" width="14" height="6" fill="#7a5430"/>
+
+        <!-- Simple Traveler Cloth Headband -->
+        <rect x="25" y="18" width="14" height="3" fill="#a48057"/>
+        <rect x="30" y="18" width="3" height="3" fill="#c4a57b"/>
+
+        <!-- Ordinary Friendly Rookie Face -->
+        ${faceSvg}
+
+        <!-- Humble Rustic Linen Tunic (Earth Tone) -->
+        <rect x="24" y="31" width="16" height="16" fill="#876644"/>
+        <rect x="26" y="32" width="12" height="14" fill="#a5815b"/>
+        <!-- Rough V-Neck Collar -->
+        <polygon points="30,32 32,37 34,32" fill="#ffd2aa"/>
+
+        <!-- Simple Rope / Leather Waist Belt with Iron Buckle -->
+        <rect x="24" y="44" width="16" height="3" fill="#4d3622"/>
+        <rect x="30" y="44" width="4" height="3" fill="#888888"/>
+
+        <!-- Hands (Bare Traveler Hands) -->
+        <rect x="21" y="39" width="3" height="4" fill="#ffd2aa"/>
+        <rect x="40" y="39" width="3" height="4" fill="#ffd2aa"/>
+
+        <!-- Loose Rustic Canvas Trousers -->
+        <rect x="26" y="47" width="5" height="10" fill="#524336"/>
+        <rect x="33" y="47" width="5" height="10" fill="#524336"/>
+
+        <!-- Humble Wrapped Traveler Boots -->
+        <rect x="25" y="57" width="6" height="4" fill="#6b4c2e"/>
+        <rect x="33" y="57" width="6" height="4" fill="#6b4c2e"/>
+        <line x1="25" y1="58" x2="31" y2="58" stroke="#a48057" stroke-width="1"/>
+        <line x1="33" y1="58" x2="39" y2="58" stroke="#a48057" stroke-width="1"/>
+
+        <!-- Right Hand: Practice Wooden Twig / Beginner Stick (見習木棒) -->
+        <g>
+          <rect x="42" y="35" width="3" height="18" fill="#80542b" rx="1"/>
+          <line x1="43.5" y1="36" x2="43.5" y2="51" stroke="#aa7945" stroke-width="1"/>
+          <!-- Small rope grip wrap -->
+          <rect x="42" y="38" width="3" height="3" fill="#c4a57b"/>
+        </g>
+      `;
     }
 
     return wrapSvg(64, 64, `
       ${relicSvg}
+      ${awakeningSvg}
       ${classBodySvg}
     `, 'pixel-hero-sprite');
   };

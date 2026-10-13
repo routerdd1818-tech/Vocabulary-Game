@@ -76,6 +76,79 @@ const GAME_CONFIG = {
     }
   ],
 
+  // Novice Passerby / Villager Base Profile (Before Passing Dojo)
+  NOVICE_CLASS: {
+    id: 'novice',
+    name: '見習村民 (路人)',
+    title: '尚未覺醒之平凡見習生',
+    icon: 'sword',
+    badge: '見習路人',
+    bonusDesc: '基礎無職業加成，須前往修煉道場通過多益考核轉職',
+    bonus: { def: 0, hp: 0, atk: 0, timeBonus: 0, goldMultiplier: 0 },
+    desc: '身穿樸素粗麻布衣與麻質斗篷，手握見習木棒，看似毫無特殊技能的路人，卻懷抱著登上通天塔頂端的冒險意志。'
+  },
+
+  // 5 Tiers of Class Awakening System (GRE High-level Academic Vocabulary)
+  CLASS_AWAKENING_CONFIG: {
+    tiers: [
+      { rank: 1, name: '一階覺醒・真理啟蒙', stars: '★☆☆☆☆', requiredCorrect: 5, maxMistakes: 2, timeLimit: 18.0, desc: '通過 5 題 GRE 高階詞彙考核（容錯 2 題）' },
+      { rank: 2, name: '二階覺醒・奧術共鳴', stars: '★★☆☆☆', requiredCorrect: 7, maxMistakes: 2, timeLimit: 16.0, desc: '通過 7 題 GRE 高階詞彙考核（容錯 2 題）' },
+      { rank: 3, name: '三階覺醒・極意破境', stars: '★★★☆☆', requiredCorrect: 10, maxMistakes: 1, timeLimit: 14.0, desc: '通過 10 題 GRE 高階詞彙考核（容錯 1 題）' },
+      { rank: 4, name: '四階覺醒・英雄傳承', stars: '★★★★☆', requiredCorrect: 12, maxMistakes: 1, timeLimit: 12.0, desc: '通過 12 題 GRE 高階詞彙考核（容錯 1 題）' },
+      { rank: 5, name: '五階覺醒・神域真姿', stars: '★★★★★', requiredCorrect: 15, maxMistakes: 0, timeLimit: 10.0, desc: '零失誤連續答對 15 題 GRE 極限詞彙（零容錯）' }
+    ],
+    bonuses: {
+      knight: [
+        null,
+        { def: 14, hp: 60, atk: 5, timeBonus: 0, goldMultiplier: 0, desc: '防禦 +14，HP +60，攻擊 +5' },
+        { def: 22, hp: 100, atk: 10, timeBonus: 0.5, goldMultiplier: 0, desc: '防禦 +22，HP +100，攻擊 +10，時限 +0.5s' },
+        { def: 32, hp: 160, atk: 18, timeBonus: 1.0, goldMultiplier: 0, desc: '防禦 +32，HP +160，攻擊 +18，時限 +1.0s' },
+        { def: 45, hp: 240, atk: 28, timeBonus: 1.5, goldMultiplier: 0.10, desc: '防禦 +45，HP +240，攻擊 +28，時限 +1.5s，金幣 +10%' },
+        { def: 65, hp: 360, atk: 42, timeBonus: 2.0, goldMultiplier: 0.20, desc: '防禦 +65，HP +360，攻擊 +42，時限 +2.0s，金幣 +20%' }
+      ],
+      mage: [
+        null,
+        { def: 0, hp: 15, atk: 16, timeBonus: 2.2, goldMultiplier: 0, desc: '攻擊 +16，時限 +2.2s，HP +15' },
+        { def: 6, hp: 30, atk: 26, timeBonus: 3.0, goldMultiplier: 0, desc: '攻擊 +26，時限 +3.0s，HP +30，防禦 +6' },
+        { def: 12, hp: 50, atk: 38, timeBonus: 4.0, goldMultiplier: 0, desc: '攻擊 +38，時限 +4.0s，HP +50，防禦 +12' },
+        { def: 20, hp: 75, atk: 54, timeBonus: 5.2, goldMultiplier: 0.15, desc: '攻擊 +54，時限 +5.2s，HP +75，防禦 +20，金幣 +15%' },
+        { def: 30, hp: 110, atk: 75, timeBonus: 6.5, goldMultiplier: 0.30, desc: '攻擊 +75，時限 +6.5s，HP +110，防禦 +30，金幣 +30%' }
+      ],
+      ranger: [
+        null,
+        { def: 0, hp: 0, atk: 22, timeBonus: 0.5, goldMultiplier: 0.25, desc: '攻擊 +22，金幣 +25%，時限 +0.5s' },
+        { def: 0, hp: 25, atk: 34, timeBonus: 1.0, goldMultiplier: 0.38, desc: '攻擊 +34，金幣 +38%，時限 +1.0s，HP +25' },
+        { def: 8, hp: 45, atk: 48, timeBonus: 1.5, goldMultiplier: 0.52, desc: '攻擊 +48，金幣 +52%，時限 +1.5s，HP +45，防禦 +8' },
+        { def: 16, hp: 70, atk: 66, timeBonus: 2.2, goldMultiplier: 0.68, desc: '攻擊 +66，金幣 +68%，時限 +2.2s，HP +70，防禦 +16' },
+        { def: 26, hp: 105, atk: 90, timeBonus: 3.0, goldMultiplier: 0.90, desc: '攻擊 +90，金幣 +90%，時限 +3.0s，HP +105，防禦 +26' }
+      ],
+      berserker: [
+        null,
+        { def: 2, hp: -5, atk: 35, timeBonus: 0, goldMultiplier: 0, desc: '攻擊 +35，生命 -5，防禦 +2' },
+        { def: 8, hp: 10, atk: 52, timeBonus: 0, goldMultiplier: 0, desc: '攻擊 +52，生命 +10，防禦 +8' },
+        { def: 15, hp: 30, atk: 74, timeBonus: 0.5, goldMultiplier: 0, desc: '攻擊 +74，生命 +30，防禦 +15，時限 +0.5s' },
+        { def: 24, hp: 55, atk: 102, timeBonus: 1.0, goldMultiplier: 0.12, desc: '攻擊 +102，生命 +55，防禦 +24，時限 +1.0s，金幣 +12%' },
+        { def: 35, hp: 90, atk: 140, timeBonus: 1.5, goldMultiplier: 0.25, desc: '攻擊 +140，生命 +90，防禦 +35，時限 +1.5s，金幣 +25%' }
+      ],
+      valkyrie: [
+        null,
+        { def: 12, hp: 110, atk: 8, timeBonus: 0, goldMultiplier: 0, desc: 'HP +110，防禦 +12，攻擊 +8' },
+        { def: 20, hp: 175, atk: 18, timeBonus: 0, goldMultiplier: 0, desc: 'HP +175，防禦 +20，攻擊 +18' },
+        { def: 30, hp: 260, atk: 30, timeBonus: 0.8, goldMultiplier: 0, desc: 'HP +260，防禦 +30，攻擊 +30，時限 +0.8s' },
+        { def: 42, hp: 365, atk: 45, timeBonus: 1.5, goldMultiplier: 0.10, desc: 'HP +365，防禦 +42，攻擊 +45，時限 +1.5s，金幣 +10%' },
+        { def: 60, hp: 500, atk: 65, timeBonus: 2.2, goldMultiplier: 0.20, desc: 'HP +500，防禦 +60，攻擊 +65，時限 +2.2s，金幣 +20%' }
+      ],
+      reaper: [
+        null,
+        { def: 0, hp: 25, atk: 26, timeBonus: 1.4, goldMultiplier: 0, desc: '攻擊 +26，時限 +1.4s，HP +25' },
+        { def: 8, hp: 45, atk: 40, timeBonus: 2.0, goldMultiplier: 0, desc: '攻擊 +40，時限 +2.0s，HP +45，防禦 +8' },
+        { def: 16, hp: 70, atk: 58, timeBonus: 2.8, goldMultiplier: 0.15, desc: '攻擊 +58，時限 +2.8s，HP +70，防禦 +16，金幣 +15%' },
+        { def: 25, hp: 100, atk: 78, timeBonus: 3.6, goldMultiplier: 0.25, desc: '攻擊 +78，時限 +3.6s，HP +100，防禦 +25，金幣 +25%' },
+        { def: 36, hp: 140, atk: 106, timeBonus: 4.6, goldMultiplier: 0.40, desc: '攻擊 +106，時限 +4.6s，HP +140，防禦 +36，金幣 +40%' }
+      ]
+    }
+  },
+
   // 15 Dungeon Bosses
   DUNGEON_BOSSES: [
     {
