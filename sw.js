@@ -1,5 +1,5 @@
 // Word Dungeon & Babel Tower - Service Worker
-const CACHE_NAME = 'word-dungeon-v1';
+const CACHE_NAME = 'word-dungeon-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
   './js/supabase-client.js',
   './js/pixel-sprites.js',
   './js/vocab-data.js',
+  './js/vocab-repository.js',
   './js/game-data.js',
   './js/audio.js',
   './js/app.js',

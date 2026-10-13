@@ -30,6 +30,7 @@
         <div class="hud-actions">
           <div id="hud-active-buff-badge" class="hud-badges" style="display: none;"></div>
           <div id="hud-leave-pass-badge" class="hud-badges" style="display: none;"></div>
+          <div id="hud-admin-badge" class="hud-badges badge-admin" style="display: none;"></div>
           <button id="btn-sound-toggle" class="hud-btn" title="切換音效">
             <span id="hud-sound-icon"></span>
           </button>
@@ -58,16 +59,17 @@
       <!-- Dynamically Injected by App State -->
     </main>
 
-    <!-- Simulation / Debug Toolbar -->
-    <footer class="debug-toolbar">
-      <div class="debug-title">🛠️ 開發調試工具 (可直接測試情勒與數值)</div>
+    <!-- Simulation / Debug Toolbar (Admin Only - Hidden by Default) -->
+    <footer class="debug-toolbar" id="debug-toolbar" style="display: none;">
+      <div class="debug-title">🛠️ 總管大賢者調試工具 (Admin: tangghgh)</div>
       <div class="debug-buttons">
         <button class="debug-btn" id="dbg-absent-1">模擬缺席 1 天</button>
         <button class="debug-btn" id="dbg-absent-3">模擬缺席 3 天</button>
         <button class="debug-btn" id="dbg-absent-7">模擬缺席 7 天</button>
-        <button class="debug-btn" id="dbg-add-gold">+100 金幣</button>
+        <button class="debug-btn" id="dbg-add-gold">+500 金幣</button>
         <button class="debug-btn" id="dbg-damage-50">-50 HP</button>
         <button class="debug-btn" id="dbg-full-heal">回滿血</button>
+        <button class="debug-btn" id="dbg-unlock-items">一鍵全裝備解鎖</button>
         <button class="debug-btn" id="dbg-reset-save">重設存檔</button>
       </div>
     </footer>
@@ -82,6 +84,7 @@
   <script src="./js/supabase-client.js"></script>
   <script src="./js/pixel-sprites.js"></script>
   <script src="./js/vocab-data.js"></script>
+  <script src="./js/vocab-repository.js"></script>
   <script src="./js/game-data.js"></script>
   <script src="./js/audio.js"></script>
   <script src="./js/app.js"></script>

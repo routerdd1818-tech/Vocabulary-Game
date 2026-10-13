@@ -1695,4 +1695,333 @@ body {
   border-color: #7a7298;
 }
 
+/* ==========================================================================
+   Medieval Dungeon Style: Bookmark System, Correction Panel & Review Grimoire
+   ========================================================================== */
+
+/* Bookmark Button in Battle */
+.bookmark-btn {
+  background: #2b2044;
+  border: 2px solid #5c478a;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #d6cae8;
+  font-family: inherit;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+.bookmark-btn:hover {
+  background: #3d2d60;
+  border-color: #ffd700;
+  color: #ffffff;
+}
+
+.bookmark-btn.bookmarked {
+  background: linear-gradient(180deg, #4d3310, #362105);
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.question-category-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #1b263b;
+  border: 1px solid #38bdf8;
+  color: #7dd3fc;
+  font-weight: bold;
+}
+
+/* Medieval Obsidian Truth Revelation / Correction Modal */
+.modal-dialog-dark {
+  background: #14111f;
+  border: 3px solid #802030;
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.95), 0 0 15px rgba(230, 46, 46, 0.25);
+  max-width: 440px;
+  width: 92%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.correction-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #4a1c28;
+  padding-bottom: 8px;
+}
+
+.correction-title {
+  color: #ff6666;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.correction-card {
+  background: #1b1629;
+  border: 2px solid #3d2c55;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.correction-word-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dashed #3a2e50;
+  padding-bottom: 6px;
+}
+
+.correction-word {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd700;
+  letter-spacing: 0.5px;
+}
+
+.correction-pos {
+  font-size: 12px;
+  color: #ffdd88;
+  font-style: italic;
+  margin-left: 6px;
+}
+
+.correction-meaning {
+  font-size: 15px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.correction-answer-box {
+  background: #251b24;
+  border: 1px solid #772b38;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.correction-label {
+  font-size: 11px;
+  color: #ffaa55;
+  font-weight: bold;
+}
+
+.correction-correct-ans {
+  font-size: 14px;
+  color: #44dd66;
+  font-weight: bold;
+}
+
+.correction-sentence-box {
+  background: #161224;
+  border: 1px solid #36294e;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.correction-sentence-en {
+  font-size: 13px;
+  color: #eeddcc;
+  line-height: 1.4;
+}
+
+.correction-sentence-en strong {
+  color: #ffd700;
+  text-decoration: underline;
+}
+
+.correction-sentence-zh {
+  font-size: 12px;
+  color: #a095b5;
+}
+
+.correction-bookmark-row {
+  margin-top: 4px;
+}
+
+.btn-correction-bookmark {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 8px;
+  background: #2c2042;
+  border: 2px solid #ffd700;
+  color: #ffd700;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  transition: all 0.15s;
+}
+
+.btn-correction-bookmark.bookmarked {
+  background: #503010;
+  color: #ffea78;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.pixel-btn-action {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  background: linear-gradient(180deg, #b83232 0%, #7a1515 100%);
+  border: 2px solid #ffd700;
+  color: #ffffff;
+  padding: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: all 0.15s;
+  width: 100%;
+  text-align: center;
+}
+
+.pixel-btn-action:hover {
+  background: linear-gradient(180deg, #d43b3b 0%, #941a1a 100%);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+/* Obsidian Review Grimoire (黑曜石復習秘殿) */
+.grimoire-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #3d2f59;
+  padding-bottom: 6px;
+  overflow-x: auto;
+}
+
+.grimoire-trial-banner {
+  background: linear-gradient(135deg, #2a1438, #1a102a);
+  border: 2px solid #ffd700;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.btn-start-review-trial {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  background: linear-gradient(180deg, #9b5de5 0%, #5d259e 100%);
+  border: 2px solid #ffd700;
+  color: #ffffff;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.btn-start-review-trial:hover {
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.grimoire-filter-bar {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.grimoire-filter-pill {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #1c172a;
+  border: 1px solid #43355e;
+  color: #a497be;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.grimoire-filter-pill.active {
+  background: #4a2870;
+  border-color: #ffd700;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.grimoire-card {
+  background: #1b162a;
+  border: 2px solid #3c2f57;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s;
+}
+
+.grimoire-card:hover {
+  border-color: #ffd700;
+}
+
+.grimoire-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grimoire-card-word {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.grimoire-badge-mastered {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #113322;
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+}
+
+.grimoire-badge-learning {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #332211;
+  border: 1px solid #e67e22;
+  color: #f39c12;
+}
+
+.grimoire-badge-unmastered {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #331111;
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+}
+
+/* Admin Badge & Developer Toolbar */
+.badge-admin {
+  background: linear-gradient(135deg, #4b1b7a, #802bb1) !important;
+  border: 1px solid #ffd700 !important;
+  color: #ffd700 !important;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.debug-toolbar {
+  border-top: 2px solid #ffd700;
+  background: #100b1a;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.8);
+}
+
+
 

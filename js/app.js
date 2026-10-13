@@ -34,6 +34,9 @@ const App = (() => {
     towerRecordFloor: 1,
     vocabStats: {},
     bestiaryUnlocked: [],
+    bookmarkedWords: [],
+    mistakeWords: [],
+    isAdmin: false,
     dailyGoals: {
       date: '',
       answered: 0,
@@ -86,12 +89,13 @@ const App = (() => {
     return (user && user.id) ? `word_dungeon_save_${user.id}` : 'word_dungeon_save_guest';
   };
 
-  // Toggle HUD and debug visibility (hidden during unauthenticated gate)
+  // Toggle HUD and debug visibility (debug toolbar only visible to admin)
   const setHUDVisible = (visible) => {
     const hud = document.querySelector('.top-hud');
     const dbg = document.querySelector('.debug-toolbar');
     if (hud) hud.style.display = visible ? 'block' : 'none';
-    if (dbg) dbg.style.display = visible ? 'flex' : 'none';
+    const isAdm = (window.SupabaseClient && SupabaseClient.isAdmin()) || (state && state.isAdmin);
+    if (dbg) dbg.style.display = (visible && isAdm) ? 'flex' : 'none';
   };
 
   // Save & Load (Independent per user)
@@ -116,6 +120,9 @@ const App = (() => {
       } else {
         state = getDefaultState();
       }
+      state.isAdmin = (window.SupabaseClient && SupabaseClient.isAdmin()) || state.isAdmin || false;
+      if (!Array.isArray(state.bookmarkedWords)) state.bookmarkedWords = [];
+      if (!Array.isArray(state.mistakeWords)) state.mistakeWords = [];
     } catch (e) {
       console.error('Load failed', e);
       state = getDefaultState();
@@ -267,27 +274,123 @@ const App = (() => {
     saveState();
   };
 
+  // ==========================================
+  // DYNAMIC VOCABULARY ENGINE (Scheme 1: Lightweight Graded 10,000+ Words)
+  // ==========================================
+  const tierPoolCache = {};
+
+  // Retrieve full vocabulary pool for a given tier (combines VOCAB_DATABASE and VOCAB_REPOSITORY)
+  const getTierVocabPool = (tier) => {
+    tier = Math.min(15, Math.max(1, tier));
+    if (tierPoolCache[tier]) return tierPoolCache[tier];
+
+    const repoList = (window.VOCAB_REPOSITORY && window.VOCAB_REPOSITORY[tier]) || [];
+    const craftedList = (window.VOCAB_DATABASE || []).filter(v => v.tier === tier);
+
+    const mappedRepo = repoList.map((entry) => {
+      const w = entry[0];
+      const p = entry[1];
+      const m = entry[2];
+      const wordId = `t${tier}_${w.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      return {
+        id: wordId,
+        word: w,
+        pos: p,
+        meaning: m,
+        tier: tier,
+        isHandcrafted: false
+      };
+    });
+
+    const combined = [...craftedList, ...mappedRepo];
+    tierPoolCache[tier] = combined;
+    return combined;
+  };
+
+  // Find a vocabulary item by ID across both databases
+  const findVocabById = (id) => {
+    if (!id) return null;
+    const crafted = (window.VOCAB_DATABASE || []).find(v => v.id === id);
+    if (crafted) return crafted;
+
+    const m = id.match(/^t(\d+)_(.+)$/);
+    if (m) {
+      const tier = parseInt(m[1], 10);
+      const wordKey = m[2];
+      const pool = getTierVocabPool(tier);
+      const found = pool.find(item => item.id === id || item.word.toLowerCase().replace(/[^a-z0-9]/g, '_') === wordKey);
+      if (found) {
+        return {
+          id: found.id,
+          word: found.word,
+          pos: found.pos,
+          meaning: found.meaning,
+          tier: tier,
+          categoryLabel: `Tier ${tier}`,
+          sentence: `The party discussed the significance of ______ during their rest.`,
+          sentenceTarget: found.word,
+          sentenceZh: `提示：請依據語境選出適合單字【${found.meaning}】。`
+        };
+      }
+    }
+    return null;
+  };
+
+  const getAllTrackedVocabList = (targetIds) => {
+    if (!Array.isArray(targetIds) || targetIds.length === 0) return [];
+    const result = [];
+    const seen = new Set();
+    for (const id of targetIds) {
+      if (seen.has(id)) continue;
+      const item = findVocabById(id);
+      if (item) {
+        result.push(item);
+        seen.add(id);
+      }
+    }
+    return result;
+  };
+
+  // Helper to pick N distinct random items from an array
+  const pickDistinct = (arr, count) => {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    const unique = Array.from(new Set(shuffled));
+    return unique.slice(0, count);
+  };
+
   // SRS Weighted Question Selection
   const pickVocab = (tier) => {
     globalTurnCounter++;
-    const pool = VOCAB_DATABASE.filter(v => v.tier === tier);
-    if (pool.length === 0) return VOCAB_DATABASE[0];
+    let pool = [];
+
+    if (battle.mode === 'review') {
+      const targetIds = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])]));
+      pool = getAllTrackedVocabList(targetIds);
+      if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 8);
+    } else {
+      pool = getTierVocabPool(tier);
+      if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 5);
+    }
 
     const weightedList = pool.map(item => {
       const s = state.vocabStats[item.id] || { seen: 0, correct: 0, wrong: 0, streak: 0, lastTurn: 0 };
+      const isBookmarked = (state.bookmarkedWords || []).includes(item.id);
+      const isMistake = (state.mistakeWords || []).includes(item.id);
       let weight = 100;
 
       if (s.seen === 0) {
-        weight = 100; // Highest priority for brand new words
-      } else if (s.wrong > 0 && s.streak < 3) {
-        weight = Math.min(85, Math.max(40, 55 + s.wrong * 10 - s.streak * 8)); // Mistakes
+        weight = 110; // Highest priority for brand new words
+      } else if (isMistake || (s.wrong > 0 && s.streak < 3)) {
+        weight = 130 + s.wrong * 15 - s.streak * 12;
+      } else if (isBookmarked) {
+        weight = 90;
       } else {
-        weight = Math.max(8, Math.round(28 / (1 + 0.5 * s.correct))); // Mastered retention floor
+        weight = Math.max(12, Math.round(30 / (1 + 0.3 * s.correct)));
       }
 
-      // 3-turn cooldown to avoid immediate repeats
-      if (s.lastTurn > 0 && (globalTurnCounter - s.lastTurn) <= 3) {
-        weight *= 0.05;
+      // 3-turn cooldown to avoid immediate consecutive repeats
+      if (s.lastTurn > 0 && (globalTurnCounter - s.lastTurn) <= 3 && pool.length > 3) {
+        weight *= 0.1;
       }
 
       return { item, weight };
@@ -299,7 +402,6 @@ const App = (() => {
     for (const entry of weightedList) {
       rand -= entry.weight;
       if (rand <= 0) {
-        // Record last turn
         if (!state.vocabStats[entry.item.id]) {
           state.vocabStats[entry.item.id] = { seen: 0, correct: 0, wrong: 0, streak: 0, lastTurn: globalTurnCounter };
         } else {
@@ -311,11 +413,11 @@ const App = (() => {
     return pool[0];
   };
 
-  // Build 4 Question Types
+  // Build 4 Question Types (Dynamic Synthesis Engine)
   const generateQuestion = (tier) => {
     const vocab = pickVocab(tier);
-    // Randomly pick question type 1 to 4
     const type = Math.floor(Math.random() * 4) + 1;
+    const tierPool = getTierVocabPool(tier);
 
     let qData = {
       type: type,
@@ -325,28 +427,155 @@ const App = (() => {
 
     if (type === 1) {
       // Type 1: Dual Choice POS + Meaning
-      const posOptions = ['n.', 'v.', 'adj.', 'adv.'];
-      const meaningChoices = [vocab.meaning, ...vocab.distractorsMeaning].sort(() => Math.random() - 0.5);
+      let posOptions = ['n.', 'v.', 'adj.', 'adv.'];
+      if (!posOptions.includes(vocab.pos)) {
+        posOptions = [vocab.pos, 'n.', 'v.', 'adj.'].slice(0, 4);
+      }
+      posOptions.sort(() => Math.random() - 0.5);
+
+      let distractorMeanings = [];
+      if (vocab.distractorsMeaning && vocab.distractorsMeaning.length >= 3) {
+        distractorMeanings = vocab.distractorsMeaning.slice(0, 3);
+      } else {
+        const otherMeanings = tierPool
+          .filter(v => v.meaning !== vocab.meaning)
+          .map(v => v.meaning);
+        distractorMeanings = pickDistinct(otherMeanings, 3);
+      }
+
+      const meaningChoices = [vocab.meaning, ...distractorMeanings].sort(() => Math.random() - 0.5);
       qData.posOptions = posOptions;
       qData.meaningChoices = meaningChoices;
       qData.correctPos = vocab.pos;
       qData.correctMeaning = vocab.meaning;
       qData.userSelectedPos = null;
       qData.userSelectedMeaning = null;
+
     } else if (type === 2) {
-      // Type 2: Sentence Cloze
-      qData.choices = [...vocab.sentenceChoices].sort(() => Math.random() - 0.5);
-      qData.correctAnswer = vocab.sentenceTarget;
+      // Type 2: Sentence Cloze in Context
+      let sentence = vocab.sentence;
+      let sentenceZh = vocab.sentenceZh;
+
+      if (!sentence) {
+        const posTemplates = {
+          'n.': [
+            'The brave adventurer discovered an ancient ______ inside the secret vault.',
+            'Every knight in the realm must respect this sacred ______.',
+            'A glowing ______ rested upon the stone altar of the forgotten temple.',
+            'Without adequate ______, venturing into the deeper labyrinth is perilous.'
+          ],
+          'v.': [
+            'The party members must ______ together before the chamber walls collapse.',
+            'Legends state that only a pure heart can ______ the seal of the holy relic.',
+            'The paladin stepped forward to ______ the sanctuary against encroaching gloom.',
+            'The scouts gathered near the campfire to ______ for the treacherous trial ahead.'
+          ],
+          'adj.': [
+            'The winding stone corridor felt remarkably ______ to the wary party scouts.',
+            'A ______ aura emanated from the glowing runes embedded in the chamber floor.',
+            'Only a truly ______ champion could endure the trials of the Babel Tower.',
+            'The ancient stone tablets bore a ______ message that puzzled the scholar.'
+          ],
+          'adv.': [
+            'The phantom assassin moved ______ through the corridor without alerting the sentry.',
+            'The battle mage ______ cast the barrier before the dragon fire struck the squad.',
+            'The massive dungeon gates swung open ______ as the champion placed the talisman.'
+          ]
+        };
+        const templates = posTemplates[vocab.pos] || [
+          'Mastering this ______ is essential for survival in this perilous floor.'
+        ];
+        sentence = templates[Math.floor(Math.random() * templates.length)];
+        sentenceZh = `提示：依據語境與【${vocab.meaning}】之意，選出正確單字填入空格。`;
+      }
+
+      let choices = [];
+      if (vocab.sentenceChoices && vocab.sentenceChoices.length >= 4) {
+        choices = [...vocab.sentenceChoices].sort(() => Math.random() - 0.5);
+      } else {
+        const samePosWords = tierPool
+          .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase() && v.pos === vocab.pos)
+          .map(v => v.word);
+        const otherWords = tierPool
+          .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase())
+          .map(v => v.word);
+        const poolToPick = samePosWords.length >= 3 ? samePosWords : otherWords;
+        const distractors = pickDistinct(poolToPick, 3);
+        choices = [vocab.word, ...distractors].sort(() => Math.random() - 0.5);
+      }
+
+      vocab.sentence = sentence;
+      vocab.sentenceZh = sentenceZh;
+      vocab.sentenceTarget = vocab.word;
+      qData.choices = choices;
+      qData.correctAnswer = vocab.word;
+
     } else if (type === 3) {
       // Type 3: Spelling Fill-in
-      qData.lettersPool = [...vocab.spellingPool].sort(() => Math.random() - 0.5);
-      qData.neededLetters = vocab.spellingMissing;
+      let spellingWord = vocab.spellingWord;
+      let neededLetters = vocab.spellingMissing;
+      let lettersPool = vocab.spellingPool;
+
+      if (!spellingWord || !neededLetters || !lettersPool) {
+        const cleanLetters = vocab.word.toLowerCase().replace(/[^a-z]/g, '');
+        const len = cleanLetters.length;
+        let blankIndices = [];
+
+        if (len <= 4) {
+          blankIndices = [1];
+        } else if (len <= 7) {
+          blankIndices = [1, Math.min(len - 2, 3)];
+        } else {
+          blankIndices = [2, Math.min(len - 3, 4), Math.min(len - 2, 6)];
+        }
+
+        const chars = cleanLetters.split('');
+        neededLetters = blankIndices.map(idx => chars[idx]);
+
+        const spaced = chars.map((ch, idx) => blankIndices.includes(idx) ? '_' : ch);
+        spellingWord = spaced.join(' ');
+
+        const fillerLetters = ['a', 'e', 'i', 'o', 'u', 'r', 's', 't', 'l', 'n', 'c', 'd', 'p', 'm', 'y', 'k'];
+        const randomFillers = pickDistinct(fillerLetters.filter(l => !neededLetters.includes(l)), 5);
+        lettersPool = [...neededLetters, ...randomFillers].sort(() => Math.random() - 0.5);
+      }
+
+      vocab.spellingWord = spellingWord;
+      vocab.spellingMissing = neededLetters;
+      vocab.spellingPool = lettersPool;
+      qData.lettersPool = [...lettersPool].sort(() => Math.random() - 0.5);
+      qData.neededLetters = neededLetters;
       qData.userTypedLetters = [];
+
     } else if (type === 4) {
       // Type 4: Context Q&A
-      qData.qaQuestion = vocab.qaQuestion;
-      qData.choices = vocab.qaChoices;
-      qData.correctIndex = vocab.qaCorrect;
+      let qaQuestion = vocab.qaQuestion;
+      let choices = vocab.qaChoices;
+      let correctIndex = vocab.qaCorrect;
+
+      if (!qaQuestion || !choices) {
+        qaQuestion = `Q: 古老地下城石碑刻有單字【${vocab.word}】(${vocab.pos})。在當前地牢情境中，此詞彙的深層含義為何？`;
+        const otherEntries = tierPool.filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase());
+        const distractors = pickDistinct(otherEntries, 3);
+        const correctChoice = `此詞代表【${vocab.meaning}】，指示破解當前地牢機關之關鍵條件。`;
+        const wrongChoice1 = `誤指【${distractors[0]?.meaning || '未知危險'}】，若盲目應對將觸發防禦護盾陷阱。`;
+        const wrongChoice2 = `誤解為【${distractors[1]?.meaning || '幻象迷宮'}】，會導致小隊行進方向產生偏誤。`;
+        const wrongChoice3 = `代表【${distractors[2]?.meaning || '雜湊魔力'}】，屬於完全不相關的無效干擾訊息。`;
+
+        const allChoices = [
+          { text: correctChoice, isCorrect: true },
+          { text: wrongChoice1, isCorrect: false },
+          { text: wrongChoice2, isCorrect: false },
+          { text: wrongChoice3, isCorrect: false }
+        ].sort(() => Math.random() - 0.5);
+
+        choices = allChoices.map(c => c.text);
+        correctIndex = allChoices.findIndex(c => c.isCorrect);
+      }
+
+      qData.qaQuestion = qaQuestion;
+      qData.choices = choices;
+      qData.correctIndex = correctIndex;
     }
 
     return qData;
@@ -393,6 +622,23 @@ const App = (() => {
       leaveBadge.innerHTML = `${PixelSprites.icon('scroll', 14)} <span>休假中 (${leftDays}天)</span>`;
     } else {
       leaveBadge.style.display = 'none';
+    }
+
+    // Admin Badge & Debug Toolbar visibility
+    const isAdm = (window.SupabaseClient && SupabaseClient.isAdmin()) || state.isAdmin;
+    state.isAdmin = isAdm;
+    const adminBadge = document.getElementById('hud-admin-badge');
+    if (adminBadge) {
+      if (isAdm) {
+        adminBadge.style.display = 'flex';
+        adminBadge.innerHTML = `${PixelSprites.icon('crown', 14)} <span>GM 總管</span>`;
+      } else {
+        adminBadge.style.display = 'none';
+      }
+    }
+    const dbgToolbar = document.querySelector('.debug-toolbar');
+    if (dbgToolbar) {
+      dbgToolbar.style.display = isAdm ? 'flex' : 'none';
     }
   };
 
@@ -479,8 +725,8 @@ const App = (() => {
           <span>公會商城</span>
         </button>
         <button class="pixel-btn-sub" id="btn-open-codex">
-          ${PixelSprites.icon('scroll', 20)}
-          <span>圖鑑錯題</span>
+          ${PixelSprites.icon('book', 20)}
+          <span>記憶禁書閣</span>
         </button>
         <button class="pixel-btn-sub" id="btn-open-checkin">
           ${PixelSprites.icon('calendar', 20)}
@@ -535,7 +781,7 @@ const App = (() => {
     document.getElementById('btn-mode-dungeon').onclick = () => renderDungeonSelectView();
     document.getElementById('btn-open-tavern').onclick = () => renderShopView('food');
     document.getElementById('btn-open-shop').onclick = () => renderShopView('equip');
-    document.getElementById('btn-open-codex').onclick = () => renderCodexView('bestiary');
+    document.getElementById('btn-open-codex').onclick = () => renderCodexView('bookmarks');
     document.getElementById('btn-open-checkin').onclick = () => showCheckinModal();
     document.getElementById('btn-open-lottery').onclick = () => showLotteryModal();
 
@@ -718,6 +964,8 @@ const App = (() => {
     if (battle.mode === 'dungeon') {
       const boss = GAME_CONFIG.DUNGEON_BOSSES.find(b => b.id === battle.stageId);
       tier = boss ? boss.tier : 1;
+    } else if (battle.mode === 'review') {
+      tier = 1;
     } else {
       tier = Math.min(15, Math.max(1, Math.ceil(state.towerFloor / 66)));
     }
@@ -924,10 +1172,19 @@ const App = (() => {
         <!-- Question Panel -->
         <div class="question-panel">
           <div class="question-header">
-            <span class="question-type-badge">題型 ${q.type}</span>
-            <button class="audio-btn" onclick="App.speakCurrentWord()">
-              ${PixelSprites.icon('speaker', 14)} <span>聽發音</span>
-            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="question-type-badge">題型 ${q.type}</span>
+              <span class="question-category-badge">${q.vocab.categoryLabel || '核心英文'}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="audio-btn" onclick="App.speakCurrentWord()" title="播放英式/美式發音">
+                ${PixelSprites.icon('speaker', 14)} <span>聽發音</span>
+              </button>
+              <button class="bookmark-btn ${(state.bookmarkedWords || []).includes(q.vocab.id) ? 'bookmarked' : ''}" id="btn-toggle-bookmark" onclick="App.toggleBookmark('${q.vocab.id}')" title="收藏此題至專屬複習法典">
+                ${PixelSprites.icon((state.bookmarkedWords || []).includes(q.vocab.id) ? 'bookmark' : 'star', 14)}
+                <span>${(state.bookmarkedWords || []).includes(q.vocab.id) ? '已收藏' : '收藏此題'}</span>
+              </button>
+            </div>
           </div>
           ${questionBodyHtml}
         </div>
@@ -952,6 +1209,12 @@ const App = (() => {
   const speakCurrentWord = () => {
     if (battle.currentQuestion && battle.currentQuestion.vocab) {
       AudioManager.speak(battle.currentQuestion.vocab.word);
+    }
+  };
+
+  const speakWord = (word) => {
+    if (word) {
+      AudioManager.speak(word);
     }
   };
 
@@ -1059,6 +1322,11 @@ const App = (() => {
       battle.combo = 0;
       AudioManager.play('buzzer');
 
+      if (!state.mistakeWords) state.mistakeWords = [];
+      if (!state.mistakeWords.includes(vocabId)) {
+        state.mistakeWords.push(vocabId);
+      }
+
       // Boss attacks Hero!
       executeEnemyAttack(feedbackMsg);
     }
@@ -1098,7 +1366,7 @@ const App = (() => {
     // Reduce Enemy HP
     battle.enemyCurrentHp = Math.max(0, battle.enemyCurrentHp - damage);
 
-    if (battle.mode === 'dungeon') {
+    if (battle.mode === 'dungeon' || battle.mode === 'review') {
       if (battle.enemyCurrentHp <= 0) {
         setTimeout(() => onDungeonVictory(), 500);
       } else {
@@ -1195,23 +1463,174 @@ const App = (() => {
     state.currentHp = Math.max(0, state.currentHp - totalDamage);
     showToast(feedbackMsg);
 
-    if (battle.mode === 'dungeon') {
-      if (state.currentHp <= 0) {
-        setTimeout(() => onCombatDefeat(), 500);
-      } else {
-        setTimeout(() => loadNextQuestion(), 1000);
-      }
-    } else {
-      // Tower Mode
-      state.towerPoints = Math.max(-1, state.towerPoints - 1);
-
-      if (state.towerPoints < 0 || state.currentHp <= 0) {
-        // Drop floor crisis!
+    if (state.currentHp <= 0) {
+      if (battle.mode === 'tower') {
         handleTowerDropFloor();
       } else {
-        setTimeout(() => loadNextQuestion(), 1000);
+        setTimeout(() => onCombatDefeat(), 500);
+      }
+    } else {
+      if (battle.mode === 'tower') {
+        state.towerPoints = Math.max(0, state.towerPoints - 1);
+      }
+      setTimeout(() => {
+        showCorrectionModal(battle.currentQuestion, feedbackMsg);
+      }, 400);
+    }
+  };
+
+  // Toggle Question Bookmark
+  const toggleBookmark = (vocabId, showToastMsg = true) => {
+    if (!state.bookmarkedWords) state.bookmarkedWords = [];
+    const idx = state.bookmarkedWords.indexOf(vocabId);
+    if (idx >= 0) {
+      state.bookmarkedWords.splice(idx, 1);
+      AudioManager.play('click');
+      if (showToastMsg) showToast('已自複習法典中取消收藏');
+    } else {
+      state.bookmarkedWords.push(vocabId);
+      AudioManager.play('coin');
+      if (showToastMsg) showToast('已成功銘刻至【黑曜石復習禁書閣】！');
+    }
+    saveState();
+
+    // If currently on battle screen, update the battle bookmark button live
+    const bBtn = document.getElementById('btn-toggle-bookmark');
+    if (bBtn) {
+      const isBookmarked = state.bookmarkedWords.includes(vocabId);
+      bBtn.className = `bookmark-btn ${isBookmarked ? 'bookmarked' : ''}`;
+      bBtn.innerHTML = `${PixelSprites.icon(isBookmarked ? 'bookmark' : 'star', 14)} <span>${isBookmarked ? '已收藏' : '收藏此題'}</span>`;
+    }
+  };
+
+  // Medieval Obsidian Truth Revelation / Correction Modal
+  const showCorrectionModal = (q, feedbackMsg) => {
+    if (!q || !q.vocab) {
+      loadNextQuestion();
+      return;
+    }
+    const isBookmarked = (state.bookmarkedWords || []).includes(q.vocab.id);
+    const highlightedSentence = q.vocab.sentence.replace('______', `<strong>${q.vocab.sentenceTarget}</strong>`);
+
+    let correctAnswerText = '';
+    if (q.type === 1) {
+      correctAnswerText = `【${q.correctPos}】 ${q.correctMeaning}`;
+    } else if (q.type === 2) {
+      correctAnswerText = `【${q.correctAnswer}】 (詞意: ${q.vocab.meaning})`;
+    } else if (q.type === 3) {
+      correctAnswerText = `【${q.vocab.word}】 (缺漏字母: ${q.neededLetters.join(', ')})`;
+    } else if (q.type === 4) {
+      correctAnswerText = q.choices[q.correctIndex];
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-correction-overlay" onclick="event.stopPropagation()">
+        <div class="modal-dialog modal-dialog-dark correction-dialog" onclick="event.stopPropagation()">
+          <div class="correction-header">
+            <div style="filter: drop-shadow(0 2px 4px rgba(255,50,50,0.6));">
+              ${PixelSprites.icon('skull', 20)}
+            </div>
+            <div>
+              <div class="correction-title">魔物反擊・古籍真理顯現</div>
+              <div style="font-size:11px; color:#ffaaaa;">${feedbackMsg || '作答失誤！古籍顯露了正確答案'}</div>
+            </div>
+          </div>
+
+          <div class="correction-card">
+            <div class="correction-word-row">
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <span class="correction-word">${q.vocab.word}</span>
+                <span class="correction-pos">${q.vocab.pos}</span>
+                <span class="question-category-badge">${q.vocab.categoryLabel || '核心英文'}</span>
+              </div>
+              <button class="audio-btn" onclick="AudioManager.speak('${q.vocab.word}')" title="播放發音">
+                ${PixelSprites.icon('speaker', 14)} <span>聽發音</span>
+              </button>
+            </div>
+
+            <div class="correction-meaning">${q.vocab.meaning}</div>
+
+            <div class="correction-answer-box">
+              <div class="correction-label">📜 正解核心：</div>
+              <div class="correction-correct-ans">${correctAnswerText}</div>
+            </div>
+
+            <div class="correction-sentence-box">
+              <div class="correction-label">📖 語境真理例句：</div>
+              <div class="correction-sentence-en">${highlightedSentence}</div>
+              <div class="correction-sentence-zh">${q.vocab.sentenceZh}</div>
+            </div>
+
+            <div class="correction-bookmark-row">
+              <button class="btn-correction-bookmark ${isBookmarked ? 'bookmarked' : ''}" id="btn-correction-bookmark" onclick="App.toggleBookmarkInModal('${q.vocab.id}')">
+                ${PixelSprites.icon(isBookmarked ? 'bookmark' : 'star', 16)}
+                <span id="correction-bookmark-label">${isBookmarked ? '★ 已珍藏於複習法典' : '⭐ 收藏此題至專屬複習法典'}</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="pixel-btn-action" onclick="App.continueAfterCorrection()">
+            ⚔️ 我已領悟，重整旗鼓繼續戰鬥！
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const toggleBookmarkInModal = (vocabId) => {
+    toggleBookmark(vocabId, false);
+    const isBookmarked = (state.bookmarkedWords || []).includes(vocabId);
+    const btn = document.getElementById('btn-correction-bookmark');
+    if (btn) {
+      if (isBookmarked) {
+        btn.classList.add('bookmarked');
+        btn.innerHTML = `${PixelSprites.icon('bookmark', 16)} <span id="correction-bookmark-label">★ 已珍藏於複習法典</span>`;
+      } else {
+        btn.classList.remove('bookmarked');
+        btn.innerHTML = `${PixelSprites.icon('star', 16)} <span id="correction-bookmark-label">⭐ 收藏此題至專屬複習法典</span>`;
       }
     }
+  };
+
+  const continueAfterCorrection = () => {
+    document.getElementById('modal-root').innerHTML = '';
+    loadNextQuestion();
+  };
+
+  // Launch Dedicated Review Mode Battle
+  const startReviewMode = () => {
+    const targetIds = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])]));
+    if (targetIds.length === 0) {
+      alert('您的【黑曜石復習禁書閣】中目前沒有收藏或待淨化錯題！可以在挑戰中點選「⭐ 收藏此題」或進行作答！');
+      return;
+    }
+    battle = {
+      active: true,
+      mode: 'review',
+      stageId: 99,
+      enemyName: '奧術試煉石像鬼 (銘文禁書閣守護像)',
+      enemyMaxHp: 220,
+      enemyCurrentHp: 220,
+      enemyAtk: 12,
+      enemyDef: 6,
+      timeLimit: 18.0,
+      currentTime: 18.0,
+      timerId: null,
+      currentQuestion: null,
+      currentTurn: 1,
+      combo: 0,
+      correctInSession: 0,
+      totalInSession: 0,
+      bossTrait: null,
+      minionKey: 'gargoyle_warden',
+      timeReductionNext: 0,
+      burnTurns: 0,
+      stoneArmorCooldown: 0
+    };
+    AudioManager.play('battleStart');
+    loadNextQuestion();
   };
 
   // Tower Drop Floor with Guard Scroll Interception
@@ -1285,6 +1704,15 @@ const App = (() => {
     battle.active = false;
     clearInterval(battle.timerId);
     AudioManager.play('victory');
+
+    if (battle.mode === 'review') {
+      state.gold += 35;
+      saveState();
+      updateHUD();
+      alert('🎉 銘文淨化試煉大捷！\n\n您已成功通過黑曜石禁書閣複習試煉，詞彙印記已深化，並自公會領取 +35 金幣獎勵！');
+      renderCodexView('bookmarks');
+      return;
+    }
 
     const boss = GAME_CONFIG.DUNGEON_BOSSES.find(b => b.id === battle.stageId);
     const stats = getHeroStats();
@@ -1677,10 +2105,168 @@ const App = (() => {
   // ==========================================
   // VIEW: Codex & Mistake Notebook
   // ==========================================
-  const renderCodexView = (activeTab = 'bestiary') => {
+  // ==========================================
+  // VIEW: Obsidian Review Grimoire (黑曜石復習秘殿・銘刻禁書閣)
+  // ==========================================
+  let grimoireActiveCategory = 'all';
+
+  const renderCodexView = (activeTab = 'bookmarks', categoryFilter = 'all') => {
+    grimoireActiveCategory = categoryFilter || grimoireActiveCategory;
+    if (!Array.isArray(state.bookmarkedWords)) state.bookmarkedWords = [];
+    if (!Array.isArray(state.mistakeWords)) state.mistakeWords = [];
+
+    const categories = [
+      { id: 'all', label: '全部領域' },
+      { id: 'business', label: '商務職場' },
+      { id: 'finance', label: '財金經濟' },
+      { id: 'sports', label: '運動競技' },
+      { id: 'news', label: '時事新聞' },
+      { id: 'travel', label: '旅遊差旅' },
+      { id: 'country', label: '國家外交' },
+      { id: 'daily', label: '日常生活' }
+    ];
+
     let contentHtml = '';
 
-    if (activeTab === 'bestiary') {
+    if (activeTab === 'bookmarks') {
+      let filtered = getAllTrackedVocabList(state.bookmarkedWords);
+      if (grimoireActiveCategory !== 'all') {
+        filtered = filtered.filter(v => v.category === grimoireActiveCategory);
+      }
+
+      if (filtered.length === 0) {
+        contentHtml = `
+          <div style="text-align:center; padding:35px 20px; color:var(--text-muted); background:#161224; border:2px dashed #3a2e50;">
+            <div style="margin-bottom:8px;">${PixelSprites.icon('bookmark', 28)}</div>
+            <div style="font-weight:bold; color:#ffdd88; margin-bottom:4px;">目前尚無珍藏法印</div>
+            <div style="font-size:12px; line-height:1.5;">
+              在地下城討伐或登塔挑戰時，點選題目右上方的【收藏】<br>
+              即可將您不太熟、或是四選一矇到的實用題目收錄於此！
+            </div>
+          </div>
+        `;
+      } else {
+        const cards = filtered.map(vocab => {
+          const s = state.vocabStats[vocab.id] || { seen: 0, correct: 0, wrong: 0, streak: 0 };
+          let badgeHtml = '';
+          if (s.streak >= 3) {
+            badgeHtml = `<span class="grimoire-badge-mastered">已完全掌握</span>`;
+          } else if (s.wrong > s.correct) {
+            badgeHtml = `<span class="grimoire-badge-unmastered">待學會</span>`;
+          } else {
+            badgeHtml = `<span class="grimoire-badge-learning">修煉試煉中</span>`;
+          }
+
+          const displaySentence = (vocab.sentence || 'The adventurer studied the importance of ______.')
+            .replace('______', `<strong style="color:#ffd700;">${vocab.sentenceTarget || vocab.word}</strong>`);
+          const displaySentenceZh = vocab.sentenceZh || `提示：【${vocab.meaning}】`;
+
+          return `
+            <div class="grimoire-card">
+              <div class="grimoire-card-top">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span class="grimoire-card-word">${vocab.word}</span>
+                  <span style="font-size:12px; color:#ffdd88;">(${vocab.pos})</span>
+                  <span class="question-category-badge">${vocab.categoryLabel || `Tier ${vocab.tier || 1}`}</span>
+                  ${badgeHtml}
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button class="audio-btn" onclick="AudioManager.speak('${vocab.word}')" title="播放發音">
+                    ${PixelSprites.icon('speaker', 14)}
+                  </button>
+                  <button class="bookmark-btn bookmarked" onclick="App.toggleBookmark('${vocab.id}'); App.renderCodexView('bookmarks');" title="取消收藏">
+                    ${PixelSprites.icon('bookmark', 14)} <span>已珍藏</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="font-size:14px; font-weight:bold; color:#ffffff;">${vocab.meaning}</div>
+
+              <div style="background:#130e1e; border:1px solid #33264a; padding:6px 8px; font-size:12px; line-height:1.4;">
+                <div style="color:#eeddcc;">${displaySentence}</div>
+                <div style="color:#a095b5; margin-top:2px;">${displaySentenceZh}</div>
+              </div>
+
+              <div style="font-size:10px; color:#a090b8; display:flex; justify-content:space-between;">
+                <span>累計遇見: ${s.seen} 次 | 連對推進: ${s.streak} 次</span>
+                <span>答錯: ${s.wrong} 次 / 答對: ${s.correct} 次</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        contentHtml = `<div style="display:flex; flex-direction:column; gap:10px;">${cards}</div>`;
+      }
+    } else if (activeTab === 'mistakes') {
+      const mistakeIds = Array.from(new Set([
+        ...(state.mistakeWords || []),
+        ...Object.keys(state.vocabStats).filter(id => state.vocabStats[id]?.wrong > 0)
+      ]));
+      let filtered = getAllTrackedVocabList(mistakeIds);
+      if (grimoireActiveCategory !== 'all') {
+        filtered = filtered.filter(v => v.category === grimoireActiveCategory);
+      }
+
+      if (filtered.length === 0) {
+        contentHtml = `
+          <div style="text-align:center; padding:35px 20px; color:var(--text-muted); background:#161224; border:2px dashed #3a2e50;">
+            <div style="margin-bottom:8px;">${PixelSprites.icon('check', 28)}</div>
+            <div style="font-weight:bold; color:#44dd66; margin-bottom:4px;">目前沒有任何待淨化錯題！太出色了！</div>
+            <div style="font-size:12px;">所有遭遇過的詞彙均已被勇者完全征服！</div>
+          </div>
+        `;
+      } else {
+        const cards = filtered.map(vocab => {
+          const s = state.vocabStats[vocab.id] || { seen: 0, correct: 0, wrong: 0, streak: 0 };
+          const isBookmarked = state.bookmarkedWords.includes(vocab.id);
+          let badgeHtml = '';
+          if (s.streak >= 3) {
+            badgeHtml = `<span class="grimoire-badge-mastered">已完全掌握</span>`;
+          } else if (s.wrong > s.correct) {
+            badgeHtml = `<span class="grimoire-badge-unmastered">待學會</span>`;
+          } else {
+            badgeHtml = `<span class="grimoire-badge-learning">修煉試煉中</span>`;
+          }
+
+          const displaySentence = (vocab.sentence || 'The adventurer studied the importance of ______.')
+            .replace('______', `<strong style="color:#ffd700;">${vocab.sentenceTarget || vocab.word}</strong>`);
+          const displaySentenceZh = vocab.sentenceZh || `提示：【${vocab.meaning}】`;
+
+          return `
+            <div class="grimoire-card" style="border-left: 4px solid #ff4444;">
+              <div class="grimoire-card-top">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span class="grimoire-card-word">${vocab.word}</span>
+                  <span style="font-size:12px; color:#ffdd88;">(${vocab.pos})</span>
+                  <span class="question-category-badge">${vocab.categoryLabel || `Tier ${vocab.tier || 1}`}</span>
+                  ${badgeHtml}
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button class="audio-btn" onclick="AudioManager.speak('${vocab.word}')" title="播放發音">
+                    ${PixelSprites.icon('speaker', 14)}
+                  </button>
+                  <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="App.toggleBookmark('${vocab.id}'); App.renderCodexView('mistakes');" title="${isBookmarked ? '取消收藏' : '收藏'}">
+                    ${PixelSprites.icon(isBookmarked ? 'bookmark' : 'star', 14)} <span>${isBookmarked ? '已珍藏' : '收藏'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="font-size:14px; font-weight:bold; color:#ffffff;">${vocab.meaning}</div>
+
+              <div style="background:#130e1e; border:1px solid #33264a; padding:6px 8px; font-size:12px; line-height:1.4;">
+                <div style="color:#eeddcc;">${displaySentence}</div>
+                <div style="color:#a095b5; margin-top:2px;">${displaySentenceZh}</div>
+              </div>
+
+              <div style="font-size:10px; color:#ff8888; display:flex; justify-content:space-between;">
+                <span>累計答錯: ${s.wrong} 次 | 連對進度: ${s.streak}/3 次</span>
+                <span style="color:#ffdd88;">正解: ${vocab.sentenceTarget || vocab.word}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        contentHtml = `<div style="display:flex; flex-direction:column; gap:10px;">${cards}</div>`;
+      }
+    } else {
       // Bestiary: 15 Bosses + 12 Minions
       let bossCards = GAME_CONFIG.DUNGEON_BOSSES.map(b => {
         const isDiscovered = state.bestiaryUnlocked.some(key => key.includes(`boss_${b.id}`));
@@ -1714,53 +2300,54 @@ const App = (() => {
       `).join('');
 
       contentHtml = `<div class="items-list-container">${bossCards}${minionCards}</div>`;
-    } else {
-      // Mistake Codex
-      const mistakeList = Object.keys(state.vocabStats).filter(id => state.vocabStats[id].wrong > 0);
-
-      if (mistakeList.length === 0) {
-        contentHtml = `
-          <div style="text-align:center; padding:30px; color:var(--text-muted);">
-            ${PixelSprites.icon('check', 24)}
-            <div style="margin-top:10px;">目前沒有任何錯題！真厲害！</div>
-          </div>
-        `;
-      } else {
-        const cards = mistakeList.map(id => {
-          const vocab = VOCAB_DATABASE.find(v => v.id === id);
-          if (!vocab) return '';
-          const s = state.vocabStats[id];
-          return `
-            <div class="shop-item-card">
-              <div class="shop-item-left">
-                <button class="audio-btn" onclick="AudioManager.speak('${vocab.word}')">
-                  ${PixelSprites.icon('speaker', 14)}
-                </button>
-                <div class="shop-item-info">
-                  <div class="shop-item-title">${vocab.word} <span style="font-size:11px; color:#ffdd88;">(${vocab.pos})</span></div>
-                  <div class="shop-item-desc">${vocab.meaning}</div>
-                  <div style="font-size:10px; color:#ff8888;">累計答錯: ${s.wrong} 次 | 答對: ${s.correct} 次</div>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-        contentHtml = `<div class="items-list-container">${cards}</div>`;
-      }
     }
 
+    const reviewTotalCount = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])])).length;
+
     const html = `
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <button class="hud-btn" onclick="App.renderLobby()">&lt; 返回營地</button>
-        <div style="font-weight:bold; color:var(--gold);">📖 圖鑑與單字錯題本</div>
+        <div style="font-weight:bold; color:var(--gold); display:flex; align-items:center; gap:6px;">
+          ${PixelSprites.icon('book', 18)} <span>黑曜石復習秘殿・銘刻禁書閣</span>
+        </div>
       </div>
 
-      <div class="tabs-header">
-        <button class="tab-btn ${activeTab === 'bestiary' ? 'active' : ''}" onclick="App.renderCodexView('bestiary')">魔物圖鑑</button>
-        <button class="tab-btn ${activeTab === 'mistakes' ? 'active' : ''}" onclick="App.renderCodexView('mistakes')">錯題複習本</button>
+      <!-- Review Trial Launch Banner -->
+      <div class="grimoire-trial-banner" style="margin-bottom:10px;">
+        <div>
+          <div style="font-size:12px; font-weight:bold; color:#ffd700;">⚔️ 銘文淨化試煉・專屬複習模式</div>
+          <div style="font-size:10px; color:#d2cbe0;">針對您的收藏庫與錯題集進行沉浸戰鬥，直到完全掌握！(待修煉: ${reviewTotalCount} 詞)</div>
+        </div>
+        <button class="btn-start-review-trial" onclick="App.startReviewMode()">
+          啟動試煉
+        </button>
       </div>
 
-      ${contentHtml}
+      <div class="grimoire-tabs">
+        <button class="tab-btn ${activeTab === 'bookmarks' ? 'active' : ''}" onclick="App.renderCodexView('bookmarks')">
+          ${PixelSprites.icon('bookmark', 14)} 珍藏法印 (${state.bookmarkedWords.length})
+        </button>
+        <button class="tab-btn ${activeTab === 'mistakes' ? 'active' : ''}" onclick="App.renderCodexView('mistakes')">
+          ${PixelSprites.icon('skull', 14)} 待淨化錯題 (${state.mistakeWords.length})
+        </button>
+        <button class="tab-btn ${activeTab === 'bestiary' ? 'active' : ''}" onclick="App.renderCodexView('bestiary')">
+          ${PixelSprites.icon('crown', 14)} 魔物聖典
+        </button>
+      </div>
+
+      ${activeTab !== 'bestiary' ? `
+        <div class="grimoire-filter-bar">
+          ${categories.map(cat => `
+            <button class="grimoire-filter-pill ${grimoireActiveCategory === cat.id ? 'active' : ''}" onclick="App.renderCodexView('${activeTab}', '${cat.id}')">
+              ${cat.label}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      <div style="margin-top:8px;">
+        ${contentHtml}
+      </div>
     `;
 
     setMainView(html);
@@ -1911,8 +2498,8 @@ const App = (() => {
             ${tab === 'login' ? `
               <form id="gate-login-form" onsubmit="event.preventDefault(); App.handleGateLogin();" style="display:flex; flex-direction:column; gap:10px;">
                 <div class="auth-form-group">
-                  <label class="auth-label">冒險者電子信箱 (Email)</label>
-                  <input type="email" id="gate-email" class="auth-input" placeholder="hero@dungeon.com" required autocomplete="email">
+                  <label class="auth-label">冒險者公會帳號或 Email</label>
+                  <input type="text" id="gate-account" class="auth-input" placeholder="冒險者帳號 (例如: tangghgh) 或 Email" required autocomplete="username">
                 </div>
 
                 <div class="auth-form-group">
@@ -2020,12 +2607,12 @@ const App = (() => {
   };
 
   const handleGateLogin = async () => {
-    const email = document.getElementById('gate-email')?.value?.trim();
+    const account = (document.getElementById('gate-account') || document.getElementById('gate-email'))?.value?.trim();
     const password = document.getElementById('gate-password')?.value;
     const btn = document.getElementById('btn-gate-submit');
 
-    if (!email || !password) {
-      alert('請填寫完整 Email 與通行密碼！');
+    if (!account || !password) {
+      alert('請填寫完整帳號 (或 Email) 與通行密碼！');
       return;
     }
 
@@ -2036,16 +2623,24 @@ const App = (() => {
 
     try {
       showToast('正在驗證冒險者資料...');
-      await SupabaseClient.signIn(email, password);
+      await SupabaseClient.signIn(account, password);
 
+      state.isAdmin = SupabaseClient.isAdmin();
       setHUDVisible(true);
       loadState();
+      if (SupabaseClient.isAdmin()) {
+        state.isAdmin = true;
+      }
       await SupabaseClient.syncFromCloud();
       checkAbsence();
       updateHUD();
       renderLobbyView();
       bindDebugToolbar();
-      showToast(`登入成功！歡迎回到地下城，勇者 ${state.heroName}！`);
+      if (state.isAdmin) {
+        showToast('🛡️ 最高領主 GM 登入成功！開發調試面板已激活！');
+      } else {
+        showToast(`登入成功！歡迎回到地下城，勇者 ${state.heroName}！`);
+      }
     } catch (err) {
       console.error('Gate login error:', err);
       alert('登入失敗: ' + (err.message || '請確認帳號密碼或網路連線'));
@@ -2081,23 +2676,33 @@ const App = (() => {
 
     try {
       showToast('正在向公會註冊新勇者...');
-      const res = await SupabaseClient.signUp(email, password, username, heroName);
+      await SupabaseClient.signUp(email, password, username, heroName);
 
-      if (SupabaseClient.isLoggedIn()) {
-        state = getDefaultState(heroName, chosenClass);
-        state.heroClass = chosenClass;
-        saveState();
-        await SupabaseClient.syncToCloud(state);
-        setHUDVisible(true);
-        checkAbsence();
-        updateHUD();
-        renderLobbyView();
-        bindDebugToolbar();
-        showToast(`註冊成功！歡迎踏入單字地下城，${state.heroName}！`);
-      } else {
-        alert('註冊成功！若有啟用信箱確認機制，請前往信箱點擊確認信後，切換至「冒險者登入」即可啟程！');
-        renderAuthGateView('login');
+      // Force instant login if not logged in yet (bypasses any confirm-email requirements)
+      if (!SupabaseClient.isLoggedIn()) {
+        try {
+          await SupabaseClient.signIn(email, password);
+        } catch (loginErr) {
+          console.warn('Auto login after signup fallback:', loginErr);
+        }
       }
+
+      state = getDefaultState(heroName, chosenClass);
+      state.heroClass = chosenClass;
+      state.isAdmin = SupabaseClient.isAdmin();
+      saveState();
+      try {
+        await SupabaseClient.syncToCloud(state);
+      } catch (cloudErr) {
+        console.warn('Initial cloud sync warning:', cloudErr);
+      }
+
+      setHUDVisible(true);
+      checkAbsence();
+      updateHUD();
+      renderLobbyView();
+      bindDebugToolbar();
+      showToast(`註冊成功並已自動登入！永久契約已生效，歡迎勇者 ${state.heroName}！`);
     } catch (err) {
       console.error('Gate signup error:', err);
       alert('註冊失敗: ' + (err.message || '請檢查資訊格式或稍後再試'));
@@ -2127,8 +2732,8 @@ const App = (() => {
 
           <div id="auth-tab-body" style="padding:8px 0; display:flex; flex-direction:column; gap:8px;">
             ${activeTab === 'login' ? `
-              <div style="font-size:12px; color:var(--text-muted);">輸入您的帳號密碼登入，雲端進度與排行榜將自動同步：</div>
-              <input type="email" id="auth-email" placeholder="電子郵件 (Email)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
+              <div style="font-size:12px; color:var(--text-muted);">輸入您的冒險者帳號或 Email 與密碼登入：</div>
+              <input type="text" id="auth-email" placeholder="冒險者帳號 (例如: tangghgh) 或 Email" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <input type="password" id="auth-password" placeholder="密碼 (Password)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <button class="claim-btn" style="padding:8px;" onclick="App.handleLogin()">登入遊戲</button>
             ` : activeTab === 'signup' ? `
@@ -2170,7 +2775,7 @@ const App = (() => {
               <input type="password" id="cfg-key" value="${savedKey}" placeholder="Anon public Key (eyJhbGciOi...)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <button class="claim-btn" style="padding:8px;" onclick="App.handleSaveSupabaseConfig()">儲存連線設定</button>
               <div style="font-size:11px; color:#88ddff; background:#122030; padding:6px; border:1px solid #204060;">
-                提示：專案資料夾內已備妥 <code>supabase/schema.sql</code>，在 Supabase SQL Editor 貼上執行即可完成 profiles 表與 RLS 權限建置！
+                提示：專案資料夾內已備妥 <code>supabase/schema.sql</code>，在 Supabase SQL Editor 貼上執行即可完成 profiles 表與 RLS 權建置！
               </div>
             `}
           </div>
@@ -2184,34 +2789,39 @@ const App = (() => {
   };
 
   const handleLogin = async () => {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    if (!email || !password) {
-      alert('請輸入 Email 與密碼！');
+    const account = document.getElementById('auth-email')?.value?.trim();
+    const password = document.getElementById('auth-password')?.value;
+    if (!account || !password) {
+      alert('請輸入帳號/Email 與密碼！');
       return;
     }
 
     try {
-      showToast('正在登入 Supabase...');
-      await SupabaseClient.signIn(email, password);
+      showToast('正在驗證冒險者勳章...');
+      await SupabaseClient.signIn(account, password);
+      state.isAdmin = SupabaseClient.isAdmin();
       loadState();
+      if (SupabaseClient.isAdmin()) {
+        state.isAdmin = true;
+      }
       await SupabaseClient.syncFromCloud();
-      showToast('登入成功！雲端進度已同步！');
+      showToast(state.isAdmin ? '🛡️ GM 管理者已登入！' : '登入成功！雲端進度已同步！');
       closeModal();
       setHUDVisible(true);
       checkAbsence();
       updateHUD();
       renderLobbyView();
+      bindDebugToolbar();
     } catch (err) {
       alert('登入失敗: ' + (err.message || '請確認帳號密碼或 Supabase 設定'));
     }
   };
 
   const handleSignup = async () => {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const username = document.getElementById('auth-username').value;
-    const heroname = document.getElementById('auth-heroname').value;
+    const email = document.getElementById('auth-email')?.value?.trim();
+    const password = document.getElementById('auth-password')?.value;
+    const username = document.getElementById('auth-username')?.value?.trim();
+    const heroname = document.getElementById('auth-heroname')?.value?.trim() || '單字勇者';
 
     if (!email || !password || !username) {
       alert('請填寫完整資訊！');
@@ -2221,23 +2831,32 @@ const App = (() => {
     try {
       showToast('正在註冊帳號...');
       await SupabaseClient.signUp(email, password, username, heroname);
-      if (SupabaseClient.isLoggedIn()) {
-        const chosenClass = gateSelectedHeroClass || 'knight';
-        state = getDefaultState(heroname || '單字勇者', chosenClass);
-        state.heroClass = chosenClass;
-        saveState();
-        await SupabaseClient.syncToCloud(state);
-        showToast('註冊成功！已自動登入！');
-        closeModal();
-        setHUDVisible(true);
-        checkAbsence();
-        updateHUD();
-        renderLobbyView();
-      } else {
-        alert('註冊成功！若有啟用信箱確認，請前往信箱驗證後登入。');
-        closeModal();
-        renderAuthGateView('login');
+      if (!SupabaseClient.isLoggedIn()) {
+        try {
+          await SupabaseClient.signIn(email, password);
+        } catch (loginErr) {
+          console.warn('Auto login after signup error:', loginErr);
+        }
       }
+
+      const chosenClass = gateSelectedHeroClass || 'knight';
+      state = getDefaultState(heroname || '單字勇者', chosenClass);
+      state.heroClass = chosenClass;
+      state.isAdmin = SupabaseClient.isAdmin();
+      saveState();
+      try {
+        await SupabaseClient.syncToCloud(state);
+      } catch (cloudErr) {
+        console.warn('Initial cloud sync error:', cloudErr);
+      }
+
+      showToast('註冊成功並已自動登入！');
+      closeModal();
+      setHUDVisible(true);
+      checkAbsence();
+      updateHUD();
+      renderLobbyView();
+      bindDebugToolbar();
     } catch (err) {
       alert('註冊失敗: ' + (err.message || '請檢查資訊格式或確認信件'));
     }
@@ -2296,6 +2915,8 @@ const App = (() => {
     if (data.hero_class) state.heroClass = data.hero_class;
     if (data.inventory && data.inventory._heroClass) state.heroClass = data.inventory._heroClass;
     if (data.inventory && data.inventory._lotteryPity !== undefined) state.lotteryPity = data.inventory._lotteryPity;
+    if (data.bookmarked_words && Array.isArray(data.bookmarked_words)) state.bookmarkedWords = data.bookmarked_words;
+    if (data.mistake_words && Array.isArray(data.mistake_words)) state.mistakeWords = data.mistake_words;
 
     saveState();
     updateHUD();
@@ -2884,37 +3505,72 @@ const App = (() => {
     setTimeout(() => toast.remove(), 2500);
   };
 
-  // Simulation & Debug Handlers
+  // Simulation & Debug Handlers (Strictly accessible by Admin / GM)
   const bindDebugToolbar = () => {
-    document.getElementById('dbg-absent-1').onclick = () => simulateAbsence(1);
-    document.getElementById('dbg-absent-3').onclick = () => simulateAbsence(3);
-    document.getElementById('dbg-absent-7').onclick = () => simulateAbsence(7);
-    document.getElementById('dbg-add-gold').onclick = () => {
-      state.gold += 100;
+    const toolbar = document.getElementById('debug-toolbar');
+    if (!state.isAdmin) {
+      if (toolbar) toolbar.style.display = 'none';
+      return;
+    }
+    if (toolbar) toolbar.style.display = 'flex';
+
+    const safeBind = (id, fn) => {
+      const el = document.getElementById(id);
+      if (el) el.onclick = fn;
+    };
+
+    safeBind('dbg-absent-1', () => simulateAbsence(1));
+    safeBind('dbg-absent-3', () => simulateAbsence(3));
+    safeBind('dbg-absent-7', () => simulateAbsence(7));
+    safeBind('dbg-add-gold', () => {
+      state.gold += 1000;
       updateHUD();
       saveState();
-      showToast('已增加 100 金幣！');
-    };
-    document.getElementById('dbg-damage-50').onclick = () => {
+      showToast('🛡️ GM: 已注入 1,000 金幣！');
+    });
+    safeBind('dbg-damage-50', () => {
       state.currentHp = Math.max(1, state.currentHp - 50);
       updateHUD();
       saveState();
       renderLobbyView();
-    };
-    document.getElementById('dbg-full-heal').onclick = () => {
+    });
+    safeBind('dbg-full-heal', () => {
       state.currentHp = getHeroStats().maxHp;
       updateHUD();
       saveState();
       renderLobbyView();
-    };
-    document.getElementById('dbg-reset-save').onclick = () => {
+      showToast('🛡️ GM: 生命值已完全恢復！');
+    });
+    safeBind('dbg-unlock-items', () => {
+      // GM God-Mode Cheat: Unlock all weapons, armors, relics, max consumables, B15F
+      (GAME_CONFIG.WEAPONS || []).forEach(w => {
+        if (!state.ownedWeapons.includes(w.id)) state.ownedWeapons.push(w.id);
+      });
+      (GAME_CONFIG.ARMORS || []).forEach(a => {
+        if (!state.ownedArmors.includes(a.id)) state.ownedArmors.push(a.id);
+      });
+      (GAME_CONFIG.RELICS || []).forEach(r => {
+        if (!state.ownedRelics.includes(r.id)) state.ownedRelics.push(r.id);
+      });
+      state.inventory.potion = Math.max(state.inventory.potion || 0, 99);
+      state.inventory.guard_scroll = Math.max(state.inventory.guard_scroll || 0, 99);
+      state.gold = Math.max(state.gold, 9999);
+      state.dungeonProgress = Math.max(state.dungeonProgress, 15);
+      state.towerFloor = Math.max(state.towerFloor, 30);
+      state.currentHp = getHeroStats().maxHp;
+      updateHUD();
+      saveState();
+      renderLobbyView();
+      showToast('🛡️ GM 神級特權：已解鎖全套史詩神兵裝備、99瓶聖水與深淵進度！');
+    });
+    safeBind('dbg-reset-save', () => {
       if (confirm('確定要重設當前帳號的本機遊戲進度嗎？')) {
         localStorage.removeItem(getStorageKey());
         state = getDefaultState();
         saveState();
         location.reload();
       }
-    };
+    });
   };
 
   const simulateAbsence = (days) => {
@@ -2956,6 +3612,9 @@ const App = (() => {
     // User is authenticated: restore profile and launch dungeon camp
     setHUDVisible(true);
     loadState();
+    if (SupabaseClient.isAdmin()) {
+      state.isAdmin = true;
+    }
     await SupabaseClient.syncFromCloud();
     checkAbsence();
     updateHUD();
@@ -2981,6 +3640,11 @@ const App = (() => {
     renderCodexView,
     startDungeonBoss,
     startTowerMode,
+    startReviewMode,
+    toggleBookmark,
+    toggleBookmarkInModal,
+    continueAfterCorrection,
+    speakWord,
     selectPos,
     selectMeaning,
     answerType2,

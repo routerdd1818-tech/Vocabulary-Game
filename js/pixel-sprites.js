@@ -237,7 +237,67 @@ const PixelSprites = (() => {
       <circle cx="8" cy="8" r="2.5" fill="#ff4444"/>
       <circle cx="8" cy="8" r="1" fill="#ffffff"/>
       <polygon points="8,0 6,3 10,3" fill="#ffffff"/>
-    `, `pixel-icon pixel-wheel-icon`)
+    `, `pixel-icon pixel-wheel-icon`),
+
+    crown: (size = 16) => wrapSvg(16, 16, `
+      <rect x="2" y="11" width="12" height="3" fill="#c89b3c"/>
+      <rect x="3" y="12" width="10" height="1" fill="#ffd700"/>
+      <polygon points="2,11 4,5 7,9 8,9 11,5 13,11" fill="#ffd700"/>
+      <rect x="3" y="4" width="2" height="2" fill="#ffffff"/>
+      <rect x="7" y="3" width="2" height="2" fill="#ff4444"/>
+      <rect x="11" y="4" width="2" height="2" fill="#ffffff"/>
+      <rect x="4" y="12" width="2" height="1" fill="#e62e2e"/>
+      <rect x="7" y="12" width="2" height="1" fill="#44ddff"/>
+      <rect x="10" y="12" width="2" height="1" fill="#44dd66"/>
+    `, `pixel-icon pixel-crown-icon`),
+
+    castle: (size = 16) => wrapSvg(16, 16, `
+      <rect x="2" y="5" width="3" height="9" fill="#585868"/>
+      <rect x="11" y="5" width="3" height="9" fill="#585868"/>
+      <rect x="2" y="3" width="1" height="2" fill="#787890"/>
+      <rect x="4" y="3" width="1" height="2" fill="#787890"/>
+      <rect x="11" y="3" width="1" height="2" fill="#787890"/>
+      <rect x="13" y="3" width="1" height="2" fill="#787890"/>
+      <rect x="5" y="7" width="6" height="7" fill="#787890"/>
+      <rect x="6" y="5" width="4" height="2" fill="#9090a8"/>
+      <rect x="7" y="10" width="2" height="4" fill="#14121d"/>
+      <rect x="7" y="3" width="2" height="2" fill="#ffd700"/>
+    `, `pixel-icon pixel-castle-icon`),
+
+    key: (size = 16) => wrapSvg(16, 16, `
+      <rect x="2" y="4" width="6" height="6" fill="#c89b3c"/>
+      <rect x="4" y="6" width="2" height="2" fill="#14121d"/>
+      <rect x="7" y="6" width="7" height="2" fill="#ffd700"/>
+      <rect x="11" y="8" width="2" height="2" fill="#ffd700"/>
+      <rect x="13" y="8" width="1" height="2" fill="#ffd700"/>
+    `, `pixel-icon pixel-key-icon`),
+
+    book: (size = 16) => wrapSvg(16, 16, `
+      <rect x="2" y="3" width="12" height="10" fill="#6a3082"/>
+      <rect x="2" y="3" width="2" height="10" fill="#4a1860"/>
+      <rect x="5" y="4" width="8" height="8" fill="#f4ecd8"/>
+      <rect x="7" y="6" width="4" height="4" fill="#ffd700"/>
+      <rect x="8" y="2" width="2" height="5" fill="#e62e2e"/>
+    `, `pixel-icon pixel-book-icon`),
+
+    bookmark: (size = 16) => wrapSvg(16, 16, `
+      <rect x="4" y="2" width="8" height="12" fill="#e62e2e"/>
+      <polygon points="4,14 8,11 12,14" fill="#14121d"/>
+      <rect x="6" y="4" width="4" height="4" fill="#ffd700"/>
+    `, `pixel-icon pixel-bookmark-icon`),
+
+    magic: (size = 16) => wrapSvg(16, 16, `
+      <rect x="7" y="1" width="2" height="14" fill="#b066ff"/>
+      <rect x="1" y="7" width="14" height="2" fill="#b066ff"/>
+      <rect x="4" y="4" width="8" height="8" fill="#00ffff"/>
+      <rect x="6" y="6" width="4" height="4" fill="#ffffff"/>
+    `, `pixel-icon pixel-magic-icon`),
+
+    quill: (size = 16) => wrapSvg(16, 16, `
+      <polygon points="12,2 14,4 5,13 3,13 3,11" fill="#eeddbb"/>
+      <polygon points="12,2 14,4 10,8 8,6" fill="#4fe3ff"/>
+      <rect x="2" y="13" width="2" height="2" fill="#14121d"/>
+    `, `pixel-icon pixel-quill-icon`)
   };
 
   // Dynamic Multi-Class & Multi-Tier Equipment Pixel Hero Paper Doll (64x64)
