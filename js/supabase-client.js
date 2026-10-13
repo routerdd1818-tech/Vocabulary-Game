@@ -130,14 +130,32 @@ const SupabaseClient = (() => {
     return (u.toLowerCase() === ADMIN_CREDENTIALS.username.toLowerCase() || e.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase());
   };
 
+  // Helper: Validate standard UUID v4 format
+  const isValidUUID = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+  };
+
+  // Helper: Generate valid UUID v4
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   // Helper: Format username or email into a valid email
   const normalizeEmail = (accountInput) => {
     const trimmed = (accountInput || '').trim();
     if (trimmed.includes('@')) {
       return trimmed;
     }
-    // If entered as username, format as pseudo-email for Supabase Auth
-    return `${trimmed.toLowerCase()}@worddungeon.player`;
+    // If entered as username, format as pseudo-email for Supabase Auth with standard .com TLD
+    return `${trimmed.toLowerCase()}@worddungeon.com`;
   };
 
   // Sign In with Account (Username or Email) & Password
@@ -152,7 +170,7 @@ const SupabaseClient = (() => {
       cleanPassword === ADMIN_CREDENTIALS.password
     ) {
       currentUser = {
-        id: 'admin_tangghgh',
+        id: '00000000-0000-4000-a000-000000000001',
         email: ADMIN_CREDENTIALS.email,
         username: ADMIN_CREDENTIALS.username,
         hero_name: ADMIN_CREDENTIALS.heroName,
@@ -163,13 +181,12 @@ const SupabaseClient = (() => {
       return { user: currentUser };
     }
 
-    const formattedEmail = normalizeEmail(rawAccount);
     const c = getClient();
     if (!c) {
       // Local fallback session
       currentUser = {
-        id: 'local_' + btoa(rawAccount).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12),
-        email: formattedEmail,
+        id: generateUUID(),
+        email: normalizeEmail(rawAccount),
         username: rawAccount.split('@')[0],
         hero_name: '冒險者 ' + rawAccount.split('@')[0],
         isAdmin: false
@@ -178,19 +195,51 @@ const SupabaseClient = (() => {
       return { user: currentUser };
     }
 
+    // Determine login email: if username without @, check if profiles has _accountEmail in inventory
+    let loginEmail = rawAccount;
+    if (!rawAccount.includes('@')) {
+      try {
+        const { data: prof } = await c
+          .from('profiles')
+          .select('id, username, inventory')
+          .ilike('username', rawAccount)
+          .maybeSingle();
+
+        if (prof && prof.inventory && prof.inventory._accountEmail) {
+          loginEmail = prof.inventory._accountEmail;
+        } else {
+          loginEmail = normalizeEmail(rawAccount);
+        }
+      } catch (lookupErr) {
+        loginEmail = normalizeEmail(rawAccount);
+      }
+    }
+
     try {
       const { data, error } = await c.auth.signInWithPassword({
-        email: formattedEmail,
+        email: loginEmail,
         password: cleanPassword
       });
 
       if (error) {
         // If error is "Email not confirmed", auto-bypass to satisfy user request!
         if (error.message && error.message.toLowerCase().includes('confirm')) {
-          console.warn('Auto-bypassing email confirmation for player:', formattedEmail);
+          console.warn('Auto-bypassing email confirmation for player:', loginEmail);
+          let resolvedId = null;
+          try {
+            const { data: prof } = await c
+              .from('profiles')
+              .select('id')
+              .ilike('username', rawAccount.split('@')[0])
+              .maybeSingle();
+            if (prof && isValidUUID(prof.id)) {
+              resolvedId = prof.id;
+            }
+          } catch (e) {}
+
           currentUser = {
-            id: 'confirmed_' + btoa(formattedEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 14),
-            email: formattedEmail,
+            id: resolvedId || generateUUID(),
+            email: loginEmail,
             username: rawAccount.split('@')[0],
             hero_name: '單字勇者',
             isAdmin: false
@@ -210,11 +259,23 @@ const SupabaseClient = (() => {
       await syncFromCloud();
       return data;
     } catch (err) {
-      // Handle email not confirmed by setting graceful active local session
+      // Handle email not confirmed by setting graceful active local session with valid UUID
       if (err.message && err.message.toLowerCase().includes('confirm')) {
+        let resolvedId = null;
+        try {
+          const { data: prof } = await c
+            .from('profiles')
+            .select('id')
+            .ilike('username', rawAccount.split('@')[0])
+            .maybeSingle();
+          if (prof && isValidUUID(prof.id)) {
+            resolvedId = prof.id;
+          }
+        } catch (e) {}
+
         currentUser = {
-          id: 'user_' + btoa(formattedEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 14),
-          email: formattedEmail,
+          id: resolvedId || generateUUID(),
+          email: loginEmail,
           username: rawAccount.split('@')[0],
           hero_name: '單字勇者',
           isAdmin: false
@@ -240,7 +301,7 @@ const SupabaseClient = (() => {
       password === ADMIN_CREDENTIALS.password
     ) {
       currentUser = {
-        id: 'admin_tangghgh',
+        id: '00000000-0000-4000-a000-000000000001',
         email: ADMIN_CREDENTIALS.email,
         username: ADMIN_CREDENTIALS.username,
         hero_name: ADMIN_CREDENTIALS.heroName,
@@ -288,8 +349,11 @@ const SupabaseClient = (() => {
     } catch (signInErr) {
       // If sign in fails due to email confirm check, bypass immediately!
       console.warn('Auto-login bypass for confirm email requirement:', signInErr);
+      const assignedId = (signupData?.user?.id && isValidUUID(signupData.user.id)) 
+        ? signupData.user.id 
+        : generateUUID();
       currentUser = {
-        id: signupData?.user?.id || 'usr_' + Date.now(),
+        id: assignedId,
         email: formattedEmail,
         username: cleanUsername,
         hero_name: cleanHeroName,
@@ -303,7 +367,7 @@ const SupabaseClient = (() => {
     }
 
     // 3. Immediately upsert profile
-    if (currentUser && c) {
+    if (currentUser && c && isValidUUID(currentUser.id)) {
       try {
         await c.from('profiles').upsert({
           id: currentUser.id,
@@ -314,7 +378,15 @@ const SupabaseClient = (() => {
           gold: 60,
           current_hp: 120,
           streak: 1,
-          last_active_timestamp: Date.now()
+          inventory: {
+            _heroClass: 'knight',
+            _lotteryPity: 0,
+            _accountEmail: formattedEmail,
+            _bookmarkedWords: [],
+            _mistakeWords: []
+          },
+          last_active_timestamp: Date.now(),
+          updated_at: new Date().toISOString()
         });
       } catch (upsertErr) {
         console.warn('Initial profile upsert notice:', upsertErr);
@@ -340,66 +412,120 @@ const SupabaseClient = (() => {
 
   // Download Profile from Supabase
   const syncFromCloud = async () => {
-    if (!currentUser || !client) return;
+    if (!currentUser) return null;
+    const c = getClient();
+    if (!c) return null;
 
     try {
-      const { data, error } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
+      let profileData = null;
 
-      if (error && error.code !== 'PGRST116') {
-        return;
+      // 1. Try querying by user ID if it is a valid UUID
+      if (isValidUUID(currentUser.id)) {
+        const { data, error } = await c
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          profileData = data;
+        }
       }
 
-      if (data) {
-        if (window.App && typeof window.App.applyCloudProfile === 'function') {
-          window.App.applyCloudProfile(data);
+      // 2. Fallback: Query by username if ID didn't match or was fallback
+      if (!profileData) {
+        const targetUsername = currentUser.user_metadata?.username || currentUser.username || (currentUser.email ? currentUser.email.split('@')[0] : '');
+        if (targetUsername) {
+          const { data, error } = await c
+            .from('profiles')
+            .select('*')
+            .ilike('username', targetUsername)
+            .maybeSingle();
+
+          if (!error && data) {
+            profileData = data;
+            // Adopt the remote profile's valid UUID!
+            if (isValidUUID(data.id)) {
+              currentUser.id = data.id;
+              saveLocalSession(currentUser);
+            }
+          }
         }
+      }
+
+      if (profileData) {
+        if (window.App && typeof window.App.applyCloudProfile === 'function') {
+          window.App.applyCloudProfile(profileData);
+        }
+        return profileData;
       }
     } catch (e) {
       console.warn('Sync from cloud exception:', e);
     }
+    return null;
   };
 
   // Upload current game state to Supabase
   const syncToCloud = async (state) => {
-    if (!currentUser || !client) return;
+    if (!currentUser) return;
+    const c = getClient();
+    if (!c) return;
+
+    // Ensure valid UUID
+    if (!isValidUUID(currentUser.id)) {
+      const targetUsername = currentUser.user_metadata?.username || currentUser.username || (currentUser.email ? currentUser.email.split('@')[0] : '');
+      if (targetUsername) {
+        try {
+          const { data } = await c.from('profiles').select('id').ilike('username', targetUsername).maybeSingle();
+          if (data && isValidUUID(data.id)) {
+            currentUser.id = data.id;
+            saveLocalSession(currentUser);
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!isValidUUID(currentUser.id)) {
+      console.warn('Sync to cloud aborted: invalid user UUID', currentUser.id);
+      return;
+    }
 
     try {
+      const inventoryData = Object.assign({}, state.inventory || {}, {
+        _heroClass: state.heroClass || 'knight',
+        _lotteryPity: state.lotteryPity || 0,
+        _bookmarkedWords: state.bookmarkedWords || [],
+        _mistakeWords: state.mistakeWords || [],
+        _accountEmail: currentUser.email || ''
+      });
+
       const payload = {
         id: currentUser.id,
-        hero_name: state.heroName,
-        tower_floor: state.towerFloor,
-        tower_record_floor: Math.max(state.towerFloor, state.towerRecordFloor),
-        tower_points: state.towerPoints,
-        gold: state.gold,
-        current_hp: state.currentHp,
-        streak: state.streak,
-        equipped_weapon: state.equippedWeapon,
-        equipped_armor: state.equippedArmor,
-        equipped_relic: state.equippedRelic,
-        owned_weapons: state.ownedWeapons,
-        owned_armors: state.ownedArmors,
-        bookmarked_words: state.bookmarkedWords || [],
-        mistake_words: state.mistakeWords || [],
-        inventory: Object.assign({}, state.inventory, {
-          _heroClass: state.heroClass || 'knight',
-          _lotteryPity: state.lotteryPity || 0,
-          _bookmarkedWords: state.bookmarkedWords || [],
-          _mistakeWords: state.mistakeWords || []
-        }),
-        dungeon_progress: state.dungeonProgress,
-        dungeon_first_cleared: state.dungeonFirstCleared,
-        vocab_stats: state.vocabStats,
-        bestiary_unlocked: state.bestiaryUnlocked,
+        username: currentUser.user_metadata?.username || currentUser.username || (currentUser.email ? currentUser.email.split('@')[0] : 'hero'),
+        hero_name: state.heroName || '單字勇者',
+        tower_floor: state.towerFloor || 1,
+        tower_record_floor: Math.max(state.towerFloor || 1, state.towerRecordFloor || 1),
+        tower_points: state.towerPoints || 0,
+        gold: state.gold !== undefined ? state.gold : 60,
+        current_hp: state.currentHp !== undefined ? state.currentHp : 120,
+        streak: state.streak || 1,
+        equipped_weapon: state.equippedWeapon || 'w1',
+        equipped_armor: state.equippedArmor || 'a1',
+        equipped_relic: state.equippedRelic || null,
+        owned_weapons: Array.isArray(state.ownedWeapons) ? state.ownedWeapons : ['w1'],
+        owned_armors: Array.isArray(state.ownedArmors) ? state.ownedArmors : ['a1'],
+        owned_relics: Array.isArray(state.ownedRelics) ? state.ownedRelics : [],
+        inventory: inventoryData,
+        dungeon_progress: state.dungeonProgress || 1,
+        dungeon_first_cleared: Array.isArray(state.dungeonFirstCleared) ? state.dungeonFirstCleared : [],
+        vocab_stats: state.vocabStats || {},
+        bestiary_unlocked: Array.isArray(state.bestiaryUnlocked) ? state.bestiaryUnlocked : [],
         leave_pass_expires: state.leavePassExpires || 0,
         last_active_timestamp: state.lastActiveTimestamp || Date.now(),
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await client
+      const { error } = await c
         .from('profiles')
         .upsert(payload);
 

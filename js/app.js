@@ -99,11 +99,11 @@ const App = (() => {
   };
 
   // Save & Load (Independent per user)
-  const saveState = () => {
+  const saveState = (syncCloud = true) => {
     try {
       const key = getStorageKey();
       localStorage.setItem(key, JSON.stringify(state));
-      if (window.SupabaseClient && SupabaseClient.isLoggedIn()) {
+      if (syncCloud && window.SupabaseClient && SupabaseClient.isLoggedIn()) {
         SupabaseClient.syncToCloud(state);
       }
     } catch (e) {
@@ -2906,22 +2906,35 @@ const App = (() => {
     if (data.owned_weapons) state.ownedWeapons = data.owned_weapons;
     if (data.owned_armors) state.ownedArmors = data.owned_armors;
     if (data.owned_relics) state.ownedRelics = data.owned_relics;
-    if (data.inventory) state.inventory = data.inventory;
+    if (data.inventory) state.inventory = Object.assign({}, data.inventory);
     if (data.dungeon_progress) state.dungeonProgress = data.dungeon_progress;
     if (data.dungeon_first_cleared) state.dungeonFirstCleared = data.dungeon_first_cleared;
     if (data.vocab_stats) state.vocabStats = data.vocab_stats;
     if (data.bestiary_unlocked) state.bestiaryUnlocked = data.bestiary_unlocked;
     if (data.leave_pass_expires) state.leavePassExpires = data.leave_pass_expires;
-    if (data.hero_class) state.heroClass = data.hero_class;
-    if (data.inventory && data.inventory._heroClass) state.heroClass = data.inventory._heroClass;
-    if (data.inventory && data.inventory._lotteryPity !== undefined) state.lotteryPity = data.inventory._lotteryPity;
-    if (data.bookmarked_words && Array.isArray(data.bookmarked_words)) state.bookmarkedWords = data.bookmarked_words;
-    if (data.mistake_words && Array.isArray(data.mistake_words)) state.mistakeWords = data.mistake_words;
+    if (data.last_active_timestamp) state.lastActiveTimestamp = data.last_active_timestamp;
 
-    saveState();
+    if (data.inventory && data.inventory._heroClass) state.heroClass = data.inventory._heroClass;
+    else if (data.hero_class) state.heroClass = data.hero_class;
+
+    if (data.inventory && data.inventory._lotteryPity !== undefined) state.lotteryPity = data.inventory._lotteryPity;
+
+    if (data.inventory && Array.isArray(data.inventory._bookmarkedWords)) {
+      state.bookmarkedWords = data.inventory._bookmarkedWords;
+    } else if (data.bookmarked_words && Array.isArray(data.bookmarked_words)) {
+      state.bookmarkedWords = data.bookmarked_words;
+    }
+
+    if (data.inventory && Array.isArray(data.inventory._mistakeWords)) {
+      state.mistakeWords = data.inventory._mistakeWords;
+    } else if (data.mistake_words && Array.isArray(data.mistake_words)) {
+      state.mistakeWords = data.mistake_words;
+    }
+
+    saveState(false);
     updateHUD();
     renderLobbyView();
-    showToast(`雲端存檔已同步！歡迎勇者 ${state.heroName}！`);
+    showToast(`雲端進度已同步！歡迎勇者 ${state.heroName}！`);
   };
 
   const calculateOverallAccuracy = () => {
@@ -3676,9 +3689,23 @@ const App = (() => {
     handleSignup,
     handleLogout,
     handleSaveSupabaseConfig,
-    applyCloudProfile
+    applyCloudProfile,
+    saveState: (syncCloud) => saveState(syncCloud)
   };
 })();
+
+// Mobile & Desktop Lifecycle Cloud Sync
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && window.SupabaseClient && SupabaseClient.isLoggedIn() && window.App) {
+    App.saveState(true);
+  }
+});
+
+window.addEventListener('beforeunload', () => {
+  if (window.SupabaseClient && SupabaseClient.isLoggedIn() && window.App) {
+    App.saveState(true);
+  }
+});
 
 // Start application when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
