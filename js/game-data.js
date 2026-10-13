@@ -482,14 +482,8 @@ const GAME_CONFIG = {
     { day: 7, gold: 150, item: 'guard_scroll', count: 2, label: '150 金幣 + 護樓卷x2' }
   ],
 
-  // Initial Competitors in Tower Leaderboard
-  INITIAL_LEADERBOARD: [
-    { name: '神話審判長・雷恩', floor: 885, accuracy: 96.4, streak: 142, weapon: 'w6', quote: 'GRE 詞彙只是清晨的微風。' },
-    { name: '金色證書・艾莉絲', floor: 730, accuracy: 94.2, streak: 89, weapon: 'w5', quote: '多益滿分不過是登塔的起點。' },
-    { name: '暗影行者・克洛德', floor: 512, accuracy: 91.8, streak: 45, weapon: 'w4', quote: '堅持每天背，地牢也能走成平地。' },
-    { name: '北歐遊俠・英格麗', floor: 360, accuracy: 89.5, streak: 31, weapon: 'w3', quote: '防禦裝備備齊，爬塔掉層不怕！' },
-    { name: '初階見習生・小莫', floor: 78, accuracy: 82.0, streak: 7, weapon: 'w2', quote: '今天也要努力完成每日目標！' }
-  ],
+  // Initial Competitors in Tower Leaderboard (No dummy NPCs, real Supabase players only)
+  INITIAL_LEADERBOARD: [],
 
   // Goblin Dungeon Lottery / Fate Roulette (30 Gold, 9999 Gold Jackpot)
   LOTTERY: {

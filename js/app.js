@@ -358,6 +358,30 @@ const App = (() => {
     return unique.slice(0, count);
   };
 
+  // Dojo Vocabulary Pool Selector
+  const getDojoVocabPool = (category) => {
+    let tiers = [1, 2];
+    if (category === 'elementary') tiers = [1, 2, 3];
+    else if (category === 'highschool') tiers = [4, 5, 6, 7, 8];
+    else if (category === 'toeic') tiers = [10, 11, 12, 13];
+    else if (category === 'gre') tiers = [9, 14, 15];
+    else if (category === 'mistakes') {
+      const targetIds = Array.from(new Set([...(state.mistakeWords || []), ...(state.bookmarkedWords || [])]));
+      const list = getAllTrackedVocabList(targetIds);
+      if (list.length > 0) return list;
+      tiers = [1, 2, 3, 4, 5];
+    } else {
+      tiers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    }
+
+    const fullPool = [];
+    tiers.forEach(t => {
+      const p = getTierVocabPool(t);
+      if (p && p.length > 0) fullPool.push(...p);
+    });
+    return fullPool.length > 0 ? fullPool : getTierVocabPool(1);
+  };
+
   // SRS Weighted Question Selection
   const pickVocab = (tier) => {
     globalTurnCounter++;
@@ -367,6 +391,8 @@ const App = (() => {
       const targetIds = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])]));
       pool = getAllTrackedVocabList(targetIds);
       if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 8);
+    } else if (battle.mode === 'dojo') {
+      pool = getDojoVocabPool(battle.dojoCategory || 'all');
     } else {
       pool = getTierVocabPool(tier);
       if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 5);
@@ -417,7 +443,7 @@ const App = (() => {
   const generateQuestion = (tier) => {
     const vocab = pickVocab(tier);
     const type = Math.floor(Math.random() * 4) + 1;
-    const tierPool = getTierVocabPool(tier);
+    const tierPool = battle.mode === 'dojo' ? getDojoVocabPool(battle.dojoCategory || 'all') : getTierVocabPool(tier);
 
     let qData = {
       type: type,
@@ -697,8 +723,8 @@ const App = (() => {
         </div>
       </div>
 
-      <!-- Main Dual Game Modes -->
-      <div class="modes-grid">
+      <!-- Main Trio Game Modes -->
+      <div class="modes-grid modes-grid-3">
         <button class="pixel-btn-mode mode-btn-tower" id="btn-mode-tower">
           ${PixelSprites.icon('tower', 28)}
           <div>挑戰登塔模式</div>
@@ -711,6 +737,13 @@ const App = (() => {
           <div>地下城討伐戰</div>
           <div class="mode-desc">15大固定Boss・耐戰高題量</div>
           <span style="font-size:11px; color:#ff9999;">目前開放至: B${state.dungeonProgress}F</span>
+        </button>
+
+        <button class="pixel-btn-mode mode-btn-dojo" id="btn-mode-dojo">
+          ${PixelSprites.icon('sword', 28)}
+          <div style="color:var(--gold); font-size:15px; font-weight:bold;">⚔️ 修煉道場 (到場)</div>
+          <div class="mode-desc">自選題庫・無傷切磋・熟練詞彙・無限連擊</div>
+          <span style="font-size:11px; color:#ffe082;">自由練習・單字專修</span>
         </button>
       </div>
 
@@ -730,7 +763,7 @@ const App = (() => {
         </button>
         <button class="pixel-btn-sub" id="btn-open-checkin">
           ${PixelSprites.icon('calendar', 20)}
-          <span>七日簽到</span>
+          <span>每日到場簽到</span>
         </button>
         <button class="pixel-btn-sub btn-lottery-highlight" id="btn-open-lottery">
           ${PixelSprites.icon('dice', 20)}
@@ -779,6 +812,7 @@ const App = (() => {
   const bindLobbyEvents = () => {
     document.getElementById('btn-mode-tower').onclick = () => startTowerMode();
     document.getElementById('btn-mode-dungeon').onclick = () => renderDungeonSelectView();
+    document.getElementById('btn-mode-dojo').onclick = () => showDojoSelectModal();
     document.getElementById('btn-open-tavern').onclick = () => renderShopView('food');
     document.getElementById('btn-open-shop').onclick = () => renderShopView('equip');
     document.getElementById('btn-open-codex').onclick = () => renderCodexView('bookmarks');
@@ -905,6 +939,80 @@ const App = (() => {
     battle.stoneArmorCooldown = 0;
 
     setupTowerFloorMonster();
+    AudioManager.play('click');
+    loadNextQuestion();
+  };
+
+  // Dojo Selection Modal & Mode Starter (修煉道場 / 到場)
+  const showDojoSelectModal = () => {
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog modal-dialog-gold" onclick="event.stopPropagation()">
+          <div class="modal-title">${PixelSprites.icon('sword', 16)} 勇者修煉道場 (到場自選試煉)</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+            在道場中可無壓力自由修煉單字，每題答對皆賺取金幣與連擊，答錯不致命並自動收錄至錯題簿：
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="dojo-tier-card" onclick="App.startDojoMode('elementary')">
+              <div style="font-weight:bold; color:#77ffaa; font-size:13px;">📗 基礎與生活日常 (國中小 Level 1-3)</div>
+              <div style="font-size:11px; color:#a0b8a0;">涵蓋約 2,200 基礎生活單字，奠定扎實英文基礎</div>
+            </button>
+
+            <button class="dojo-tier-card" onclick="App.startDojoMode('highschool')">
+              <div style="font-weight:bold; color:#4fe3ff; font-size:13px;">📘 高中大考 7000 單 (Level 4-8)</div>
+              <div style="font-size:11px; color:#a0c0e0;">大考必備、閱讀進階字彙與高頻克漏字題目</div>
+            </button>
+
+            <button class="dojo-tier-card" onclick="App.startDojoMode('toeic')">
+              <div style="font-weight:bold; color:#ffaa44; font-size:13px;">📙 TOEIC 多益職場商務 (商務金證必考)</div>
+              <div style="font-size:11px; color:#e0b090;">辦公室、會議談判、商務電郵與差旅核心單字</div>
+            </button>
+
+            <button class="dojo-tier-card" onclick="App.startDojoMode('gre')">
+              <div style="font-weight:bold; color:#e080ff; font-size:13px;">📕 GRE / 托福 高階殿堂 (留學學術字彙)</div>
+              <div style="font-size:11px; color:#cca0e0;">學術殿堂、邏輯思辨、高端詞彙全面挑戰</div>
+            </button>
+
+            <button class="dojo-tier-card" onclick="App.startDojoMode('mistakes')">
+              <div style="font-weight:bold; color:#ff6666; font-size:13px;">🛡️ 勇者錯題專修庫 (個人專屬弱點強化)</div>
+              <div style="font-size:11px; color:#e09090;">針對您的近期錯題 (${(state.mistakeWords || []).length} 題) 與收藏庫集中出題精準打擊</div>
+            </button>
+
+            <button class="dojo-tier-card" onclick="App.startDojoMode('all')">
+              <div style="font-weight:bold; color:var(--gold); font-size:13px;">🌟 全單字庫綜合無盡試煉 (10,000+ 詞彙)</div>
+              <div style="font-size:11px; color:var(--gold-light);">完全隨機挑戰，測試勇者的真實詞彙綜合實力</div>
+            </button>
+          </div>
+
+          <button class="modal-close-btn" style="margin-top:10px;" onclick="App.closeModal()">返回大廳</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const startDojoMode = (categoryKey = 'all') => {
+    closeModal();
+    battle.active = true;
+    battle.mode = 'dojo';
+    battle.dojoCategory = categoryKey;
+    battle.enemyName = '道場木人樁・修煉傀儡';
+    battle.enemyMaxHp = 99999;
+    battle.enemyCurrentHp = 99999;
+    battle.enemyAtk = 0;
+    battle.enemyDef = 4;
+    battle.timeLimit = 20.0;
+    battle.bossTrait = null;
+    battle.minionKey = 'dojo_dummy';
+    battle.combo = 0;
+    battle.correctInSession = 0;
+    battle.totalInSession = 0;
+    battle.currentTurn = 1;
+    battle.timeReductionNext = 0;
+    battle.burnTurns = 0;
+    battle.stoneArmorCooldown = 0;
+
     AudioManager.play('click');
     loadNextQuestion();
   };
@@ -1115,8 +1223,58 @@ const App = (() => {
       `;
     }
 
+    // Stage Banner Bar
+    let stageBannerHtml = '';
+    if (battle.mode === 'dungeon') {
+      const boss = GAME_CONFIG.DUNGEON_BOSSES.find(b => b.id === battle.stageId);
+      const stageName = boss ? boss.name : `B${battle.stageId}F 領主`;
+      stageBannerHtml = `
+        <div class="stage-banner-bar">
+          <span class="stage-banner-tag dungeon-tag">${PixelSprites.icon('skull', 12)} B${battle.stageId}F 地下城領地</span>
+          <span class="stage-banner-title">${stageName}</span>
+          <span style="font-size:10px; color:#ff9999;">魔王關卡: ${battle.stageId} / 15</span>
+        </div>
+      `;
+    } else if (battle.mode === 'tower') {
+      let altitudeName = '夜幕要塞階梯 (1-20F)';
+      const f = state.towerFloor;
+      if (f > 500) altitudeName = '星河創世神殿 (501-1000F)';
+      else if (f > 250) altitudeName = '極光極限秘境 (251-500F)';
+      else if (f > 100) altitudeName = '暮光星穹觀景台 (101-250F)';
+      else if (f > 50) altitudeName = '蔚藍平流層神廟 (51-100F)';
+      else if (f > 20) altitudeName = '晨曦雲海迴廊 (21-50F)';
+
+      stageBannerHtml = `
+        <div class="stage-banner-bar">
+          <span class="stage-banner-tag tower-tag">${PixelSprites.icon('tower', 12)} 通天塔第 ${state.towerFloor} 層</span>
+          <span class="stage-banner-title">${altitudeName}</span>
+          <span style="color:#4fe3ff; font-weight:bold;">${state.towerPoints} / 5 積分</span>
+        </div>
+      `;
+    } else if (battle.mode === 'dojo') {
+      const catLabels = {
+        elementary: '基礎生活 (國中小 1-3)',
+        highschool: '高中大考 7000 單 (4-8)',
+        toeic: 'TOEIC 多益職場商務',
+        gre: 'GRE / 托福 高階殿堂',
+        mistakes: '錯題強化專修庫',
+        all: '全單字庫綜合試煉'
+      };
+      const catName = catLabels[battle.dojoCategory] || '自由修煉';
+      stageBannerHtml = `
+        <div class="stage-banner-bar">
+          <span class="stage-banner-tag dojo-tag">${PixelSprites.icon('sword', 12)} 勇者修煉道場 (到場)</span>
+          <span class="stage-banner-title">${catName}</span>
+          <span style="color:#ffd700; font-weight:bold;">連擊 x${battle.combo}</span>
+        </div>
+      `;
+    }
+
     const html = `
       <div class="battle-arena-wrapper">
+        <!-- Stage & Floor Indicator -->
+        ${stageBannerHtml}
+
         <!-- Battle Top Info Bar -->
         <div class="battle-header-info">
           <div>
@@ -1130,7 +1288,7 @@ const App = (() => {
         ${towerBlockHtml}
 
         <!-- Medieval Combat Duel Stage -->
-        <div class="duel-stage ${battle.mode === 'dungeon' ? 'stage-medieval-dungeon' : 'stage-medieval-tower'}" id="duel-stage">
+        <div class="duel-stage ${battle.mode === 'dungeon' ? 'stage-medieval-dungeon' : battle.mode === 'dojo' ? 'stage-medieval-dojo' : 'stage-medieval-tower'}" id="duel-stage">
           <div class="medieval-arena-backdrop">
             ${PixelSprites.renderMedievalBackdrop(battle.mode, battle.stageId, state.towerFloor)}
           </div>
@@ -1366,6 +1524,14 @@ const App = (() => {
     // Reduce Enemy HP
     battle.enemyCurrentHp = Math.max(0, battle.enemyCurrentHp - damage);
 
+    if (battle.mode === 'dojo') {
+      state.gold += 2;
+      AudioManager.play('coin');
+      showFloatingText('hero-floating-box', '+2G', 'dmg-heal');
+      setTimeout(() => loadNextQuestion(), 600);
+      return;
+    }
+
     if (battle.mode === 'dungeon' || battle.mode === 'review') {
       if (battle.enemyCurrentHp <= 0) {
         setTimeout(() => onDungeonVictory(), 500);
@@ -1403,6 +1569,16 @@ const App = (() => {
 
   // Enemy Attack Calculation
   const executeEnemyAttack = (feedbackMsg) => {
+    if (battle.mode === 'dojo') {
+      battle.combo = 0;
+      showFloatingText('hero-floating-box', '木人格擋！', 'dmg-hero');
+      AudioManager.play('playerHurt');
+      setTimeout(() => {
+        showCorrectionModal(battle.currentQuestion, feedbackMsg || '道場木人招式拆解');
+      }, 400);
+      return;
+    }
+
     const heroStats = getHeroStats();
     let enemyAtk = battle.enemyAtk;
     let pierce = 0;
@@ -1669,6 +1845,34 @@ const App = (() => {
     }
   };
 
+  // Full-screen Floor Up Splash Celebration Overlay
+  const showFloorUpCelebration = (newFloor, floorGold) => {
+    let altitudeTitle = '踏入夜幕要塞！';
+    if (newFloor > 500) altitudeTitle = '登臨星河創世神殿！即將觸及終極神格！';
+    else if (newFloor > 250) altitudeTitle = '穿越極光天幕！進入極限冰晶秘境！';
+    else if (newFloor > 100) altitudeTitle = '穿過雲層！抵達暮光星穹觀景台！';
+    else if (newFloor > 50) altitudeTitle = '突破平流層！蔚藍神殿在眼前展開！';
+    else if (newFloor > 20) altitudeTitle = '踏破石階！升上海拔千米晨曦雲海！';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'floor-up-splash-overlay';
+    overlay.id = 'floor-up-splash';
+    overlay.innerHTML = `
+      <div class="floor-up-splash-box">
+        <div class="splash-badge">FLOOR UP! 晉升新樓層</div>
+        <div class="splash-title">${PixelSprites.icon('tower', 24)} 恭喜突破至 ${newFloor}F！</div>
+        <div class="splash-desc">${altitudeTitle}</div>
+        <div class="splash-sub">💰 獲取晉級突破賞金 +${floorGold} 金幣！守衛實力已同步提升！</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('fade-out');
+      setTimeout(() => overlay.remove(), 400);
+    }, 1300);
+  };
+
   // Tower Floor Advance
   const onTowerFloorAdvance = () => {
     state.towerFloor++;
@@ -1695,8 +1899,11 @@ const App = (() => {
     saveState();
     updateHUD();
 
+    // Trigger visual floor-up splash celebration!
+    showFloorUpCelebration(state.towerFloor, floorGold);
+
     setupTowerFloorMonster();
-    setTimeout(() => loadNextQuestion(), 1000);
+    setTimeout(() => loadNextQuestion(), 1600);
   };
 
   // Dungeon Victory
@@ -1769,6 +1976,9 @@ const App = (() => {
     clearInterval(battle.timerId);
     battle.active = false;
     AudioManager.play('click');
+    if (battle.mode === 'dojo') {
+      showToast(`道場修煉告一段落！本次答對 ${battle.correctInSession} 題，累計獲得 ${battle.correctInSession * 2} 金幣！`);
+    }
     renderLobbyView();
   };
 
@@ -2369,7 +2579,7 @@ const App = (() => {
       if (cloudData && cloudData.length > 0) {
         rivals = cloudData.map(c => {
           const userObj = SupabaseClient.getUser();
-          const isMe = userObj && userObj.id === c.id;
+          const isMe = userObj && (userObj.id === c.id || (userObj.user_metadata?.username && userObj.user_metadata.username === c.username));
           return {
             name: `${c.hero_name || '單字勇者'}${isMe ? ' (你)' : ''}`,
             floor: c.tower_record_floor || 1,
@@ -2382,19 +2592,24 @@ const App = (() => {
       }
     }
 
-    if (!isFromSupabase) {
-      // Local fallback rivals
-      rivals = [...GAME_CONFIG.INITIAL_LEADERBOARD];
-      const playerEntry = {
+    const isLoggedIn = window.SupabaseClient && SupabaseClient.isLoggedIn();
+    const currentUser = isLoggedIn ? SupabaseClient.getUser() : null;
+
+    // Ensure current player is always represented in the leaderboard
+    const hasSelf = rivals.some(r => r.isSelf);
+    if (!hasSelf) {
+      rivals.push({
         name: `${state.heroName} (你)`,
         floor: state.towerRecordFloor,
         streak: state.streak,
         isSelf: true,
-        quote: '一步一步登上 1000 樓！'
-      };
-      rivals.push(playerEntry);
-      rivals.sort((a, b) => b.floor - a.floor);
+        quote: (currentUser && (currentUser.user_metadata?.username || currentUser.username)) 
+          ? `@${currentUser.user_metadata?.username || currentUser.username}` 
+          : '一步一步登上 1000 樓！'
+      });
     }
+
+    rivals.sort((a, b) => b.floor - a.floor);
 
     const rowsHtml = rivals.map((r, idx) => `
       <div class="goal-item" style="${r.isSelf ? 'border-color:var(--gold); background:#27203b;' : ''}">
@@ -2412,31 +2627,23 @@ const App = (() => {
       </div>
     `).join('');
 
-    const isLoggedIn = window.SupabaseClient && SupabaseClient.isLoggedIn();
-    const currentUser = isLoggedIn ? SupabaseClient.getUser() : null;
-
     const modalHtml = `
       <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
         <div class="modal-dialog modal-dialog-gold" onclick="event.stopPropagation()">
           <div class="modal-title">${PixelSprites.icon('trophy', 16)} 通天塔勇者全球排行榜</div>
 
-          <!-- Supabase Auth Status Banner -->
-          <div style="background:#191428; border:1px solid #4a386c; padding:8px; display:flex; justify-content:space-between; align-items:center;">
+          <!-- Supabase Unified Auth Status Banner -->
+          <div style="background:#191428; border:1px solid #4a386c; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
             <div>
-              ${isLoggedIn ? `
-                <div style="font-size:11px; color:#77ffaa; font-weight:bold;">👑 雲端連線：${currentUser.email}</div>
-                <div style="font-size:10px; color:#a090b8;">進度自動即時同步至 Supabase</div>
-              ` : `
-                <div style="font-size:11px; color:#caa0ff; font-weight:bold;">⚡ 訪客模式 (本地存檔)</div>
-                <div style="font-size:10px; color:#a090b8;">登入帳號即可參與即時全球玩家競賽！</div>
-              `}
+              <div style="font-size:11px; color:#77ffaa; font-weight:bold;">
+                👑 冒險者公會通行：${currentUser ? (currentUser.user_metadata?.username || currentUser.username || currentUser.email) : state.heroName}
+              </div>
+              <div style="font-size:10px; color:#a090b8;">
+                ${isFromSupabase ? '🟢 即時連線至 Supabase 全球天梯' : '🟡 雲端連線中・進度即時自動同步'}
+              </div>
             </div>
             <div>
-              ${isLoggedIn ? `
-                <button class="hud-btn" style="padding:3px 6px;" onclick="App.handleLogout()">登出</button>
-              ` : `
-                <button class="claim-btn" onclick="App.showAuthModal('login')">登入 / 註冊</button>
-              `}
+              <button class="hud-btn" style="padding:4px 8px; font-size:10px; color:#ff9999;" onclick="App.handleLogout()">登出 / 切換帳號</button>
             </div>
           </div>
 
@@ -2474,6 +2681,10 @@ const App = (() => {
     const main = document.getElementById('main-content');
     if (!main) return;
 
+    const savedCreds = window.SupabaseClient ? SupabaseClient.getSavedCredentials() : null;
+    const defaultAccount = (savedCreds && savedCreds.account) ? savedCreds.account : '';
+    const defaultPassword = (savedCreds && savedCreds.password) ? savedCreds.password : '';
+
     main.innerHTML = `
       <div class="auth-gate-wrapper">
         <div class="auth-gate-banner">
@@ -2499,12 +2710,17 @@ const App = (() => {
               <form id="gate-login-form" onsubmit="event.preventDefault(); App.handleGateLogin();" style="display:flex; flex-direction:column; gap:10px;">
                 <div class="auth-form-group">
                   <label class="auth-label">冒險者公會帳號或 Email</label>
-                  <input type="text" id="gate-account" class="auth-input" placeholder="冒險者帳號 (例如: tangghgh) 或 Email" required autocomplete="username">
+                  <input type="text" id="gate-account" class="auth-input" placeholder="冒險者帳號 (例如: tangghgh) 或 Email" value="${defaultAccount}" required autocomplete="username">
                 </div>
 
                 <div class="auth-form-group">
                   <label class="auth-label">通行密碼 (Password)</label>
-                  <input type="password" id="gate-password" class="auth-input" placeholder="請輸入通行密碼" required autocomplete="current-password">
+                  <input type="password" id="gate-password" class="auth-input" placeholder="請輸入通行密碼" value="${defaultPassword}" required autocomplete="current-password">
+                </div>
+
+                <div class="auth-remember-row">
+                  <input type="checkbox" id="gate-remember" checked>
+                  <label for="gate-remember">記住我的登入資訊 (下次開啟 PWA 自動登入)</label>
                 </div>
 
                 <button type="submit" id="btn-gate-submit" class="auth-submit-btn">
@@ -2609,6 +2825,7 @@ const App = (() => {
   const handleGateLogin = async () => {
     const account = (document.getElementById('gate-account') || document.getElementById('gate-email'))?.value?.trim();
     const password = document.getElementById('gate-password')?.value;
+    const remember = document.getElementById('gate-remember')?.checked !== false;
     const btn = document.getElementById('btn-gate-submit');
 
     if (!account || !password) {
@@ -2623,7 +2840,7 @@ const App = (() => {
 
     try {
       showToast('正在驗證冒險者資料...');
-      await SupabaseClient.signIn(account, password);
+      await SupabaseClient.signIn(account, password, remember);
 
       state.isAdmin = SupabaseClient.isAdmin();
       setHUDVisible(true);
@@ -3653,6 +3870,8 @@ const App = (() => {
     renderCodexView,
     startDungeonBoss,
     startTowerMode,
+    startDojoMode,
+    showDojoSelectModal,
     startReviewMode,
     toggleBookmark,
     toggleBookmarkInModal,

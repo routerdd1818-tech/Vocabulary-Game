@@ -2023,5 +2023,163 @@ body {
   box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.8);
 }
 
+/* ==========================================================================
+   Dojo (修煉道場 / 到場) & Stage Banner & Level Up Celebration Styles
+   ========================================================================== */
+.mode-btn-dojo {
+  grid-column: span 2;
+  border-color: #d4af37 !important;
+  background: linear-gradient(180deg, #382414 0%, #1f120a 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.mode-btn-dojo:hover {
+  border-color: #ffd700 !important;
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.45);
+}
+
+.dojo-tier-card {
+  background: #20172e;
+  border: 2px solid #48396e;
+  padding: 10px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.dojo-tier-card:hover {
+  border-color: var(--gold);
+  background: #2c2040;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Prominent Battle Stage & Floor Indicator Bar */
+.stage-banner-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #151022;
+  border: 1px solid #48396e;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.stage-banner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.stage-banner-tag.dungeon-tag {
+  background: #331118;
+  border: 1px solid #ff4466;
+  color: #ff8899;
+}
+.stage-banner-tag.tower-tag {
+  background: #091a2e;
+  border: 1px solid #00b0ff;
+  color: #4fe3ff;
+}
+.stage-banner-tag.dojo-tag {
+  background: #2e1d0f;
+  border: 1px solid #d4af37;
+  color: #ffd700;
+}
+.stage-banner-title {
+  color: #c4b5e0;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+/* Floor Up / Level Up Splash Celebration Overlay */
+.floor-up-splash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  pointer-events: none;
+  animation: splashFadeIn 0.3s ease-out forwards;
+}
+.floor-up-splash-overlay.fade-out {
+  animation: splashFadeOut 0.4s ease-in forwards;
+}
+.floor-up-splash-box {
+  background: linear-gradient(180deg, #2b1b47 0%, #150d24 100%);
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.2);
+  padding: 20px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: splashPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  max-width: 90%;
+}
+.splash-badge {
+  background: #ffd700;
+  color: #1a0f2b;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 3px 10px;
+  letter-spacing: 2px;
+  border-radius: 2px;
+}
+.splash-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.splash-desc {
+  font-size: 13px;
+  color: #4fe3ff;
+  font-weight: bold;
+}
+.splash-sub {
+  font-size: 11px;
+  color: #c4b5e0;
+}
+
+@keyframes splashPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes splashFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes splashFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.auth-remember-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #c4b5e0;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.auth-remember-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
 
 

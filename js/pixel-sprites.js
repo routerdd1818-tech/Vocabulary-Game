@@ -1206,6 +1206,24 @@ const PixelSprites = (() => {
           <circle cx="30" cy="14" r="2" fill="#ff00ff"/>
         `;
         break;
+      case 'dojo_dummy':
+        content = `
+          <!-- Cross wooden stand -->
+          <rect x="18" y="28" width="4" height="10" fill="#5c3818"/>
+          <rect x="10" y="36" width="20" height="3" fill="#3e230c"/>
+          <!-- Straw body -->
+          <rect x="14" y="14" width="12" height="15" fill="#c29b38" rx="2"/>
+          <line x1="14" y1="18" x2="26" y2="18" stroke="#8a671c" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="26" y2="22" stroke="#8a671c" stroke-width="1.5"/>
+          <line x1="14" y1="26" x2="26" y2="26" stroke="#8a671c" stroke-width="1.5"/>
+          <!-- Wooden dummy arms -->
+          <rect x="6" y="16" width="28" height="4" fill="#8d5b2d" rx="1"/>
+          <!-- Head / Straw top -->
+          <circle cx="20" cy="10" r="5" fill="#d4ad4b"/>
+          <rect x="16" y="8" width="8" height="2" fill="#cc2222"/>
+          <circle cx="20" cy="20" r="3" fill="#ff4444" opacity="0.8"/>
+        `;
+        break;
       default:
         content = `<circle cx="20" cy="20" r="10" fill="#777777"/>`;
     }
@@ -1324,186 +1342,529 @@ const PixelSprites = (() => {
     `, 'pixel-scroll-sprite');
   };
 
-  // Medieval Battle Duel Arena Backdrop (320x140)
+  // Medieval Battle Duel Arena Backdrop (320x140) with dynamic biomes
   const renderMedievalBackdrop = (mode = 'dungeon', stageId = 1, towerFloor = 1) => {
-    if (mode === 'dungeon') {
-      // Medieval Castle Dungeon Keep
+    // 1. DOJO TRAINING ARENA (修煉道場 / 到場)
+    if (mode === 'dojo') {
       return `
         <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-          <!-- Deep Dungeon Stone Wall -->
-          <rect width="320" height="140" fill="#101218"/>
-          
-          <!-- Medieval Masonry Stone Blocks -->
-          <rect x="0" y="0" width="76" height="24" fill="#181a24"/>
-          <rect x="0" y="0" width="76" height="2" fill="#292d3e"/>
-          <rect x="80" y="0" width="76" height="24" fill="#151720"/>
-          <rect x="80" y="0" width="76" height="2" fill="#252938"/>
-          <rect x="160" y="0" width="76" height="24" fill="#181a24"/>
-          <rect x="160" y="0" width="76" height="2" fill="#292d3e"/>
-          <rect x="240" y="0" width="80" height="24" fill="#151720"/>
-          <rect x="240" y="0" width="80" height="2" fill="#252938"/>
+          <!-- Cedar Wood Dojo Wall -->
+          <rect width="320" height="140" fill="#24160e"/>
+          <rect x="0" y="0" width="320" height="18" fill="#180e09"/>
+          <!-- Wooden Pillar Frames -->
+          <rect x="18" y="0" width="12" height="105" fill="#3b2316"/>
+          <rect x="148" y="0" width="24" height="105" fill="#321d13"/>
+          <rect x="290" y="0" width="12" height="105" fill="#3b2316"/>
+          <!-- Shoji Screen Grids -->
+          <rect x="36" y="22" width="106" height="75" fill="#e8d8be" opacity="0.85"/>
+          <rect x="178" y="22" width="106" height="75" fill="#e8d8be" opacity="0.85"/>
+          <line x1="36" y1="46" x2="142" y2="46" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="36" y1="70" x2="142" y2="70" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="71" y1="22" x2="71" y2="97" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="107" y1="22" x2="107" y2="97" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="178" y1="46" x2="284" y2="46" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="178" y1="70" x2="284" y2="70" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="213" y1="22" x2="213" y2="97" stroke="#4a2e1d" stroke-width="2"/>
+          <line x1="249" y1="22" x2="249" y2="97" stroke="#4a2e1d" stroke-width="2"/>
 
-          <rect x="0" y="26" width="36" height="24" fill="#151720"/>
-          <rect x="40" y="26" width="76" height="24" fill="#1c1e2a"/>
-          <rect x="120" y="26" width="76" height="24" fill="#151720"/>
-          <rect x="200" y="26" width="76" height="24" fill="#1c1e2a"/>
-          <rect x="280" y="26" width="40" height="24" fill="#151720"/>
+          <!-- Center Dojo Martial Banner -->
+          <rect x="150" y="16" width="20" height="48" fill="#881818"/>
+          <polygon points="150,64 160,72 170,64" fill="#881818"/>
+          <rect x="148" y="14" width="24" height="3" fill="#d4af37"/>
+          <rect x="157" y="26" width="6" height="2" fill="#ffd700"/>
+          <rect x="159" y="26" width="2" height="14" fill="#ffd700"/>
+          <rect x="155" y="32" width="10" height="2" fill="#ffd700"/>
+          <rect x="156" y="44" width="8" height="8" fill="#ffd700"/>
 
-          <rect x="0" y="52" width="76" height="24" fill="#181a24"/>
-          <rect x="80" y="52" width="76" height="24" fill="#1c1e2a"/>
-          <rect x="160" y="52" width="76" height="24" fill="#181a24"/>
-          <rect x="240" y="52" width="80" height="24" fill="#1c1e2a"/>
+          <!-- Left Weapon Rack (Swords & Spears) -->
+          <rect x="42" y="60" width="30" height="42" fill="#422919"/>
+          <rect x="44" y="50" width="3" height="46" fill="#c0c0c0"/>
+          <rect x="43" y="44" width="5" height="6" fill="#ffd700"/>
+          <rect x="54" y="48" width="3" height="48" fill="#a0a0a0"/>
+          <rect x="64" y="52" width="3" height="44" fill="#c0c0c0"/>
 
-          <!-- Gothic Pointed Stone Arch in background center -->
-          <path d="M 110,105 L 110,40 Q 160,8 210,40 L 210,105 Z" fill="#0b0c12" stroke="#2c3040" stroke-width="4"/>
-          <!-- Dungeon Iron Grating inside arch -->
-          <line x1="130" y1="35" x2="130" y2="105" stroke="#1d202b" stroke-width="2"/>
-          <line x1="150" y1="24" x2="150" y2="105" stroke="#1d202b" stroke-width="2"/>
-          <line x1="170" y1="24" x2="170" y2="105" stroke="#1d202b" stroke-width="2"/>
-          <line x1="190" y1="35" x2="190" y2="105" stroke="#1d202b" stroke-width="2"/>
-          <line x1="110" y1="55" x2="210" y2="55" stroke="#1d202b" stroke-width="2"/>
-          <line x1="110" y1="75" x2="210" y2="75" stroke="#1d202b" stroke-width="2"/>
-          <line x1="110" y1="95" x2="210" y2="95" stroke="#1d202b" stroke-width="2"/>
+          <!-- Right Training Straw Dummy -->
+          <rect x="250" y="55" width="8" height="45" fill="#52341d"/>
+          <circle cx="254" cy="50" r="7" fill="#c49a56"/>
+          <rect x="248" y="58" width="12" height="22" fill="#ba9048"/>
+          <line x1="238" y1="64" x2="270" y2="64" stroke="#ba9048" stroke-width="4"/>
 
-          <!-- Medieval Heraldic Royal Tapestry in Center Arch -->
-          <rect x="145" y="32" width="30" height="42" fill="#6b1d28"/>
-          <polygon points="145,74 160,84 175,74" fill="#6b1d28"/>
-          <!-- Gold Trim on Banner -->
-          <rect x="145" y="30" width="30" height="2" fill="#d4af37"/>
-          <line x1="145" y1="32" x2="145" y2="74" stroke="#d4af37" stroke-width="1"/>
-          <line x1="175" y1="32" x2="175" y2="74" stroke="#d4af37" stroke-width="1"/>
-          <!-- Gold Lion Crest -->
-          <rect x="156" y="44" width="8" height="10" fill="#ffd700"/>
-          <rect x="154" y="48" width="12" height="3" fill="#ffd700"/>
-          <rect x="158" y="40" width="4" height="4" fill="#ffd700"/>
-          <rect x="157" y="56" width="6" height="4" fill="#ffd700"/>
-
-          <!-- Hanging Dungeon Chains from Ceiling -->
-          <g fill="#2e3344">
-            <!-- Left Chain -->
-            <rect x="74" y="0" width="4" height="6"/>
-            <rect x="75" y="6" width="2" height="5"/>
-            <rect x="74" y="11" width="4" height="6"/>
-            <rect x="75" y="17" width="2" height="5"/>
-            <circle cx="76" cy="27" r="4" fill="none" stroke="#2e3344" stroke-width="2"/>
-            <!-- Right Chain -->
-            <rect x="244" y="0" width="4" height="6"/>
-            <rect x="245" y="6" width="2" height="5"/>
-            <rect x="244" y="11" width="4" height="6"/>
-            <rect x="245" y="17" width="2" height="5"/>
-            <circle cx="246" cy="25" r="4" fill="none" stroke="#2e3344" stroke-width="2"/>
-          </g>
-
-          <!-- Left Cast-iron Torch Sconce on Pillar -->
+          <!-- Paper Lanterns -->
           <g class="torch-anim-left">
-            <rect x="28" y="45" width="4" height="16" fill="#3a3d4c"/>
-            <rect x="32" y="42" width="8" height="3" fill="#282a36"/>
-            <rect x="38" y="38" width="6" height="8" fill="#4a3525"/>
-            <!-- Animated Torch Flame -->
-            <rect x="39" y="31" width="5" height="7" fill="#ff4400" class="torch-fire-outer"/>
-            <rect x="40" y="28" width="4" height="7" fill="#ff9900" class="torch-fire-mid"/>
-            <rect x="41" y="26" width="2" height="4" fill="#ffff66" class="torch-fire-inner"/>
-            <circle cx="41" cy="32" r="18" fill="rgba(255,140,20,0.2)" class="torch-glow"/>
+            <rect x="16" y="30" width="16" height="20" fill="#ffeedd"/>
+            <rect x="16" y="28" width="16" height="2" fill="#881818"/>
+            <rect x="16" y="50" width="16" height="2" fill="#881818"/>
+            <circle cx="24" cy="40" r="6" fill="#ffaa22" opacity="0.8"/>
+            <circle cx="24" cy="40" r="16" fill="rgba(255,160,30,0.2)"/>
           </g>
-
-          <!-- Right Cast-iron Torch Sconce on Pillar -->
           <g class="torch-anim-right">
-            <rect x="288" y="45" width="4" height="16" fill="#3a3d4c"/>
-            <rect x="280" y="42" width="8" height="3" fill="#282a36"/>
-            <rect x="276" y="38" width="6" height="8" fill="#4a3525"/>
-            <!-- Animated Torch Flame -->
-            <rect x="276" y="31" width="5" height="7" fill="#ff4400" class="torch-fire-outer"/>
-            <rect x="276" y="28" width="4" height="7" fill="#ff9900" class="torch-fire-mid"/>
-            <rect x="277" y="26" width="2" height="4" fill="#ffff66" class="torch-fire-inner"/>
-            <circle cx="279" cy="32" r="18" fill="rgba(255,140,20,0.2)" class="torch-glow"/>
+            <rect x="288" y="30" width="16" height="20" fill="#ffeedd"/>
+            <rect x="288" y="28" width="16" height="2" fill="#881818"/>
+            <rect x="288" y="50" width="16" height="2" fill="#881818"/>
+            <circle cx="296" cy="40" r="6" fill="#ffaa22" opacity="0.8"/>
+            <circle cx="296" cy="40" r="16" fill="rgba(255,160,30,0.2)"/>
           </g>
 
-          <!-- Medieval Flagstone Floor (Perspective) -->
-          <rect x="0" y="105" width="320" height="35" fill="#181a24"/>
-          <!-- Stone Floor Tiles -->
-          <line x1="0" y1="105" x2="320" y2="105" stroke="#33384a" stroke-width="2"/>
-          <line x1="0" y1="120" x2="320" y2="120" stroke="#252837" stroke-width="1.5"/>
-          <line x1="0" y1="132" x2="320" y2="132" stroke="#202330" stroke-width="1"/>
-          
-          <line x1="45" y1="105" x2="35" y2="140" stroke="#252837" stroke-width="1.5"/>
-          <line x1="105" y1="105" x2="95" y2="140" stroke="#252837" stroke-width="1.5"/>
-          <line x1="165" y1="105" x2="160" y2="140" stroke="#252837" stroke-width="1.5"/>
-          <line x1="225" y1="105" x2="230" y2="140" stroke="#252837" stroke-width="1.5"/>
-          <line x1="285" y1="105" x2="295" y2="140" stroke="#252837" stroke-width="1.5"/>
-        </svg>
-      `;
-    } else {
-      // Medieval Tower High Battlement & Night Sky
-      return `
-        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-          <!-- Midnight Castle Sky -->
-          <rect width="320" height="140" fill="#0b0f1a"/>
-
-          <!-- Medieval Midnight Crescent Moon & Stars -->
-          <path d="M 40,20 A 10,10 0 0 0 48,32 A 8,8 0 0 1 40,20 Z" fill="#ffeebb"/>
-          <rect x="75" y="14" width="2" height="2" fill="#e0f0ff" opacity="0.8"/>
-          <rect x="120" y="20" width="2" height="2" fill="#ffffff" opacity="0.6"/>
-          <rect x="190" y="15" width="2" height="2" fill="#ffd0aa" opacity="0.9"/>
-          <rect x="235" y="24" width="2" height="2" fill="#ffffff" opacity="0.7"/>
-          <rect x="280" y="16" width="2" height="2" fill="#e0f0ff" opacity="0.8"/>
-
-          <!-- Distant Gothic Spire Silhouettes -->
-          <polygon points="135,50 140,22 145,50" fill="#141a2a"/>
-          <polygon points="175,55 180,30 185,55" fill="#141a2a"/>
-
-          <!-- High Castle Rampart Archways -->
-          <path d="M 0,90 L 0,35 Q 40,20 80,35 L 80,90 Z" fill="#151b2a" stroke="#2c3750" stroke-width="3"/>
-          <path d="M 80,90 L 80,35 Q 160,10 240,35 L 240,90 Z" fill="#121826" stroke="#2c3750" stroke-width="3"/>
-          <path d="M 240,90 L 240,35 Q 280,20 320,35 L 320,90 Z" fill="#151b2a" stroke="#2c3750" stroke-width="3"/>
-
-          <!-- Castle Battlements / Stone Crenellations -->
-          <rect x="90" y="70" width="16" height="22" fill="#232b3e"/>
-          <rect x="120" y="70" width="16" height="22" fill="#232b3e"/>
-          <rect x="150" y="70" width="16" height="22" fill="#232b3e"/>
-          <rect x="180" y="70" width="16" height="22" fill="#232b3e"/>
-          <rect x="210" y="70" width="16" height="22" fill="#232b3e"/>
-          <rect x="85" y="88" width="150" height="6" fill="#1c2333"/>
-
-          <!-- Medieval Tower Gonfalon Imperial Banner -->
-          <polygon points="150,30 170,30 170,68 160,78 150,68" fill="#1c3b6e"/>
-          <rect x="148" y="28" width="24" height="3" fill="#d4af37"/>
-          <rect x="158" y="44" width="4" height="12" fill="#ffd700"/>
-          <rect x="154" y="48" width="12" height="4" fill="#ffd700"/>
-
-          <!-- Left Tower Iron Brazier -->
-          <g class="torch-anim-left">
-            <rect x="36" y="85" width="12" height="8" fill="#30384a"/>
-            <polygon points="34,85 50,85 46,75 38,75" fill="#424c64"/>
-            <rect x="38" y="68" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/>
-            <rect x="39" y="64" width="6" height="8" fill="#ffaa00" class="torch-fire-mid"/>
-            <rect x="41" y="60" width="2" height="5" fill="#ffffff" class="torch-fire-inner"/>
-            <circle cx="42" cy="70" r="16" fill="rgba(255,160,40,0.22)" class="torch-glow"/>
-          </g>
-
-          <!-- Right Tower Iron Brazier -->
-          <g class="torch-anim-right">
-            <rect x="272" y="85" width="12" height="8" fill="#30384a"/>
-            <polygon points="270,85 286,85 282,75 274,75" fill="#424c64"/>
-            <rect x="274" y="68" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/>
-            <rect x="275" y="64" width="6" height="8" fill="#ffaa00" class="torch-fire-mid"/>
-            <rect x="277" y="60" width="2" height="5" fill="#ffffff" class="torch-fire-inner"/>
-            <circle cx="278" cy="70" r="16" fill="rgba(255,160,40,0.22)" class="torch-glow"/>
-          </g>
-
-          <!-- Stone Parapet Observation Floor -->
-          <rect x="0" y="105" width="320" height="35" fill="#181e2b"/>
-          <line x1="0" y1="105" x2="320" y2="105" stroke="#36425c" stroke-width="2"/>
-          <line x1="0" y1="120" x2="320" y2="120" stroke="#252e42" stroke-width="1.5"/>
-          <line x1="0" y1="132" x2="320" y2="132" stroke="#1d2434" stroke-width="1"/>
-
-          <line x1="45" y1="105" x2="35" y2="140" stroke="#252e42" stroke-width="1.5"/>
-          <line x1="105" y1="105" x2="95" y2="140" stroke="#252e42" stroke-width="1.5"/>
-          <line x1="165" y1="105" x2="160" y2="140" stroke="#252e42" stroke-width="1.5"/>
-          <line x1="225" y1="105" x2="230" y2="140" stroke="#252e42" stroke-width="1.5"/>
-          <line x1="285" y1="105" x2="295" y2="140" stroke="#252e42" stroke-width="1.5"/>
+          <!-- Polished Hardwood Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#3d2415"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#54331e" stroke-width="2"/>
+          <line x1="0" y1="118" x2="320" y2="118" stroke="#311c10" stroke-width="1.5"/>
+          <line x1="0" y1="130" x2="320" y2="130" stroke="#26150b" stroke-width="1"/>
+          <line x1="55" y1="105" x2="45" y2="140" stroke="#311c10" stroke-width="1.5"/>
+          <line x1="125" y1="105" x2="115" y2="140" stroke="#311c10" stroke-width="1.5"/>
+          <line x1="195" y1="105" x2="190" y2="140" stroke="#311c10" stroke-width="1.5"/>
+          <line x1="265" y1="105" x2="270" y2="140" stroke="#311c10" stroke-width="1.5"/>
         </svg>
       `;
     }
+
+    // 2. DUNGEON 15-STAGE UNIQUE BIOMES
+    if (mode === 'dungeon') {
+      const sId = parseInt(stageId, 10) || 1;
+
+      // Theme 1: Stages 1-2 (B1F-B2F) 翡翠幽森與花谷地窟 (Emerald Mossy Forest Crypt)
+      if (sId <= 2) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#0d1810"/>
+            <!-- Mossy Stone Blocks -->
+            <rect x="0" y="0" width="76" height="24" fill="#142618"/><rect x="80" y="0" width="76" height="24" fill="#182e1d"/><rect x="160" y="0" width="76" height="24" fill="#142618"/><rect x="240" y="0" width="80" height="24" fill="#182e1d"/>
+            <rect x="0" y="26" width="36" height="24" fill="#182e1d"/><rect x="40" y="26" width="76" height="24" fill="#1b3622"/><rect x="120" y="26" width="76" height="24" fill="#182e1d"/><rect x="200" y="26" width="76" height="24" fill="#1b3622"/><rect x="280" y="26" width="40" height="24" fill="#182e1d"/>
+            <rect x="0" y="52" width="76" height="24" fill="#142618"/><rect x="80" y="52" width="76" height="24" fill="#1b3622"/><rect x="160" y="52" width="76" height="24" fill="#142618"/><rect x="240" y="52" width="80" height="24" fill="#1b3622"/>
+            <!-- Hanging Emerald Vines & Spores -->
+            <path d="M 30,0 Q 36,35 24,55" stroke="#36a34d" stroke-width="3" fill="none"/>
+            <path d="M 90,0 Q 85,25 96,48" stroke="#2d8740" stroke-width="2.5" fill="none"/>
+            <path d="M 230,0 Q 235,30 220,52" stroke="#36a34d" stroke-width="3" fill="none"/>
+            <path d="M 285,0 Q 295,28 280,45" stroke="#2d8740" stroke-width="2.5" fill="none"/>
+            <!-- Glowing Forest Mushrooms -->
+            <circle cx="68" cy="98" r="4" fill="#44ff88"/><rect x="67" y="98" width="2" height="7" fill="#a0ffa0"/>
+            <circle cx="250" cy="99" r="3.5" fill="#55ffaa"/><rect x="249" y="99" width="2" height="6" fill="#a0ffa0"/>
+            <!-- Emerald Torch Sconces -->
+            <g class="torch-anim-left">
+              <rect x="30" y="44" width="4" height="15" fill="#2d3a2f"/>
+              <rect x="33" y="32" width="6" height="8" fill="#00e676" class="torch-fire-outer"/>
+              <rect x="34" y="29" width="4" height="6" fill="#b9f6ca" class="torch-fire-inner"/>
+              <circle cx="36" cy="34" r="16" fill="rgba(34,238,119,0.2)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="286" y="44" width="4" height="15" fill="#2d3a2f"/>
+              <rect x="281" y="32" width="6" height="8" fill="#00e676" class="torch-fire-outer"/>
+              <rect x="282" y="29" width="4" height="6" fill="#b9f6ca" class="torch-fire-inner"/>
+              <circle cx="284" cy="34" r="16" fill="rgba(34,238,119,0.2)"/>
+            </g>
+            <!-- Forest Moss Flagstone Floor -->
+            <rect x="0" y="105" width="320" height="35" fill="#16291a"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#2d5235" stroke-width="2"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#1d3823" stroke-width="1.5"/>
+            <line x1="60" y1="105" x2="50" y2="140" stroke="#1d3823" stroke-width="1.5"/>
+            <line x1="160" y1="105" x2="155" y2="140" stroke="#1d3823" stroke-width="1.5"/>
+            <line x1="260" y1="105" x2="265" y2="140" stroke="#1d3823" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 2: Stages 3-4 (B3F-B4F) 哥布林夜寨與殘原 (Goblin Stockade & Moon Crags)
+      if (sId <= 4) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#18120d"/>
+            <!-- Night Crags & Moon -->
+            <path d="M 40,16 A 8,8 0 0 0 46,26 A 7,7 0 0 1 40,16 Z" fill="#ffeaa7"/>
+            <polygon points="90,45 130,25 170,45" fill="#241b14"/>
+            <!-- Spiked Wooden Stockade Wall -->
+            <rect x="0" y="35" width="320" height="70" fill="#2b1c11"/>
+            <rect x="15" y="15" width="10" height="90" fill="#3d2718"/><polygon points="15,15 20,6 25,15" fill="#3d2718"/>
+            <rect x="45" y="20" width="10" height="85" fill="#352215"/><polygon points="45,20 50,11 55,20" fill="#352215"/>
+            <rect x="75" y="16" width="10" height="89" fill="#3d2718"/><polygon points="75,16 80,7 85,16" fill="#3d2718"/>
+            <rect x="105" y="22" width="10" height="83" fill="#352215"/><polygon points="105,22 110,13 115,22" fill="#352215"/>
+            <rect x="205" y="18" width="10" height="87" fill="#352215"/><polygon points="205,18 210,9 215,18" fill="#352215"/>
+            <rect x="235" y="15" width="10" height="90" fill="#3d2718"/><polygon points="235,15 240,6 245,15" fill="#3d2718"/>
+            <rect x="265" y="21" width="10" height="84" fill="#352215"/><polygon points="265,21 270,12 275,21" fill="#352215"/>
+            <rect x="295" y="16" width="10" height="89" fill="#3d2718"/><polygon points="295,16 300,7 305,16" fill="#3d2718"/>
+            <!-- Tattered Goblin Crimson Banner -->
+            <polygon points="150,30 170,30 166,65 160,58 154,65" fill="#881a1a"/>
+            <!-- Crude Campfire Flares -->
+            <g class="torch-anim-left">
+              <rect x="32" y="32" width="6" height="8" fill="#ff5500" class="torch-fire-outer"/>
+              <rect x="33" y="28" width="4" height="6" fill="#ffdd00" class="torch-fire-inner"/>
+              <circle cx="35" cy="32" r="16" fill="rgba(255,130,20,0.2)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="282" y="32" width="6" height="8" fill="#ff5500" class="torch-fire-outer"/>
+              <rect x="283" y="28" width="4" height="6" fill="#ffdd00" class="torch-fire-inner"/>
+              <circle cx="285" cy="32" r="16" fill="rgba(255,130,20,0.2)"/>
+            </g>
+            <!-- Earthy Gravel Floor -->
+            <rect x="0" y="105" width="320" height="35" fill="#241810"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#3d281a" stroke-width="2"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#1f140d" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 3: Stages 5-6 (B5F-B6F) 幽暗蛛巢與暮光鐘樓 (Twilight Bell Tower & Spider Sanctum)
+      if (sId <= 6) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#120c1f"/>
+            <!-- Purple Gothic Masonry -->
+            <rect x="0" y="0" width="76" height="24" fill="#1b1230"/><rect x="80" y="0" width="76" height="24" fill="#201538"/><rect x="160" y="0" width="76" height="24" fill="#1b1230"/><rect x="240" y="0" width="80" height="24" fill="#201538"/>
+            <rect x="0" y="26" width="36" height="24" fill="#201538"/><rect x="40" y="26" width="76" height="24" fill="#261944"/><rect x="120" y="26" width="76" height="24" fill="#201538"/><rect x="200" y="26" width="76" height="24" fill="#261944"/><rect x="280" y="26" width="40" height="24" fill="#201538"/>
+            <!-- Gothic Pointed Rose Arch -->
+            <path d="M 115,105 L 115,38 Q 160,6 205,38 L 205,105 Z" fill="#0c0717" stroke="#392461" stroke-width="3"/>
+            <!-- Hanging Violet Spiderwebs -->
+            <line x1="0" y1="0" x2="45" y2="45" stroke="#7a55ba" stroke-width="1" opacity="0.6"/>
+            <line x1="45" y1="0" x2="0" y2="45" stroke="#7a55ba" stroke-width="1" opacity="0.6"/>
+            <line x1="320" y1="0" x2="275" y2="45" stroke="#7a55ba" stroke-width="1" opacity="0.6"/>
+            <line x1="275" y1="0" x2="320" y2="45" stroke="#7a55ba" stroke-width="1" opacity="0.6"/>
+            <!-- Occult Violet Fire Sconces -->
+            <g class="torch-anim-left">
+              <rect x="28" y="44" width="4" height="16" fill="#301f4a"/>
+              <rect x="27" y="30" width="6" height="8" fill="#a855f7" class="torch-fire-outer"/>
+              <rect x="28" y="27" width="4" height="6" fill="#e9d5ff" class="torch-fire-inner"/>
+              <circle cx="30" cy="32" r="16" fill="rgba(168,85,247,0.25)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="288" y="44" width="4" height="16" fill="#301f4a"/>
+              <rect x="287" y="30" width="6" height="8" fill="#a855f7" class="torch-fire-outer"/>
+              <rect x="288" y="27" width="4" height="6" fill="#e9d5ff" class="torch-fire-inner"/>
+              <circle cx="290" cy="32" r="16" fill="rgba(168,85,247,0.25)"/>
+            </g>
+            <!-- Violet Stone Floor -->
+            <rect x="0" y="105" width="320" height="35" fill="#181029"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#3b2563" stroke-width="2"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#251642" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 4: Stages 7-8 (B7F-B8F) 冥骨深穴與角鬥迷宮 (Catacombs & Minotaur Labyrinth)
+      if (sId <= 8) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#1c0a0d"/>
+            <!-- Blood Red Brick Masonry -->
+            <rect x="0" y="0" width="76" height="24" fill="#291014"/><rect x="80" y="0" width="76" height="24" fill="#33141a"/><rect x="160" y="0" width="76" height="24" fill="#291014"/><rect x="240" y="0" width="80" height="24" fill="#33141a"/>
+            <rect x="0" y="26" width="36" height="24" fill="#33141a"/><rect x="40" y="26" width="76" height="24" fill="#3d181f"/><rect x="120" y="26" width="76" height="24" fill="#33141a"/><rect x="200" y="26" width="76" height="24" fill="#3d181f"/><rect x="280" y="26" width="40" height="24" fill="#33141a"/>
+            <!-- Heavy Spiked Iron Portcullis -->
+            <rect x="115" y="30" width="90" height="75" fill="#120507" stroke="#4f1d26" stroke-width="3"/>
+            <line x1="135" y1="30" x2="135" y2="105" stroke="#301217" stroke-width="3"/>
+            <line x1="160" y1="30" x2="160" y2="105" stroke="#301217" stroke-width="3"/>
+            <line x1="185" y1="30" x2="185" y2="105" stroke="#301217" stroke-width="3"/>
+            <line x1="115" y1="55" x2="205" y2="55" stroke="#301217" stroke-width="3"/>
+            <line x1="115" y1="80" x2="205" y2="80" stroke="#301217" stroke-width="3"/>
+            <!-- Skull Carvings in Wall -->
+            <circle cx="70" cy="50" r="4" fill="#c2b09b"/><rect x="68" y="52" width="4" height="4" fill="#c2b09b"/>
+            <circle cx="250" cy="50" r="4" fill="#c2b09b"/><rect x="248" y="52" width="4" height="4" fill="#c2b09b"/>
+            <!-- Cyan Soul Fire Braziers -->
+            <g class="torch-anim-left">
+              <rect x="30" y="44" width="4" height="16" fill="#3b161c"/>
+              <rect x="29" y="30" width="6" height="8" fill="#00e5ff" class="torch-fire-outer"/>
+              <rect x="30" y="27" width="4" height="6" fill="#e0f7fa" class="torch-fire-inner"/>
+              <circle cx="32" cy="32" r="16" fill="rgba(0,229,255,0.25)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="286" y="44" width="4" height="16" fill="#3b161c"/>
+              <rect x="285" y="30" width="6" height="8" fill="#00e5ff" class="torch-fire-outer"/>
+              <rect x="286" y="27" width="4" height="6" fill="#e0f7fa" class="torch-fire-inner"/>
+              <circle cx="288" cy="32" r="16" fill="rgba(0,229,255,0.25)"/>
+            </g>
+            <!-- Bloodstone Flagstones -->
+            <rect x="0" y="105" width="320" height="35" fill="#240c0f"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#4f1b23" stroke-width="2"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#331016" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 5: Stages 9-10 (B9F-B10F) 寒冰暗河與永凍聖殿 (Glacial Ice Temple & Dark River)
+      if (sId <= 10) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#081424"/>
+            <!-- Frozen Cyan Ice Blocks -->
+            <rect x="0" y="0" width="76" height="24" fill="#0f233d"/><rect x="80" y="0" width="76" height="24" fill="#132c4a"/><rect x="160" y="0" width="76" height="24" fill="#0f233d"/><rect x="240" y="0" width="80" height="24" fill="#132c4a"/>
+            <rect x="0" y="26" width="36" height="24" fill="#132c4a"/><rect x="40" y="26" width="76" height="24" fill="#17365c"/><rect x="120" y="26" width="76" height="24" fill="#132c4a"/><rect x="200" y="26" width="76" height="24" fill="#17365c"/><rect x="280" y="26" width="40" height="24" fill="#132c4a"/>
+            <!-- Dripping Translucent Icicles -->
+            <polygon points="20,0 24,24 28,0" fill="#80deea"/><polygon points="40,0 43,18 46,0" fill="#e0f7fa"/>
+            <polygon points="110,0 114,30 118,0" fill="#80deea"/><polygon points="140,0 143,20 146,0" fill="#e0f7fa"/>
+            <polygon points="210,0 214,28 218,0" fill="#80deea"/><polygon points="270,0 274,32 278,0" fill="#80deea"/>
+            <!-- Crystalline Glacial Pillars -->
+            <rect x="90" y="30" width="16" height="75" fill="#26c6da" opacity="0.3"/>
+            <rect x="214" y="30" width="16" height="75" fill="#26c6da" opacity="0.3"/>
+            <!-- Cobalt Frost Torches -->
+            <g class="torch-anim-left">
+              <rect x="28" y="44" width="4" height="16" fill="#1c3d66"/>
+              <rect x="27" y="30" width="6" height="8" fill="#00b0ff" class="torch-fire-outer"/>
+              <rect x="28" y="27" width="4" height="6" fill="#e1f5fe" class="torch-fire-inner"/>
+              <circle cx="30" cy="32" r="16" fill="rgba(0,176,255,0.25)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="288" y="44" width="4" height="16" fill="#1c3d66"/>
+              <rect x="287" y="30" width="6" height="8" fill="#00b0ff" class="torch-fire-outer"/>
+              <rect x="288" y="27" width="4" height="6" fill="#e1f5fe" class="torch-fire-inner"/>
+              <circle cx="290" cy="32" r="16" fill="rgba(0,176,255,0.25)"/>
+            </g>
+            <!-- Reflective Blue Ice Floor -->
+            <rect x="0" y="105" width="320" height="35" fill="#0d1e33"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#26c6da" stroke-width="2"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#163961" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 6: Stages 11-12 (B11F-B12F) 地心熔爐祭壇 (Magma Foundry & Abyssal Rift)
+      if (sId <= 12) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#1f0904"/>
+            <!-- Volcanic Basalt Masonry -->
+            <rect x="0" y="0" width="76" height="24" fill="#2e0f07"/><rect x="80" y="0" width="76" height="24" fill="#3b150b"/><rect x="160" y="0" width="76" height="24" fill="#2e0f07"/><rect x="240" y="0" width="80" height="24" fill="#3b150b"/>
+            <rect x="0" y="26" width="36" height="24" fill="#3b150b"/><rect x="40" y="26" width="76" height="24" fill="#47190d"/><rect x="120" y="26" width="76" height="24" fill="#3b150b"/><rect x="200" y="26" width="76" height="24" fill="#47190d"/><rect x="280" y="26" width="40" height="24" fill="#3b150b"/>
+            <!-- Molten Magma Falls in Center Arch -->
+            <rect x="120" y="20" width="80" height="85" fill="#ff3d00"/>
+            <rect x="135" y="20" width="50" height="85" fill="#ff9100"/>
+            <rect x="150" y="20" width="20" height="85" fill="#ffff00"/>
+            <!-- Magma Cracks on Walls -->
+            <path d="M 40,40 L 55,60 L 50,85" stroke="#ff5722" stroke-width="2" fill="none"/>
+            <path d="M 270,35 L 255,65 L 265,90" stroke="#ff5722" stroke-width="2" fill="none"/>
+            <!-- Raging Fire Braziers -->
+            <g class="torch-anim-left">
+              <rect x="28" y="44" width="4" height="16" fill="#4a180d"/>
+              <rect x="26" y="28" width="8" height="10" fill="#ff1744" class="torch-fire-outer"/>
+              <rect x="28" y="25" width="4" height="8" fill="#ffff00" class="torch-fire-inner"/>
+              <circle cx="30" cy="30" r="18" fill="rgba(255,87,34,0.3)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="288" y="44" width="4" height="16" fill="#4a180d"/>
+              <rect x="286" y="28" width="8" height="10" fill="#ff1744" class="torch-fire-outer"/>
+              <rect x="288" y="25" width="4" height="8" fill="#ffff00" class="torch-fire-inner"/>
+              <circle cx="290" cy="30" r="18" fill="rgba(255,87,34,0.3)"/>
+            </g>
+            <!-- Obsidian Floor with Glowing Lava Veins -->
+            <rect x="0" y="105" width="320" height="35" fill="#240c06"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#ff3d00" stroke-width="2.5"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#ff6d00" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 7: Stages 13-14 (B13F-B14F) 天空神殿與星界魔塔 (Celestial Sunken Temple)
+      if (sId <= 14) {
+        return `
+          <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <rect width="320" height="140" fill="#0c1126"/>
+            <!-- Starlight Stars & Constellations -->
+            <circle cx="45" cy="18" r="1.5" fill="#ffffff"/><circle cx="100" cy="12" r="1.5" fill="#ffd700"/>
+            <circle cx="180" cy="16" r="1.5" fill="#ffffff"/><circle cx="260" cy="22" r="1.5" fill="#80d8ff"/>
+            <line x1="45" y1="18" x2="100" y2="12" stroke="#4fc3f7" stroke-width="0.5" opacity="0.6"/>
+            <line x1="100" y1="12" x2="180" y2="16" stroke="#4fc3f7" stroke-width="0.5" opacity="0.6"/>
+            <!-- Divine Marble & Gold Pillars -->
+            <rect x="30" y="15" width="14" height="90" fill="#c5cae9"/><rect x="28" y="12" width="18" height="4" fill="#ffd700"/>
+            <rect x="150" y="10" width="20" height="95" fill="#e8eaf6"/><rect x="147" y="6" width="26" height="5" fill="#ffd700"/>
+            <rect x="276" y="15" width="14" height="90" fill="#c5cae9"/><rect x="274" y="12" width="18" height="4" fill="#ffd700"/>
+            <!-- Imperial Golden Sun Eagle Tapestry -->
+            <polygon points="150,22 170,22 170,60 160,70 150,60" fill="#283593"/>
+            <circle cx="160" cy="38" r="6" fill="#ffd700"/>
+            <!-- Divine Golden Braziers -->
+            <g class="torch-anim-left">
+              <rect x="28" y="24" width="6" height="8" fill="#ffd700" class="torch-fire-outer"/>
+              <rect x="29" y="22" width="4" height="6" fill="#ffffff" class="torch-fire-inner"/>
+              <circle cx="31" cy="26" r="16" fill="rgba(255,215,0,0.3)"/>
+            </g>
+            <g class="torch-anim-right">
+              <rect x="284" y="24" width="6" height="8" fill="#ffd700" class="torch-fire-outer"/>
+              <rect x="285" y="22" width="4" height="6" fill="#ffffff" class="torch-fire-inner"/>
+              <circle cx="287" cy="26" r="16" fill="rgba(255,215,0,0.3)"/>
+            </g>
+            <!-- Celestial Navy Floor with Gold Trim -->
+            <rect x="0" y="105" width="320" height="35" fill="#141a38"/>
+            <line x1="0" y1="105" x2="320" y2="105" stroke="#ffd700" stroke-width="2.5"/>
+            <line x1="0" y1="120" x2="320" y2="120" stroke="#3949ab" stroke-width="1.5"/>
+          </svg>
+        `;
+      }
+
+      // Theme 8: Stage 15 (B15F) 終焉王座時空裂隙 (The Throne of Oblivion - Final Boss)
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect width="320" height="140" fill="#130424"/>
+          <!-- Dimensional Void Swirl -->
+          <circle cx="160" cy="45" r="35" fill="#4a0e4e" opacity="0.7"/>
+          <circle cx="160" cy="45" r="22" fill="#7b1fa2" opacity="0.8"/>
+          <circle cx="160" cy="45" r="10" fill="#000000"/>
+          <!-- Cosmic Purple Lightning Rifts -->
+          <path d="M 30,10 L 60,35 L 45,60 L 80,95" stroke="#e040fb" stroke-width="2" fill="none"/>
+          <path d="M 290,12 L 260,38 L 275,65 L 240,92" stroke="#ea80fc" stroke-width="2" fill="none"/>
+          <!-- Dark Ancient Dragon Sigils -->
+          <polygon points="160,18 168,34 186,34 172,44 178,60 160,50 142,60 148,44 134,34 152,34" fill="#e040fb" opacity="0.4"/>
+          <!-- Apocalyptic Void Flames -->
+          <g class="torch-anim-left">
+            <rect x="26" y="26" width="8" height="10" fill="#d500f9" class="torch-fire-outer"/>
+            <rect x="28" y="22" width="4" height="7" fill="#ffffff" class="torch-fire-inner"/>
+            <circle cx="30" cy="28" r="18" fill="rgba(213,0,249,0.35)"/>
+          </g>
+          <g class="torch-anim-right">
+            <rect x="286" y="26" width="8" height="10" fill="#d500f9" class="torch-fire-outer"/>
+            <rect x="288" y="22" width="4" height="7" fill="#ffffff" class="torch-fire-inner"/>
+            <circle cx="290" cy="28" r="18" fill="rgba(213,0,249,0.35)"/>
+          </g>
+          <!-- Void Obsidian Floor with Neon Purple Veins -->
+          <rect x="0" y="105" width="320" height="35" fill="#1b082e"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#e040fb" stroke-width="2.5"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#8e24aa" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // 3. TOWER OF BABEL CLIMBING ALTITUDES
+    const floor = parseInt(towerFloor, 10) || 1;
+
+    // Tower Tier 1: 1-20F 塔基石壘 (Midnight Battlement)
+    if (floor <= 20) {
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect width="320" height="140" fill="#0b0f1a"/>
+          <!-- Crescent Moon & Stars -->
+          <path d="M 40,20 A 10,10 0 0 0 48,32 A 8,8 0 0 1 40,20 Z" fill="#ffeebb"/>
+          <rect x="120" y="16" width="2" height="2" fill="#ffffff" opacity="0.7"/>
+          <rect x="220" y="20" width="2" height="2" fill="#ffd0aa" opacity="0.8"/>
+          <!-- Castle Battlements -->
+          <rect x="0" y="65" width="320" height="40" fill="#151b2a"/>
+          <rect x="30" y="45" width="24" height="20" fill="#232b3e"/><rect x="80" y="45" width="24" height="20" fill="#232b3e"/><rect x="130" y="45" width="24" height="20" fill="#232b3e"/><rect x="180" y="45" width="24" height="20" fill="#232b3e"/><rect x="230" y="45" width="24" height="20" fill="#232b3e"/><rect x="280" y="45" width="24" height="20" fill="#232b3e"/>
+          <!-- Braziers -->
+          <g class="torch-anim-left"><rect x="38" y="38" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/><rect x="40" y="34" width="4" height="6" fill="#ffff00" class="torch-fire-inner"/><circle cx="42" cy="40" r="16" fill="rgba(255,160,40,0.2)"/></g>
+          <g class="torch-anim-right"><rect x="274" y="38" width="8" height="8" fill="#ff4400" class="torch-fire-outer"/><rect x="276" y="34" width="4" height="6" fill="#ffff00" class="torch-fire-inner"/><circle cx="278" cy="40" r="16" fill="rgba(255,160,40,0.2)"/></g>
+          <!-- Stone Parapet Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#181e2b"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#36425c" stroke-width="2"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#252e42" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // Tower Tier 2: 21-50F 雲霧中層 (Cloud Layer Bastion & Amber Dawn)
+    if (floor <= 50) {
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Morning Dawn Sky Gradient -->
+          <rect width="320" height="65" fill="#241b38"/>
+          <rect y="65" width="320" height="40" fill="#4a2a3f"/>
+          <!-- Rising Amber Sun Glow -->
+          <circle cx="160" cy="70" r="28" fill="#ffaa44" opacity="0.6"/>
+          <!-- Rolling Morning Cloud Pillows -->
+          <circle cx="40" cy="75" r="26" fill="#dfd0e6" opacity="0.85"/>
+          <circle cx="85" cy="70" r="22" fill="#f0e6f5" opacity="0.9"/>
+          <circle cx="130" cy="78" r="24" fill="#dfd0e6" opacity="0.85"/>
+          <circle cx="190" cy="72" r="25" fill="#f0e6f5" opacity="0.9"/>
+          <circle cx="245" cy="76" r="24" fill="#dfd0e6" opacity="0.85"/>
+          <circle cx="290" cy="70" r="26" fill="#f0e6f5" opacity="0.9"/>
+          <!-- High Archways -->
+          <path d="M 0,95 L 0,40 Q 60,15 120,40 L 120,95 Z" fill="#2a1f33" opacity="0.8"/>
+          <path d="M 200,95 L 200,40 Q 260,15 320,40 L 320,95 Z" fill="#2a1f33" opacity="0.8"/>
+          <!-- Parapet Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#2c223b"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#ffaa44" stroke-width="2"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#3d2f52" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // Tower Tier 3: 51-100F 蒼穹高台 (Azure Stratosphere Overlook)
+    if (floor <= 100) {
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Brilliant Azure Daytime Sky -->
+          <rect width="320" height="70" fill="#1976d2"/>
+          <rect y="70" width="320" height="35" fill="#42a5f5"/>
+          <!-- Sunlit White Clouds -->
+          <circle cx="60" cy="50" r="16" fill="#ffffff" opacity="0.9"/>
+          <circle cx="85" cy="46" r="22" fill="#ffffff" opacity="0.95"/>
+          <circle cx="110" cy="52" r="16" fill="#ffffff" opacity="0.9"/>
+          <circle cx="230" cy="40" r="18" fill="#ffffff" opacity="0.9"/>
+          <circle cx="255" cy="36" r="24" fill="#ffffff" opacity="0.95"/>
+          <circle cx="280" cy="42" r="18" fill="#ffffff" opacity="0.9"/>
+          <!-- Soaring Birds Silhouettes -->
+          <path d="M 140,25 Q 146,20 152,25 Q 158,20 164,25" stroke="#0d47a1" stroke-width="1.5" fill="none"/>
+          <path d="M 170,35 Q 174,31 178,35 Q 182,31 186,35" stroke="#0d47a1" stroke-width="1.2" fill="none"/>
+          <!-- Sunlit Golden Trim Castle Parapet -->
+          <rect x="0" y="80" width="320" height="25" fill="#2b476e"/>
+          <rect x="20" y="65" width="25" height="18" fill="#3a5f94"/><rect x="80" y="65" width="25" height="18" fill="#3a5f94"/><rect x="140" y="65" width="25" height="18" fill="#3a5f94"/><rect x="200" y="65" width="25" height="18" fill="#3a5f94"/><rect x="260" y="65" width="25" height="18" fill="#3a5f94"/>
+          <!-- Sunlit Stone Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#203452"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#90caf9" stroke-width="2.5"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#2e4b75" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // Tower Tier 4: 101-250F 暮光星辰 (Twilight Starlight Overlook)
+    if (floor <= 250) {
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Deep Violet Twilight Sky -->
+          <rect width="320" height="70" fill="#1e0c38"/>
+          <rect y="70" width="320" height="35" fill="#3f1c5c"/>
+          <!-- Twinkling Starlight -->
+          <circle cx="35" cy="18" r="1.5" fill="#ffffff"/><circle cx="95" cy="28" r="2" fill="#ffd54f"/>
+          <circle cx="165" cy="15" r="1.5" fill="#ffffff"/><circle cx="240" cy="22" r="2" fill="#80d8ff"/><circle cx="295" cy="32" r="1.5" fill="#ffffff"/>
+          <!-- Glowing Arcane Runic Obelisks -->
+          <rect x="40" y="25" width="16" height="80" fill="#2a1447" stroke="#00e5ff" stroke-width="1.5"/>
+          <rect x="46" y="38" width="4" height="8" fill="#00e5ff"/>
+          <rect x="46" y="55" width="4" height="8" fill="#00e5ff"/>
+          <rect x="264" y="25" width="16" height="80" fill="#2a1447" stroke="#00e5ff" stroke-width="1.5"/>
+          <rect x="270" y="38" width="4" height="8" fill="#00e5ff"/>
+          <rect x="270" y="55" width="4" height="8" fill="#00e5ff"/>
+          <!-- Twilight Parapet Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#230f3d"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#00e5ff" stroke-width="2"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#3b1b61" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // Tower Tier 5: 251-500F 極光聖境 (Aurora Sanctuary)
+    if (floor <= 500) {
+      return `
+        <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect width="320" height="140" fill="#07101f"/>
+          <!-- Shimmering Northern Lights (Aurora Borealis) -->
+          <path d="M 0,25 Q 80,5 160,35 Q 240,65 320,15" stroke="#00e676" stroke-width="14" fill="none" opacity="0.45"/>
+          <path d="M 0,32 Q 90,12 170,42 Q 250,72 320,22" stroke="#00b0ff" stroke-width="10" fill="none" opacity="0.4"/>
+          <path d="M 0,18 Q 70,38 150,18 Q 230,0 320,38" stroke="#f50057" stroke-width="8" fill="none" opacity="0.35"/>
+          <!-- Golden Celestial Spire Battlements -->
+          <rect x="0" y="75" width="320" height="30" fill="#132742"/>
+          <rect x="30" y="55" width="20" height="22" fill="#ffd700"/><rect x="90" y="55" width="20" height="22" fill="#ffd700"/><rect x="150" y="55" width="20" height="22" fill="#ffd700"/><rect x="210" y="55" width="20" height="22" fill="#ffd700"/><rect x="270" y="55" width="20" height="22" fill="#ffd700"/>
+          <!-- Celestial Parapet Floor -->
+          <rect x="0" y="105" width="320" height="35" fill="#102038"/>
+          <line x1="0" y1="105" x2="320" y2="105" stroke="#00e676" stroke-width="2.5"/>
+          <line x1="0" y1="120" x2="320" y2="120" stroke="#1d3b66" stroke-width="1.5"/>
+        </svg>
+      `;
+    }
+
+    // Tower Tier 6: 501-1000F 宇宙星雲之巔 (Pinnacle of Cosmos & Galaxy)
+    return `
+      <svg class="medieval-bg-svg" viewBox="0 0 320 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <rect width="320" height="140" fill="#040212"/>
+        <!-- Cosmic Galaxy Nebula Swirls -->
+        <circle cx="90" cy="40" r="42" fill="#7c4dff" opacity="0.25"/>
+        <circle cx="230" cy="35" r="48" fill="#e040fb" opacity="0.25"/>
+        <circle cx="160" cy="50" r="32" fill="#00e5ff" opacity="0.25"/>
+        <!-- Brilliant Star Field -->
+        <circle cx="30" cy="18" r="1.5" fill="#ffffff"/><circle cx="70" cy="12" r="2" fill="#ffd54f"/>
+        <circle cx="120" cy="22" r="1.5" fill="#ffffff"/><circle cx="160" cy="10" r="2.5" fill="#ffffff"/>
+        <circle cx="205" cy="20" r="1.5" fill="#80d8ff"/><circle cx="250" cy="14" r="2" fill="#ffd54f"/>
+        <circle cx="295" cy="24" r="1.5" fill="#ffffff"/>
+        <!-- Divine Ether Crystal Pillars -->
+        <rect x="25" y="15" width="14" height="90" fill="#311b92" stroke="#b388ff" stroke-width="1.5"/>
+        <rect x="281" y="15" width="14" height="90" fill="#311b92" stroke="#b388ff" stroke-width="1.5"/>
+        <!-- Star Constellation Platform Floor -->
+        <rect x="0" y="105" width="320" height="35" fill="#0d0824"/>
+        <line x1="0" y1="105" x2="320" y2="105" stroke="#b388ff" stroke-width="2.5"/>
+        <line x1="0" y1="120" x2="320" y2="120" stroke="#251661" stroke-width="1.5"/>
+      </svg>
+    `;
   };
 
   return {

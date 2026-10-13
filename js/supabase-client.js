@@ -8,6 +8,7 @@ const SupabaseClient = (() => {
   let currentUser = null;
 
   const STORAGE_SESSION_KEY = 'word_dungeon_auth_session';
+  const STORAGE_SAVED_AUTH_KEY = 'word_dungeon_saved_auth';
 
   // Admin Master Credentials
   const ADMIN_CREDENTIALS = {
@@ -17,8 +18,41 @@ const SupabaseClient = (() => {
     heroName: '總管大賢者 tangghgh'
   };
 
+  const getSavedCredentials = () => {
+    try {
+      const data = localStorage.getItem(STORAGE_SAVED_AUTH_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (e) {
+      console.warn('Get saved credentials warning:', e);
+    }
+    return null;
+  };
+
+  const saveCredentials = (account, password) => {
+    try {
+      localStorage.setItem(STORAGE_SAVED_AUTH_KEY, JSON.stringify({
+        account: (account || '').trim(),
+        password: (password || '').trim(),
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.warn('Save credentials warning:', e);
+    }
+  };
+
+  const clearSavedCredentials = () => {
+    try {
+      localStorage.removeItem(STORAGE_SAVED_AUTH_KEY);
+    } catch (e) {}
+  };
+
   const init = async () => {
-    // 1. Check local persistent session first (保持登入機制)
+    // 1. Initialize Supabase client if configured
+    getClient();
+
+    // 2. Check local persistent session first (保持登入機制)
     try {
       const savedSession = localStorage.getItem(STORAGE_SESSION_KEY);
       if (savedSession) {
@@ -34,30 +68,20 @@ const SupabaseClient = (() => {
       console.warn('Load saved auth session warning:', e);
     }
 
-    if (!window.supabase || !SUPABASE_CONFIG.isConfigured()) {
-      return Boolean(currentUser);
-    }
-
-    try {
-      const url = SUPABASE_CONFIG.getUrl();
-      const key = SUPABASE_CONFIG.getAnonKey();
-      client = window.supabase.createClient(url, key, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true
+    // 3. Check remote Supabase session & setup auth state listener
+    if (client) {
+      try {
+        const { data } = await client.auth.getSession();
+        if (data && data.session && data.session.user) {
+          currentUser = data.session.user;
+          const metaUser = currentUser.user_metadata?.username || '';
+          if (metaUser === ADMIN_CREDENTIALS.username || currentUser.email === ADMIN_CREDENTIALS.email) {
+            currentUser.isAdmin = true;
+          }
+          saveLocalSession(currentUser);
         }
-      });
-
-      // Check remote Supabase session
-      const { data } = await client.auth.getSession();
-      if (data && data.session && data.session.user) {
-        currentUser = data.session.user;
-        const metaUser = currentUser.user_metadata?.username || '';
-        if (metaUser === ADMIN_CREDENTIALS.username || currentUser.email === ADMIN_CREDENTIALS.email) {
-          currentUser.isAdmin = true;
-        }
-        // Sync local storage session
-        saveLocalSession(currentUser);
+      } catch (sessionErr) {
+        console.warn('Get remote session warning:', sessionErr);
       }
 
       client.auth.onAuthStateChange((event, session) => {
@@ -73,12 +97,25 @@ const SupabaseClient = (() => {
           localStorage.removeItem(STORAGE_SESSION_KEY);
         }
       });
-
-      return Boolean(currentUser);
-    } catch (e) {
-      console.error('Supabase init failed', e);
-      return Boolean(currentUser);
     }
+
+    // 4. If no active session, auto-login using remembered credentials
+    if (!currentUser) {
+      const savedCreds = getSavedCredentials();
+      if (savedCreds && savedCreds.account && savedCreds.password) {
+        try {
+          console.log('Auto-logging in with saved credentials for:', savedCreds.account);
+          const res = await signIn(savedCreds.account, savedCreds.password, true);
+          if (res && res.user) {
+            currentUser = res.user;
+          }
+        } catch (autoErr) {
+          console.warn('Auto-login from saved credentials notice:', autoErr);
+        }
+      }
+    }
+
+    return Boolean(currentUser);
   };
 
   const saveLocalSession = (user) => {
@@ -159,7 +196,7 @@ const SupabaseClient = (() => {
   };
 
   // Sign In with Account (Username or Email) & Password
-  const signIn = async (accountOrEmail, password) => {
+  const signIn = async (accountOrEmail, password, remember = true) => {
     const rawAccount = (accountOrEmail || '').trim();
     const cleanPassword = (password || '').trim();
 
@@ -176,6 +213,7 @@ const SupabaseClient = (() => {
         hero_name: ADMIN_CREDENTIALS.heroName,
         isAdmin: true
       };
+      if (remember) saveCredentials(rawAccount, cleanPassword);
       saveLocalSession(currentUser);
       await syncFromCloud();
       return { user: currentUser };
@@ -191,6 +229,7 @@ const SupabaseClient = (() => {
         hero_name: '冒險者 ' + rawAccount.split('@')[0],
         isAdmin: false
       };
+      if (remember) saveCredentials(rawAccount, cleanPassword);
       saveLocalSession(currentUser);
       return { user: currentUser };
     }
@@ -244,6 +283,7 @@ const SupabaseClient = (() => {
             hero_name: '單字勇者',
             isAdmin: false
           };
+          if (remember) saveCredentials(rawAccount, cleanPassword);
           saveLocalSession(currentUser);
           await syncFromCloud();
           return { user: currentUser };
@@ -255,6 +295,7 @@ const SupabaseClient = (() => {
       if (rawAccount.toLowerCase() === ADMIN_CREDENTIALS.username.toLowerCase()) {
         currentUser.isAdmin = true;
       }
+      if (remember) saveCredentials(rawAccount, cleanPassword);
       saveLocalSession(currentUser);
       await syncFromCloud();
       return data;
@@ -280,6 +321,7 @@ const SupabaseClient = (() => {
           hero_name: '單字勇者',
           isAdmin: false
         };
+        if (remember) saveCredentials(rawAccount, cleanPassword);
         saveLocalSession(currentUser);
         await syncFromCloud();
         return { user: currentUser };
@@ -408,6 +450,7 @@ const SupabaseClient = (() => {
     }
     currentUser = null;
     localStorage.removeItem(STORAGE_SESSION_KEY);
+    clearSavedCredentials();
   };
 
   // Download Profile from Supabase
@@ -568,6 +611,9 @@ const SupabaseClient = (() => {
     signOut,
     syncFromCloud,
     syncToCloud,
-    fetchLeaderboard
+    fetchLeaderboard,
+    getSavedCredentials,
+    saveCredentials,
+    clearSavedCredentials
   };
 })();
