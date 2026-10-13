@@ -1248,3 +1248,182 @@ body {
   font-weight: bold;
   color: #ffcc44;
 }
+
+/* ==========================================================================
+   Initial Hero Class Selector (Auth Gate & Registration)
+   ========================================================================== */
+.gate-class-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .gate-class-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gate-class-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  background: #171822;
+  border: 2px solid #2e3344;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.gate-class-card:hover {
+  background: #202330;
+  border-color: #555f7c;
+  transform: translateY(-2px);
+}
+
+.gate-class-card.selected {
+  border-color: var(--gold);
+  background: #272838;
+  box-shadow: 0 0 10px rgba(245, 196, 67, 0.4);
+}
+
+.gate-class-mini-sprite {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1017;
+  border: 1px solid #252a3a;
+}
+
+.gate-class-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.gate-class-card.selected .gate-class-title {
+  color: var(--gold);
+}
+
+.gate-class-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: #1c2e42;
+  border: 1px solid #304e6e;
+  color: #72dcff;
+}
+
+.gate-class-detail-box {
+  background: #151620;
+  border: 1px solid #363d54;
+  padding: 8px 10px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.gate-detail-name {
+  font-weight: bold;
+  color: #f7d046;
+  font-size: 12px;
+}
+
+.gate-detail-bonus {
+  color: #6ee6ff;
+  font-weight: bold;
+}
+
+.gate-detail-desc {
+  color: #a4adca;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   Shop Fitting Room / Equipment Paper Doll Preview
+   ========================================================================== */
+.shop-fitting-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: #191b26;
+  border: 2px solid #3b4258;
+  margin-bottom: 12px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.fitting-sprite-box {
+  width: 68px;
+  height: 68px;
+  background: radial-gradient(circle, #252838 0%, #101118 80%);
+  border: 2px solid #4a5472;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+.fitting-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fitting-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fitting-hero-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.fitting-switch-class-btn {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 8px;
+  background: #25293a;
+  border: 1px solid #485272;
+  color: #b0c2e8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fitting-switch-class-btn:hover {
+  background: #353b52;
+  color: #ffffff;
+  border-color: var(--gold);
+}
+
+.fitting-gear-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.fitting-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #11131c;
+  border: 1px solid #30374c;
+  color: #d6deee;
+}
+

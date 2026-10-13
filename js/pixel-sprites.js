@@ -221,46 +221,96 @@ const PixelSprites = (() => {
     `, `pixel-icon`)
   };
 
-  // Dynamic Multi-Class Pixel Hero Paper Doll (64x64)
+  // Dynamic Multi-Class & Multi-Tier Equipment Pixel Hero Paper Doll (64x64)
   const renderHero = (expression = 'happy', weaponTier = 1, armorTier = 1, relicTier = 0, heroClass = 'knight') => {
-    // Colors by armor tier
-    const armorColors = [
-      { main: '#504030', trim: '#706050', helm: '#302820' }, // T0 Cloth
-      { main: '#6a4e32', trim: '#4a823c', helm: '#503c26' }, // T1 Leather
-      { main: '#788898', trim: '#4466aa', helm: '#8c9cb0' }, // T2 Chainmail
-      { main: '#9bb8d4', trim: '#ffd700', helm: '#b2d0ee' }, // T3 Mithril
-      { main: '#3a2e54', trim: '#aa55ff', helm: '#4c3a70' }, // T4 Phantom
-      { main: '#a82c2c', trim: '#ff7733', helm: '#c43434' }, // T5 Dragon
-      { main: '#e8e8f8', trim: '#fcd736', helm: '#ffffff' }  // T6 Celestial
-    ][Math.min(armorTier, 6)];
+    const aTier = Math.max(1, Math.min(6, parseInt(armorTier) || 1));
+    const wTier = Math.max(1, Math.min(6, parseInt(weaponTier) || 1));
+    const rTier = Math.max(0, Math.min(4, parseInt(relicTier) || 0));
 
-    // Weapon colors & blade pixels
-    const weaponDef = [
-      { blade: '#605040', hilt: '#302010', glow: '#a08060' }, // T0
-      { blade: '#8b6914', hilt: '#503810', glow: '#d4af37' }, // T1 Wood
-      { blade: '#d0d8e8', hilt: '#c89b3c', glow: '#ffffff' }, // T2 Steel
-      { blade: '#ff4422', hilt: '#ffd700', glow: '#ffaa44' }, // T3 Flame
-      { blade: '#44ddff', hilt: '#ffffff', glow: '#aaeebb' }, // T4 Frost
-      { blade: '#ffff33', hilt: '#3388ff', glow: '#4fe3ff' }, // T5 Thunder
-      { blade: '#ffffff', hilt: '#ffd700', glow: '#fcd736' }  // T6 Excalibur
-    ][Math.min(weaponTier, 6)];
+    // Armor Themes (T1~T6)
+    const armorTheme = [
+      null,
+      // T1: 翠林旅人皮甲 (Traveler Leather)
+      {
+        main: '#6a4e32', trim: '#4a823c', dark: '#483522', metal: '#887058',
+        accent: '#55aa44', cape: '#3a6834', helm: '#5a422a', eyeGlow: null
+      },
+      // T2: 銀翼衛隊鎖子甲 (Silver Guard Chainmail)
+      {
+        main: '#788898', trim: '#2e5894', dark: '#506070', metal: '#b0c0d0',
+        accent: '#5588dd', cape: '#264275', helm: '#8c9cb0', eyeGlow: null
+      },
+      // T3: 秘銀聖殿重鎧 (Mithril Heavy Armor)
+      {
+        main: '#9bb8d4', trim: '#ffd700', dark: '#6888a4', metal: '#d0e4f4',
+        accent: '#3388ff', cape: '#285888', helm: '#b2d0ee', eyeGlow: '#4fe3ff'
+      },
+      // T4: 暗夜精靈幻影甲 (Phantom Night Armor)
+      {
+        main: '#2d2242', trim: '#b85bf8', dark: '#1c152a', metal: '#5a4580',
+        accent: '#cc44ff', cape: '#181024', helm: '#443264', eyeGlow: '#ee66ff'
+      },
+      // T5: 紅蓮龍鱗戰甲 (Crimson Dragonscale Armor)
+      {
+        main: '#a82424', trim: '#ff9922', dark: '#661414', metal: '#d44040',
+        accent: '#ffd700', cape: '#801818', helm: '#c43030', eyeGlow: '#ffaa00'
+      },
+      // T6: 不朽神聖蒼穹鎧 (Celestial Immortal Armor)
+      {
+        main: '#f0f4fc', trim: '#ffd700', dark: '#b8c8dc', metal: '#ffffff',
+        accent: '#55d0ff', cape: '#fcd736', helm: '#ffffff', eyeGlow: '#55ddff'
+      }
+    ][aTier];
 
-    // Relic Aura
+    // Weapon Themes (T1~T6)
+    const weaponTheme = [
+      null,
+      // T1: 木質 (Oak Practice)
+      { blade: '#8a5a2b', hilt: '#503818', glow: '#c49b4a', spark: '#eeddaa', core: '#a6723e' },
+      // T2: 精鋼 (Kingdom Steel)
+      { blade: '#d0d8e8', hilt: '#c89b3c', glow: '#ffffff', spark: '#99bbdd', core: '#eef4ff' },
+      // T3: 烈焰 (Crimson Flame)
+      { blade: '#ff3a20', hilt: '#ffd700', glow: '#ffaa22', spark: '#ffee66', core: '#ff8833' },
+      // T4: 寒冰 (Glacial Frost)
+      { blade: '#44ddff', hilt: '#ffffff', glow: '#99f0ff', spark: '#ccffff', core: '#88eeff' },
+      // T5: 蒼雷 (Thunder Dragon)
+      { blade: '#ffff44', hilt: '#3388ff', glow: '#4fe3ff', spark: '#ffffff', core: '#ffffaa' },
+      // T6: 真理 (Genesis Holy Light)
+      { blade: '#ffffff', hilt: '#ffd700', glow: '#ffd700', spark: '#ffea66', core: '#ffffff' }
+    ][wTier];
+
+    // Relic Aura (T1~T4)
     let relicSvg = '';
-    if (relicTier >= 1) {
-      const auraColor = relicTier === 1 ? '#c89b3c' : relicTier === 2 ? '#44dd88' : relicTier === 3 ? '#9966ff' : '#ffd700';
+    if (rTier >= 1) {
+      const auraColor = rTier === 1 ? '#c89b3c' : rTier === 2 ? '#44dd88' : rTier === 3 ? '#b85bf8' : '#ffd700';
       relicSvg = `
-        <circle cx="32" cy="30" r="26" fill="none" stroke="${auraColor}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+        <circle cx="32" cy="31" r="27" fill="none" stroke="${auraColor}" stroke-width="${rTier >= 3 ? '2.5' : '1.5'}" stroke-dasharray="${rTier >= 3 ? '5,3' : '3,3'}" opacity="${0.4 + rTier * 0.15}"/>
         <rect x="30" y="2" width="4" height="4" fill="${auraColor}"/>
-        <rect x="10" y="24" width="3" height="3" fill="${auraColor}"/>
-        <rect x="52" y="24" width="3" height="3" fill="${auraColor}"/>
+        <rect x="6" y="27" width="3" height="3" fill="${auraColor}"/>
+        <rect x="55" y="27" width="3" height="3" fill="${auraColor}"/>
       `;
-      if (relicTier === 4) { // Eternal Crown Halo
+      if (rTier >= 2) {
+        // Floating sparkles
         relicSvg += `
-          <rect x="26" y="6" width="12" height="3" fill="#ffd700"/>
-          <rect x="24" y="4" width="3" height="3" fill="#ffd700"/>
-          <rect x="30" y="3" width="4" height="4" fill="#ffffff"/>
-          <rect x="37" y="4" width="3" height="3" fill="#ffd700"/>
+          <rect x="14" y="10" width="2" height="2" fill="${auraColor}"/>
+          <rect x="48" y="10" width="2" height="2" fill="${auraColor}"/>
+        `;
+      }
+      if (rTier >= 3) {
+        // Wisdom Magic Circle at base
+        relicSvg += `
+          <ellipse cx="32" cy="59" rx="20" ry="4" fill="none" stroke="${auraColor}" stroke-width="1.5" opacity="0.6"/>
+          <line x1="20" y1="59" x2="44" y2="59" stroke="${auraColor}" stroke-width="1" stroke-dasharray="2,2"/>
+        `;
+      }
+      if (rTier === 4) {
+        // Eternal Crown Radiant Halo
+        relicSvg += `
+          <rect x="25" y="5" width="14" height="3" fill="#ffd700"/>
+          <rect x="23" y="3" width="3" height="3" fill="#ffd700"/>
+          <rect x="30" y="2" width="4" height="4" fill="#ffffff"/>
+          <rect x="38" y="3" width="3" height="3" fill="#ffd700"/>
+          <circle cx="32" cy="6" r="8" fill="none" stroke="#ffe766" stroke-width="1" opacity="0.5"/>
         `;
       }
     }
@@ -301,7 +351,7 @@ const PixelSprites = (() => {
         <rect x="33" y="23" width="3" height="3" fill="#112233"/>
         <rect x="30" y="27" width="4" height="2" fill="#112233"/>
       `;
-    } else { // Vacation / Sunglasses
+    } else { // Vacation
       faceSvg = `
         <rect x="26" y="20" width="12" height="11" fill="#ffd2aa"/>
         <rect x="27" y="22" width="10" height="4" fill="#111111"/>
@@ -314,259 +364,353 @@ const PixelSprites = (() => {
     let classBodySvg = '';
 
     if (heroClass === 'mage') {
-      // 🧙‍♂️ 秘術大法師: 高頂尖角星紋法師帽、奧術星空法袍、懸浮符文魔導書、水晶魔杖
+      // ==========================================
+      // 🧙‍♂️ 秘術大法師 (Mage)
+      // ==========================================
+      const hatColor = aTier >= 5 ? armorTheme.dark : armorTheme.cape;
+      const robeColor = armorTheme.main;
+      const robeTrim = armorTheme.trim;
+
       classBodySvg = `
         <!-- Wizard Hat Plume & Brim -->
-        <polygon points="32,2 26,16 38,16" fill="#2d2459"/>
-        <rect x="24" y="15" width="16" height="4" fill="#1c1538"/>
-        <rect x="30" y="14" width="4" height="3" fill="#ffd700"/>
-        <!-- Long White Wizard Hair/Beard -->
+        <polygon points="32,2 26,16 38,16" fill="${hatColor}"/>
+        <rect x="24" y="15" width="16" height="4" fill="${armorTheme.dark}"/>
+        <rect x="29" y="14" width="6" height="3" fill="${robeTrim}"/>
+        ${aTier >= 5 ? `<polygon points="32,0 30,5 34,5" fill="${armorTheme.accent}"/>` : ''}
+
+        <!-- Long Wizard Hair / Beard -->
         <rect x="24" y="19" width="3" height="14" fill="#e8edf5"/>
         <rect x="37" y="19" width="3" height="14" fill="#e8edf5"/>
         <rect x="29" y="28" width="6" height="6" fill="#e8edf5"/>
         ${faceSvg}
-        <!-- Flowing Arcane Robe -->
-        <rect x="24" y="31" width="16" height="24" fill="#251f45"/>
-        <rect x="28" y="32" width="8" height="23" fill="#362d66"/>
-        <rect x="31" y="34" width="2" height="21" fill="#ffd700"/>
-        <rect x="27" y="42" width="10" height="3" fill="#ffd700"/>
-        <!-- Robe Sleeves -->
-        <rect x="20" y="33" width="5" height="10" fill="#251f45"/>
-        <rect x="39" y="33" width="5" height="10" fill="#251f45"/>
-        <rect x="21" y="42" width="3" height="3" fill="#ffd2aa"/>
-        <rect x="40" y="42" width="3" height="3" fill="#ffd2aa"/>
+
+        <!-- Flowing Arcane Robe (Tier Adaptive) -->
+        <rect x="24" y="31" width="16" height="24" fill="${robeColor}"/>
+        <rect x="28" y="32" width="8" height="23" fill="${armorTheme.dark}"/>
+        <rect x="31" y="34" width="2" height="21" fill="${robeTrim}"/>
+        <rect x="27" y="42" width="10" height="3" fill="${robeTrim}"/>
+
+        <!-- Sleeves & Hands -->
+        <rect x="20" y="33" width="5" height="10" fill="${robeColor}"/>
+        <rect x="39" y="33" width="5" height="10" fill="${robeColor}"/>
+        <rect x="20" y="41" width="4" height="2" fill="${robeTrim}"/>
+        <rect x="40" y="41" width="4" height="2" fill="${robeTrim}"/>
+        <rect x="21" y="43" width="3" height="3" fill="#ffd2aa"/>
+        <rect x="40" y="43" width="3" height="3" fill="#ffd2aa"/>
+
         <!-- Robe Hem & Boots -->
-        <rect x="22" y="54" width="20" height="3" fill="#ffd700"/>
-        <rect x="26" y="56" width="4" height="4" fill="#120e24"/>
-        <rect x="34" y="56" width="4" height="4" fill="#120e24"/>
-        <!-- Left: Floating Arcane Grimoire Spellbook -->
+        <rect x="22" y="54" width="20" height="3" fill="${robeTrim}"/>
+        <rect x="26" y="56" width="4" height="4" fill="${armorTheme.dark}"/>
+        <rect x="34" y="56" width="4" height="4" fill="${armorTheme.dark}"/>
+
+        <!-- Left: Floating Arcane Grimoire (Tier Evolving) -->
         <g>
-          <rect x="12" y="34" width="8" height="10" fill="#662233"/>
-          <rect x="13" y="35" width="6" height="8" fill="#eef2ff"/>
-          <line x1="16" y1="35" x2="16" y2="43" stroke="#662233" stroke-width="1"/>
-          <!-- Sparkles -->
-          <rect x="14" y="31" width="2" height="2" fill="#4fe3ff"/>
-          <rect x="19" y="33" width="2" height="2" fill="#ffe766"/>
+          <rect x="11" y="33" width="9" height="11" fill="${armorTheme.dark}"/>
+          <rect x="12" y="34" width="7" height="9" fill="${weaponTheme.core}"/>
+          <line x1="15" y1="34" x2="15" y2="43" stroke="${robeTrim}" stroke-width="1.5"/>
+          <rect x="13" y="30" width="2" height="2" fill="${weaponTheme.glow}"/>
+          <rect x="18" y="32" width="2" height="2" fill="${weaponTheme.spark}"/>
         </g>
-        <!-- Right: Arcane Crystal Staff -->
+
+        <!-- Right: Arcane Magic Staff (Weapon Tier Evolving) -->
         <g>
-          <rect x="44" y="16" width="3" height="40" fill="#5c381e"/>
-          <circle cx="45" cy="14" r="5" fill="${weaponDef.glow}"/>
-          <circle cx="45" cy="14" r="3" fill="#ffffff"/>
+          <!-- Staff Shaft -->
+          <rect x="44" y="14" width="3" height="44" fill="${wTier === 1 ? '#6a4e32' : wTier === 2 ? '#b0b8c4' : '#382b40'}"/>
+          <rect x="43" y="38" width="5" height="4" fill="${weaponTheme.hilt}"/>
+          <!-- Staff Top Crystal & Wings -->
+          <circle cx="45" cy="12" r="${wTier >= 5 ? 6 : wTier >= 3 ? 5 : 4}" fill="${weaponTheme.glow}"/>
+          <circle cx="45" cy="12" r="2.5" fill="${weaponTheme.spark}"/>
+          ${wTier >= 3 ? `<polygon points="41,12 43,8 43,16" fill="${weaponTheme.blade}"/>` : ''}
+          ${wTier >= 3 ? `<polygon points="49,12 47,8 47,16" fill="${weaponTheme.blade}"/>` : ''}
+          ${wTier >= 5 ? `<circle cx="45" cy="12" r="8" fill="none" stroke="${weaponTheme.spark}" stroke-width="1" stroke-dasharray="2,2"/>` : ''}
         </g>
       `;
     } else if (heroClass === 'ranger') {
-      // 🏹 翠林巡林客: 巡林兜帽、羽飾、背負箭筒、精靈輕甲、手持長弓
+      // ==========================================
+      // 🏹 翠林巡林客 (Ranger)
+      // ==========================================
       classBodySvg = `
-        <!-- Forest Archer Hood -->
-        <rect x="25" y="14" width="14" height="7" fill="#2d5932"/>
-        <rect x="23" y="17" width="3" height="13" fill="#2d5932"/>
-        <rect x="38" y="17" width="3" height="13" fill="#2d5932"/>
-        <!-- White Feather on Hood -->
-        <polygon points="23,12 25,18 22,18" fill="#ffffff"/>
+        <!-- Forest Archer Hood (Tier Adaptive) -->
+        <rect x="25" y="14" width="14" height="7" fill="${armorTheme.cape}"/>
+        <rect x="23" y="17" width="3" height="13" fill="${armorTheme.cape}"/>
+        <rect x="38" y="17" width="3" height="13" fill="${armorTheme.cape}"/>
+        <!-- Hood Feather (Tier Adaptive) -->
+        <polygon points="23,11 25,18 21,18" fill="${armorTheme.trim}"/>
+        ${aTier >= 4 ? `<polygon points="21,9 23,16 20,16" fill="${armorTheme.accent}"/>` : ''}
         ${faceSvg}
-        <!-- Leather Jerkin & Forest Cloak -->
-        <rect x="24" y="31" width="16" height="16" fill="#3a6b3e"/>
-        <rect x="28" y="32" width="8" height="15" fill="#5c4028"/>
-        <!-- Back Cloak Tips -->
-        <rect x="21" y="34" width="4" height="14" fill="#224426"/>
-        <rect x="39" y="34" width="4" height="14" fill="#224426"/>
+
+        <!-- Leather / Mithril Jerkin & Cloak -->
+        <rect x="24" y="31" width="16" height="16" fill="${armorTheme.main}"/>
+        <rect x="28" y="32" width="8" height="15" fill="${armorTheme.dark}"/>
+        <rect x="26" y="38" width="12" height="2" fill="${armorTheme.trim}"/>
+
+        <!-- Cloak Back Flaps -->
+        <rect x="21" y="34" width="4" height="14" fill="${armorTheme.cape}"/>
+        <rect x="39" y="34" width="4" height="14" fill="${armorTheme.cape}"/>
+
         <!-- Hands with Archer Bracers -->
-        <rect x="21" y="42" width="3" height="4" fill="#5c4028"/>
+        <rect x="21" y="42" width="3" height="4" fill="${armorTheme.dark}"/>
         <rect x="40" y="40" width="3" height="4" fill="#ffd2aa"/>
+
         <!-- Legs & Tall Boots -->
-        <rect x="26" y="47" width="5" height="11" fill="#4a5238"/>
-        <rect x="33" y="47" width="5" height="11" fill="#4a5238"/>
-        <rect x="25" y="57" width="6" height="4" fill="#332415"/>
-        <rect x="33" y="57" width="6" height="4" fill="#332415"/>
-        <!-- Left Shoulder: Quiver with Arrows -->
+        <rect x="26" y="47" width="5" height="11" fill="${armorTheme.dark}"/>
+        <rect x="33" y="47" width="5" height="11" fill="${armorTheme.dark}"/>
+        <rect x="25" y="57" width="6" height="4" fill="${armorTheme.main}"/>
+        <rect x="33" y="57" width="6" height="4" fill="${armorTheme.main}"/>
+
+        <!-- Left Shoulder: Quiver with Arrows (Tier Adaptive) -->
         <g>
-          <rect x="18" y="24" width="4" height="12" fill="#6b4423"/>
-          <line x1="18" y1="21" x2="20" y2="24" stroke="#ffffff" stroke-width="1.5"/>
-          <line x1="21" y1="20" x2="21" y2="24" stroke="#ffffff" stroke-width="1.5"/>
+          <rect x="17" y="24" width="5" height="13" fill="${armorTheme.dark}"/>
+          <rect x="18" y="25" width="3" height="2" fill="${armorTheme.trim}"/>
+          <!-- Arrow Shafts & Fletchings -->
+          <line x1="17" y1="20" x2="19" y2="24" stroke="${weaponTheme.spark}" stroke-width="1.5"/>
+          <line x1="21" y1="19" x2="21" y2="24" stroke="${weaponTheme.spark}" stroke-width="1.5"/>
         </g>
-        <!-- Right Hand: Recurve Longbow -->
+
+        <!-- Right Hand: Recurve Longbow (Weapon Tier Evolving) -->
         <g>
-          <path d="M 46,12 Q 52,32 46,52" fill="none" stroke="#7a481e" stroke-width="2.5"/>
-          <line x1="46" y1="13" x2="46" y2="51" stroke="#ffffff" stroke-width="1" stroke-dasharray="2,1"/>
+          <!-- Bow Limbs -->
+          <path d="M 46,10 Q ${wTier >= 5 ? '55' : '52'},32 46,54" fill="none" stroke="${weaponTheme.blade}" stroke-width="${wTier >= 4 ? '3.5' : '2.5'}"/>
+          <!-- Bow Tips -->
+          <rect x="45" y="9" width="3" height="3" fill="${weaponTheme.hilt}"/>
+          <rect x="45" y="53" width="3" height="3" fill="${weaponTheme.hilt}"/>
+          <!-- Bowstring -->
+          <line x1="46" y1="11" x2="46" y2="53" stroke="${weaponTheme.spark}" stroke-width="1" stroke-dasharray="3,1"/>
           <!-- Nocked Arrow -->
-          <line x1="40" y1="32" x2="50" y2="32" stroke="#d0d0e0" stroke-width="1.5"/>
-          <polygon points="50,30 54,32 50,34" fill="#a0a0b0"/>
+          <line x1="39" y1="32" x2="52" y2="32" stroke="${weaponTheme.core}" stroke-width="1.5"/>
+          <polygon points="52,30 56,32 52,34" fill="${weaponTheme.glow}"/>
         </g>
       `;
     } else if (heroClass === 'berserker') {
-      // ⚔️ 維京狂戰士: 維京巨角骨盔、野獸厚毛皮披肩、肌肉戰紋、雙手巨斧
+      // ==========================================
+      // ⚔️ 維京狂戰士 (Berserker)
+      // ==========================================
+      const hornColor = aTier === 1 ? '#eeddbb' : aTier === 2 ? '#f0ece1' : aTier === 3 ? '#d6e8f4' : aTier === 4 ? '#221133' : aTier === 5 ? '#ff4422' : '#ffd700';
+
       classBodySvg = `
-        <!-- Viking Horned Helm -->
-        <rect x="25" y="15" width="14" height="6" fill="#5a606e"/>
-        <!-- Huge Curved Ivory Horns -->
-        <polygon points="22,18 16,8 24,14" fill="#f0ece1"/>
-        <polygon points="42,18 48,8 40,14" fill="#f0ece1"/>
+        <!-- Viking Horned Helm (Armor Tier Adaptive) -->
+        <rect x="25" y="15" width="14" height="6" fill="${armorTheme.helm}"/>
+        <!-- Giant Curved Horns -->
+        <polygon points="22,18 15,7 24,14" fill="${hornColor}"/>
+        <polygon points="42,18 49,7 40,14" fill="${hornColor}"/>
         <!-- Forehead Band with Studs -->
-        <rect x="25" y="19" width="14" height="3" fill="#383d47"/>
-        <rect x="28" y="19" width="2" height="3" fill="#ffd700"/>
-        <rect x="34" y="19" width="2" height="3" fill="#ffd700"/>
+        <rect x="25" y="19" width="14" height="3" fill="${armorTheme.dark}"/>
+        <rect x="28" y="19" width="2" height="3" fill="${armorTheme.trim}"/>
+        <rect x="34" y="19" width="2" height="3" fill="${armorTheme.trim}"/>
         ${faceSvg}
-        <!-- Red War Paint Streaks -->
-        <line x1="28" y1="24" x2="28" y2="28" stroke="#cc2222" stroke-width="1.5"/>
-        <line x1="35" y1="24" x2="35" y2="28" stroke="#cc2222" stroke-width="1.5"/>
-        <!-- Heavy Bear Fur Mantle over Shoulders -->
-        <rect x="20" y="30" width="24" height="6" fill="#4a3018"/>
-        <rect x="18" y="33" width="7" height="9" fill="#5c3d20"/>
-        <rect x="39" y="33" width="7" height="9" fill="#5c3d20"/>
-        <!-- Muscular Torso & Belt -->
+
+        <!-- Red / Tier War Paint Streaks -->
+        <line x1="28" y1="24" x2="28" y2="28" stroke="${aTier >= 4 ? armorTheme.accent : '#cc2222'}" stroke-width="1.5"/>
+        <line x1="35" y1="24" x2="35" y2="28" stroke="${aTier >= 4 ? armorTheme.accent : '#cc2222'}" stroke-width="1.5"/>
+
+        <!-- Heavy Beast Fur Mantle over Shoulders -->
+        <rect x="19" y="30" width="26" height="6" fill="${armorTheme.dark}"/>
+        <rect x="17" y="33" width="8" height="9" fill="${armorTheme.main}"/>
+        <rect x="39" y="33" width="8" height="9" fill="${armorTheme.main}"/>
+
+        <!-- Muscular Torso & Spiked Belt -->
         <rect x="25" y="36" width="14" height="11" fill="#e8be92"/>
-        <rect x="24" y="45" width="16" height="4" fill="#301808"/>
-        <rect x="30" y="45" width="4" height="4" fill="#ffd700"/>
+        <rect x="24" y="45" width="16" height="4" fill="${armorTheme.dark}"/>
+        <rect x="29" y="45" width="6" height="4" fill="${armorTheme.trim}"/>
+
         <!-- Legs & Fur Boots -->
-        <rect x="26" y="49" width="5" height="8" fill="#3a2212"/>
-        <rect x="33" y="49" width="5" height="8" fill="#3a2212"/>
-        <rect x="25" y="56" width="6" height="6" fill="#4a3018"/>
-        <rect x="33" y="56" width="6" height="6" fill="#4a3018"/>
-        <!-- Both Hands Wielding Giant Double-bitted Battleaxe -->
+        <rect x="26" y="49" width="5" height="8" fill="${armorTheme.dark}"/>
+        <rect x="33" y="49" width="5" height="8" fill="${armorTheme.dark}"/>
+        <rect x="25" y="56" width="6" height="6" fill="${armorTheme.main}"/>
+        <rect x="33" y="56" width="6" height="6" fill="${armorTheme.main}"/>
+
+        <!-- Giant Double-bitted Battleaxe (Weapon Tier Evolving) -->
         <g>
           <!-- Axe Haft -->
-          <rect x="42" y="14" width="3" height="44" fill="#5a3d24"/>
-          <!-- Double Axe Blades -->
-          <polygon points="43,18 53,12 55,24 43,24" fill="${weaponDef.blade}"/>
-          <polygon points="42,18 34,14 33,24 42,24" fill="${weaponDef.blade}"/>
-          <polygon points="43,24 53,30 43,26" fill="${weaponDef.blade}"/>
-          <!-- Blade Highlights -->
-          <line x1="53" y1="12" x2="55" y2="24" stroke="#ffffff" stroke-width="1"/>
-          <line x1="34" y1="14" x2="33" y2="24" stroke="#ffffff" stroke-width="1"/>
+          <rect x="42" y="12" width="3" height="46" fill="${wTier === 1 ? '#5a3d24' : '#282030'}"/>
+          <rect x="41" y="36" width="5" height="4" fill="${weaponTheme.hilt}"/>
+          <!-- Left Blade -->
+          <polygon points="42,16 31,11 31,26 42,26" fill="${weaponTheme.blade}"/>
+          <polygon points="42,26 33,31 42,27" fill="${weaponTheme.blade}"/>
+          <!-- Right Blade -->
+          <polygon points="43,16 55,10 57,27 43,26" fill="${weaponTheme.blade}"/>
+          <polygon points="43,26 54,32 43,28" fill="${weaponTheme.blade}"/>
+          <!-- Blade Core & Edge Highlights -->
+          <circle cx="43" cy="21" r="3" fill="${weaponTheme.glow}"/>
+          <line x1="55" y1="10" x2="57" y2="27" stroke="${weaponTheme.spark}" stroke-width="1.5"/>
+          <line x1="31" y1="11" x2="31" y2="26" stroke="${weaponTheme.spark}" stroke-width="1.5"/>
         </g>
       `;
     } else if (heroClass === 'valkyrie') {
-      // 👑 天馬女武神: 天馬展翼羽冠、金光板甲、飄逸鮮紅長披風、神聖長矛與金屬圓盾
+      // ==========================================
+      // 👑 天馬女武神 (Valkyrie)
+      // ==========================================
       classBodySvg = `
-        <!-- Flowing Scarlet Cape in Background -->
-        <polygon points="22,34 14,58 24,58" fill="#991828"/>
-        <polygon points="42,34 50,58 40,58" fill="#991828"/>
-        <!-- Winged Tiara / Helm -->
-        <rect x="25" y="16" width="14" height="4" fill="#ffd700"/>
+        <!-- Flowing Majestic Cape in Background (Tier Adaptive) -->
+        <polygon points="22,33 13,58 24,58" fill="${armorTheme.cape}"/>
+        <polygon points="42,33 51,58 40,58" fill="${armorTheme.cape}"/>
+
+        <!-- Winged Tiara / Crown (Tier Adaptive) -->
+        <rect x="25" y="16" width="14" height="4" fill="${armorTheme.trim}"/>
         <!-- Left & Right Winged Feathers -->
-        <polygon points="24,14 17,6 23,20" fill="#f0f4ff"/>
-        <polygon points="40,14 47,6 41,20" fill="#f0f4ff"/>
+        <polygon points="24,14 16,5 23,20" fill="${armorTheme.metal}"/>
+        <polygon points="40,14 48,5 41,20" fill="${armorTheme.metal}"/>
+        ${aTier >= 5 ? `<polygon points="22,12 12,3 20,18" fill="${armorTheme.trim}"/>` : ''}
+        ${aTier >= 5 ? `<polygon points="42,12 52,3 44,18" fill="${armorTheme.trim}"/>` : ''}
+
         <!-- Golden Warrior Hair -->
         <rect x="23" y="18" width="3" height="15" fill="#f0c430"/>
         <rect x="38" y="18" width="3" height="15" fill="#f0c430"/>
         ${faceSvg}
-        <!-- Golden Cuirass Breastplate -->
-        <rect x="24" y="31" width="16" height="16" fill="#d4af37"/>
-        <rect x="27" y="33" width="10" height="12" fill="#fae06b"/>
-        <rect x="31" y="35" width="2" height="8" fill="#ffffff"/>
-        <!-- Hands with Gold Gauntlets -->
-        <rect x="20" y="40" width="4" height="4" fill="#d4af37"/>
-        <rect x="40" y="40" width="4" height="4" fill="#d4af37"/>
-        <!-- Golden Greaves & Boots -->
-        <rect x="26" y="47" width="5" height="10" fill="#e8edf5"/>
-        <rect x="33" y="47" width="5" height="10" fill="#e8edf5"/>
-        <rect x="25" y="57" width="6" height="5" fill="#d4af37"/>
-        <rect x="33" y="57" width="6" height="5" fill="#d4af37"/>
-        <!-- Left Arm: Holy Golden Buckler Round Shield -->
+
+        <!-- Cuirass Breastplate (Tier Adaptive) -->
+        <rect x="24" y="31" width="16" height="16" fill="${armorTheme.main}"/>
+        <rect x="27" y="33" width="10" height="12" fill="${armorTheme.metal}"/>
+        <rect x="31" y="35" width="2" height="8" fill="${armorTheme.trim}"/>
+
+        <!-- Hands with Gauntlets -->
+        <rect x="20" y="40" width="4" height="4" fill="${armorTheme.trim}"/>
+        <rect x="40" y="40" width="4" height="4" fill="${armorTheme.trim}"/>
+
+        <!-- Greaves & Boots -->
+        <rect x="26" y="47" width="5" height="10" fill="${armorTheme.dark}"/>
+        <rect x="33" y="47" width="5" height="10" fill="${armorTheme.dark}"/>
+        <rect x="25" y="57" width="6" height="5" fill="${armorTheme.main}"/>
+        <rect x="33" y="57" width="6" height="5" fill="${armorTheme.main}"/>
+
+        <!-- Left Arm: Holy Buckler Round Shield (Tier Evolving) -->
         <g>
-          <circle cx="18" cy="42" r="7" fill="#d4af37"/>
-          <circle cx="18" cy="42" r="5" fill="#fae06b"/>
-          <circle cx="18" cy="42" r="2" fill="#3388ff"/>
+          <circle cx="17" cy="42" r="7" fill="${armorTheme.main}"/>
+          <circle cx="17" cy="42" r="5" fill="${armorTheme.metal}"/>
+          <circle cx="17" cy="42" r="2.5" fill="${armorTheme.trim}"/>
+          ${aTier >= 4 ? `<rect x="16" y="41" width="2" height="2" fill="${armorTheme.accent}"/>` : ''}
         </g>
-        <!-- Right Hand: Holy Lance / Spear -->
+
+        <!-- Right Hand: Holy Lance / Spear (Weapon Tier Evolving) -->
         <g>
-          <rect x="44" y="8" width="2" height="50" fill="#c49b30"/>
-          <!-- Golden Spearhead -->
-          <polygon points="45,2 41,12 49,12" fill="#ffd700"/>
-          <polygon points="45,4 43,10 47,10" fill="#ffffff"/>
-          <!-- Crimson Pennant -->
-          <polygon points="45,12 40,16 45,19" fill="#cc2222"/>
+          <!-- Spear Shaft -->
+          <rect x="44" y="6" width="2.5" height="52" fill="${wTier === 1 ? '#8a5a2b' : '#302838'}"/>
+          <rect x="43" y="38" width="4.5" height="3" fill="${weaponTheme.hilt}"/>
+          <!-- Spearhead -->
+          <polygon points="45,0 41,11 49,11" fill="${weaponTheme.blade}"/>
+          <polygon points="45,2 43,9 47,9" fill="${weaponTheme.glow}"/>
+          <!-- Holy Pennant -->
+          <polygon points="45,11 39,15 45,19" fill="${weaponTheme.spark}"/>
         </g>
       `;
     } else if (heroClass === 'reaper') {
-      // 🗡️ 暗影獵魔者: 暗夜忍者兜帽面罩、幽紫刺客雙眸、黑夜風衣、雙持淬毒匕首
+      // ==========================================
+      // 🗡️ 暗影獵魔者 (Reaper)
+      // ==========================================
+      const eyeColor = aTier >= 5 ? '#ffd700' : aTier === 4 ? '#ee44ff' : '#cc44ff';
+
       classBodySvg = `
-        <!-- Shadow Cowl & Cape -->
-        <polygon points="24,14 16,56 24,56" fill="#181524"/>
-        <polygon points="40,14 48,56 40,56" fill="#181524"/>
+        <!-- Shadow Cowl & Cape (Tier Adaptive) -->
+        <polygon points="24,14 15,56 24,56" fill="${armorTheme.cape}"/>
+        <polygon points="40,14 49,56 40,56" fill="${armorTheme.cape}"/>
+
         <!-- Dark Cowl Head -->
-        <rect x="24" y="14" width="16" height="8" fill="#181a24"/>
-        <rect x="23" y="17" width="3" height="15" fill="#181a24"/>
-        <rect x="38" y="17" width="3" height="15" fill="#181a24"/>
+        <rect x="24" y="14" width="16" height="8" fill="${armorTheme.helm}"/>
+        <rect x="23" y="17" width="3" height="15" fill="${armorTheme.helm}"/>
+        <rect x="38" y="17" width="3" height="15" fill="${armorTheme.helm}"/>
+
         <!-- Assassin Mask (Covering mouth) -->
-        <rect x="26" y="20" width="12" height="11" fill="#1a1c28"/>
-        <!-- Glowing Piercing Violet Assassin Eyes -->
-        <rect x="28" y="23" width="3" height="2" fill="#cc44ff"/>
-        <rect x="33" y="23" width="3" height="2" fill="#cc44ff"/>
+        <rect x="26" y="20" width="12" height="11" fill="${armorTheme.dark}"/>
+
+        <!-- Glowing Piercing Assassin Eyes -->
+        <rect x="28" y="23" width="3" height="2" fill="${eyeColor}"/>
+        <rect x="33" y="23" width="3" height="2" fill="${eyeColor}"/>
         <rect x="29" y="23" width="1" height="1" fill="#ffffff"/>
         <rect x="34" y="23" width="1" height="1" fill="#ffffff"/>
+
         <!-- Shadow Longcoat -->
-        <rect x="24" y="31" width="16" height="18" fill="#202332"/>
-        <rect x="28" y="33" width="8" height="14" fill="#141620"/>
-        <rect x="26" y="44" width="12" height="2" fill="#6a358c"/>
-        <!-- Hands & Dark Bracers -->
-        <rect x="20" y="40" width="4" height="4" fill="#181a24"/>
-        <rect x="40" y="40" width="4" height="4" fill="#181a24"/>
+        <rect x="24" y="31" width="16" height="18" fill="${armorTheme.main}"/>
+        <rect x="28" y="33" width="8" height="14" fill="${armorTheme.dark}"/>
+        <rect x="26" y="44" width="12" height="2" fill="${armorTheme.trim}"/>
+
+        <!-- Hands & Bracers -->
+        <rect x="20" y="40" width="4" height="4" fill="${armorTheme.helm}"/>
+        <rect x="40" y="40" width="4" height="4" fill="${armorTheme.helm}"/>
+
         <!-- Dark Boots -->
-        <rect x="26" y="49" width="5" height="9" fill="#161822"/>
-        <rect x="33" y="49" width="5" height="9" fill="#161822"/>
-        <rect x="25" y="58" width="6" height="4" fill="#0d0e14"/>
-        <rect x="33" y="58" width="6" height="4" fill="#0d0e14"/>
-        <!-- Dual Reverse-Grip Poisoned Daggers -->
+        <rect x="26" y="49" width="5" height="9" fill="${armorTheme.dark}"/>
+        <rect x="33" y="49" width="5" height="9" fill="${armorTheme.dark}"/>
+        <rect x="25" y="58" width="6" height="4" fill="${armorTheme.helm}"/>
+        <rect x="33" y="58" width="6" height="4" fill="${armorTheme.helm}"/>
+
+        <!-- Dual Reverse-Grip Poisoned Daggers (Weapon Tier Evolving) -->
         <!-- Left Dagger -->
         <g>
-          <rect x="18" y="38" width="2" height="4" fill="#503520"/>
-          <polygon points="19,42 16,54 21,50" fill="#2d323f"/>
-          <line x1="16" y1="48" x2="16" y2="54" stroke="#44dd66" stroke-width="1.5"/>
+          <rect x="18" y="37" width="2" height="4" fill="${weaponTheme.hilt}"/>
+          <polygon points="19,41 15,53 20,49" fill="${weaponTheme.blade}"/>
+          <line x1="15" y1="46" x2="15" y2="53" stroke="${weaponTheme.glow}" stroke-width="1.5"/>
         </g>
         <!-- Right Dagger -->
         <g>
-          <rect x="44" y="38" width="2" height="4" fill="#503520"/>
-          <polygon points="45,42 42,54 47,50" fill="#2d323f"/>
-          <line x1="42" y1="48" x2="42" y2="54" stroke="#44dd66" stroke-width="1.5"/>
+          <rect x="44" y="37" width="2" height="4" fill="${weaponTheme.hilt}"/>
+          <polygon points="45,41 41,53 46,49" fill="${weaponTheme.blade}"/>
+          <line x1="41" y1="46" x2="41" y2="53" stroke="${weaponTheme.glow}" stroke-width="1.5"/>
         </g>
       `;
     } else {
-      // 🛡️ 聖堂騎士 (預設 / Knight): 十字巨盔、紅羽冠、板甲十字戰袍、大面十字風箏盾、騎士長劍
+      // ==========================================
+      // 🛡️ 聖堂聖騎士 (Knight / Default)
+      // ==========================================
+      const plumeColor = aTier === 1 ? '#775533' : aTier === 2 ? '#2255aa' : aTier === 3 ? '#ffd700' : aTier === 4 ? '#9933ee' : aTier === 5 ? '#ee2222' : '#ffffff';
+
       classBodySvg = `
-        <!-- Crusader Great Helm -->
-        <rect x="24" y="14" width="16" height="17" fill="${armorColors.helm}"/>
-        <!-- Helmet Shading & Cross Visor Slits -->
-        <rect x="25" y="15" width="14" height="3" fill="#3e4458"/>
-        <!-- Red Helmet Plume Feather -->
-        <polygon points="32,8 30,14 34,14" fill="#cc2222"/>
-        <polygon points="34,7 32,13 36,13" fill="#ff4444"/>
-        <!-- Gold Cross Slit -->
-        <rect x="31" y="21" width="2" height="8" fill="#ffd700"/>
-        <rect x="27" y="23" width="10" height="2" fill="#ffd700"/>
+        <!-- Crusader Great Helm (Tier Adaptive) -->
+        <rect x="24" y="14" width="16" height="17" fill="${armorTheme.helm}"/>
+        <!-- Helmet Shading & Visor Slits -->
+        <rect x="25" y="15" width="14" height="3" fill="${armorTheme.dark}"/>
+
+        <!-- Plume Feather on Helm -->
+        <polygon points="32,7 30,14 34,14" fill="${plumeColor}"/>
+        <polygon points="34,6 32,13 36,13" fill="${armorTheme.trim}"/>
+        ${aTier === 6 ? `<polygon points="23,12 18,5 24,16" fill="#ffd700"/>` : ''}
+        ${aTier === 6 ? `<polygon points="41,12 46,5 40,16" fill="#ffd700"/>` : ''}
+
+        <!-- Gold / Visor Slit -->
+        <rect x="31" y="21" width="2" height="8" fill="${armorTheme.trim}"/>
+        <rect x="27" y="23" width="10" height="2" fill="${armorTheme.trim}"/>
         <rect x="28" y="24" width="2" height="1" fill="#111111"/>
         <rect x="34" y="24" width="2" height="1" fill="#111111"/>
-        <!-- Body & Crusader Cross Tabard -->
-        <rect x="24" y="31" width="16" height="17" fill="#e8edf5"/>
-        <rect x="22" y="33" width="3" height="8" fill="${armorColors.main}"/>
-        <rect x="39" y="33" width="3" height="8" fill="${armorColors.main}"/>
-        <!-- Holy Red Cross on Chest -->
-        <rect x="31" y="33" width="2" height="13" fill="#cc2222"/>
-        <rect x="27" y="36" width="10" height="2" fill="#cc2222"/>
+
+        <!-- Body & Crusader Tabard -->
+        <rect x="24" y="31" width="16" height="17" fill="${armorTheme.metal}"/>
+        <rect x="22" y="33" width="3" height="8" fill="${armorTheme.main}"/>
+        <rect x="39" y="33" width="3" height="8" fill="${armorTheme.main}"/>
+
+        <!-- Cross on Chest Tabard -->
+        <rect x="31" y="33" width="2" height="13" fill="${armorTheme.trim}"/>
+        <rect x="27" y="36" width="10" height="2" fill="${armorTheme.trim}"/>
+
         <!-- Hands & Gauntlets -->
-        <rect x="21" y="41" width="3" height="4" fill="#6e788c"/>
-        <rect x="40" y="41" width="3" height="4" fill="#6e788c"/>
+        <rect x="21" y="41" width="3" height="4" fill="${armorTheme.dark}"/>
+        <rect x="40" y="41" width="3" height="4" fill="${armorTheme.dark}"/>
+
         <!-- Legs & Greaves -->
-        <rect x="26" y="48" width="5" height="10" fill="#2c303f"/>
-        <rect x="33" y="48" width="5" height="10" fill="#2c303f"/>
-        <rect x="25" y="58" width="6" height="4" fill="#1a1c26"/>
-        <rect x="33" y="58" width="6" height="4" fill="#1a1c26"/>
-        <!-- Left Hand: Crusader Kite Shield -->
+        <rect x="26" y="48" width="5" height="10" fill="${armorTheme.dark}"/>
+        <rect x="33" y="48" width="5" height="10" fill="${armorTheme.dark}"/>
+        <rect x="25" y="58" width="6" height="4" fill="${armorTheme.main}"/>
+        <rect x="33" y="58" width="6" height="4" fill="${armorTheme.main}"/>
+
+        <!-- Left Hand: Crusader Kite Shield (Armor Tier Evolving) -->
         <g>
-          <path d="M 12,32 L 22,32 L 20,48 L 12,40 Z" fill="#e8edf5" stroke="#33384a" stroke-width="1"/>
-          <!-- Shield Red Cross -->
-          <line x1="16" y1="32" x2="16" y2="44" stroke="#cc2222" stroke-width="2"/>
-          <line x1="12" y1="36" x2="21" y2="36" stroke="#cc2222" stroke-width="2"/>
-          <!-- Gold Rim -->
-          <line x1="12" y1="32" x2="22" y2="32" stroke="#ffd700" stroke-width="1.5"/>
+          <path d="M 12,32 L 22,32 L 20,48 L 12,40 Z" fill="${armorTheme.main}" stroke="${armorTheme.dark}" stroke-width="1"/>
+          <!-- Shield Cross -->
+          <line x1="16" y1="32" x2="16" y2="44" stroke="${armorTheme.trim}" stroke-width="2"/>
+          <line x1="12" y1="36" x2="21" y2="36" stroke="${armorTheme.trim}" stroke-width="2"/>
+          <!-- Shield Rim -->
+          <line x1="12" y1="32" x2="22" y2="32" stroke="${armorTheme.metal}" stroke-width="1.5"/>
         </g>
-        <!-- Right Hand: Arming Sword -->
+
+        <!-- Right Hand: Arming Sword (Weapon Tier Evolving) -->
         <g>
-          <rect x="43" y="39" width="3" height="3" fill="${weaponDef.hilt}"/>
-          <rect x="41" y="37" width="7" height="2" fill="#ffd700"/>
-          <rect x="44" y="21" width="3" height="16" fill="${weaponDef.blade}"/>
-          <polygon points="44,21 47,21 45.5,17" fill="${weaponDef.blade}"/>
+          <!-- Hilt & Crossguard -->
+          <rect x="43" y="39" width="3" height="4" fill="${weaponTheme.hilt}"/>
+          <rect x="40" y="37" width="9" height="2" fill="${weaponTheme.hilt}"/>
+          <!-- Blade -->
+          <rect x="44" y="20" width="3" height="17" fill="${weaponTheme.blade}"/>
+          <polygon points="44,20 47,20 45.5,15" fill="${weaponTheme.blade}"/>
+          <!-- Blade Core Line & Sparkle -->
+          <line x1="45.5" y1="21" x2="45.5" y2="36" stroke="${weaponTheme.spark}" stroke-width="1"/>
+          ${wTier >= 3 ? `<rect x="44.5" y="16" width="2" height="2" fill="${weaponTheme.glow}"/>` : ''}
         </g>
       `;
     }

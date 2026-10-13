@@ -7,9 +7,9 @@ const App = (() => {
   const STORAGE_KEY = 'word_dungeon_save_v1';
 
   // Default State Factory (Ensures clean state isolation between accounts)
-  const getDefaultState = (heroName = '單字勇者') => ({
+  const getDefaultState = (heroName = '單字勇者', heroClass = 'knight') => ({
     heroName: heroName,
-    heroClass: 'knight',
+    heroClass: heroClass || 'knight',
     currentHp: 120,
     gold: 60,
     streak: 1,
@@ -47,6 +47,7 @@ const App = (() => {
 
   // Global App State
   let state = getDefaultState();
+  let gateSelectedHeroClass = 'knight';
 
   // Runtime Battle State
   let battle = {
@@ -1455,6 +1456,36 @@ const App = (() => {
         `;
       });
     } else if (tab === 'equip') {
+      const heroWeapon = GAME_CONFIG.EQUIPMENT.weapons.find(w => w.id === state.equippedWeapon);
+      const heroArmor = GAME_CONFIG.EQUIPMENT.armors.find(a => a.id === state.equippedArmor);
+      const heroRelic = GAME_CONFIG.EQUIPMENT.relics.find(r => r.id === state.equippedRelic);
+      const wTier = heroWeapon ? heroWeapon.tier : 1;
+      const aTier = heroArmor ? heroArmor.tier : 1;
+      const rTier = heroRelic ? heroRelic.tier : 0;
+      const curClassObj = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === (state.heroClass || 'knight'));
+
+      itemsHtml += `
+        <div class="pixel-box shop-fitting-preview">
+          <div class="fitting-sprite-box">
+            ${PixelSprites.renderHero('happy', wTier, aTier, rTier, state.heroClass || 'knight')}
+          </div>
+          <div class="fitting-info-col">
+            <div class="fitting-title-row">
+              <span class="fitting-hero-title">${state.heroName}・【${curClassObj?.name || '聖堂聖騎士'}】</span>
+              <button class="fitting-switch-class-btn" onclick="App.showClassSelectModal()">更換姿態</button>
+            </div>
+            <div class="fitting-gear-row">
+              <span class="fitting-tag">${PixelSprites.icon('sword', 10)} 武器: ${heroWeapon ? heroWeapon.name : '赤手空拳'} (T${wTier})</span>
+              <span class="fitting-tag">${PixelSprites.icon('shield', 10)} 防具: ${heroArmor ? heroArmor.name : '粗布衣'} (T${aTier})</span>
+              ${heroRelic ? `<span class="fitting-tag">${PixelSprites.icon('star', 10)} 聖物: ${heroRelic.name} (T${rTier})</span>` : ''}
+            </div>
+            <div style="font-size:10px; color:#a090b8; margin-top:3px;">
+              💡 穿戴不同武器與防具時，英雄像素身形、武器光芒與裝甲色彩將即時動態進化！
+            </div>
+          </div>
+        </div>
+      `;
+
       // All weapons, armors, relics
       const allEquips = [
         ...GAME_CONFIG.EQUIPMENT.weapons.map(w => ({ ...w, type: 'weapon' })),
@@ -1908,6 +1939,31 @@ const App = (() => {
                   <input type="text" id="gate-heroname" class="auth-input" placeholder="例如: 破曉守護者" value="單字勇者">
                 </div>
 
+                <div class="auth-form-group">
+                  <label class="auth-label">選擇初始職業型態 (中世紀英雄姿態)</label>
+                  <div class="gate-class-selector-grid" id="gate-class-grid">
+                    ${(GAME_CONFIG.HERO_CLASSES || []).map(cls => `
+                      <div class="gate-class-card ${cls.id === gateSelectedHeroClass ? 'selected' : ''}" id="gate-card-${cls.id}" onclick="App.selectGateClass('${cls.id}')">
+                        <div class="gate-class-mini-sprite">
+                          ${PixelSprites.renderHero('happy', 1, 1, 0, cls.id)}
+                        </div>
+                        <div class="gate-class-title">${cls.name}</div>
+                        <div class="gate-class-badge">${cls.badge}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div id="gate-class-detail" class="gate-class-detail-box">
+                    ${(() => {
+                      const cur = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === gateSelectedHeroClass) || (GAME_CONFIG.HERO_CLASSES || [])[0];
+                      return cur ? `
+                        <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
+                        <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
+                        <div class="gate-detail-desc">${cur.desc}</div>
+                      ` : '';
+                    })()}
+                  </div>
+                </div>
+
                 <button type="submit" id="btn-gate-submit" class="auth-submit-btn">
                   簽署公會契約・啟程
                 </button>
@@ -1925,6 +1981,35 @@ const App = (() => {
         </div>
       </div>
     `;
+  };
+
+  const selectGateClass = (classId) => {
+    gateSelectedHeroClass = classId;
+    const cards = document.querySelectorAll('.gate-class-card');
+    cards.forEach(card => card.classList.remove('selected'));
+
+    const gateTarget = document.getElementById(`gate-card-${classId}`);
+    if (gateTarget) gateTarget.classList.add('selected');
+    const modalTarget = document.getElementById(`modal-card-${classId}`);
+    if (modalTarget) modalTarget.classList.add('selected');
+
+    const cur = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === classId);
+    const detailBox = document.getElementById('gate-class-detail');
+    if (detailBox && cur) {
+      detailBox.innerHTML = `
+        <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
+        <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
+        <div class="gate-detail-desc">${cur.desc}</div>
+      `;
+    }
+    const modalDetailBox = document.getElementById('modal-class-detail');
+    if (modalDetailBox && cur) {
+      modalDetailBox.innerHTML = `
+        <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
+        <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
+        <div class="gate-detail-desc">${cur.desc}</div>
+      `;
+    }
   };
 
   const handleGateLogin = async () => {
@@ -1969,6 +2054,7 @@ const App = (() => {
     const password = document.getElementById('gate-password')?.value;
     const username = document.getElementById('gate-username')?.value?.trim();
     const heroName = document.getElementById('gate-heroname')?.value?.trim() || '單字勇者';
+    const chosenClass = gateSelectedHeroClass || 'knight';
     const btn = document.getElementById('btn-gate-submit');
 
     if (!email || !password || !username) {
@@ -1991,7 +2077,8 @@ const App = (() => {
       const res = await SupabaseClient.signUp(email, password, username, heroName);
 
       if (SupabaseClient.isLoggedIn()) {
-        state = getDefaultState(heroName);
+        state = getDefaultState(heroName, chosenClass);
+        state.heroClass = chosenClass;
         saveState();
         await SupabaseClient.syncToCloud(state);
         setHUDVisible(true);
@@ -2043,6 +2130,30 @@ const App = (() => {
               <input type="password" id="auth-password" placeholder="密碼 (至少 6 位數)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <input type="text" id="auth-username" placeholder="使用者帳號 (例如: hero99)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
               <input type="text" id="auth-heroname" value="${state.heroName}" placeholder="勇者稱號 (例如: 單字大師)" style="background:#141020; border:1px solid #48396e; color:#fff; padding:8px;">
+
+              <div style="font-size:11px; color:#ffd700; margin-top:4px;">選擇初始職業型態：</div>
+              <div class="gate-class-selector-grid" id="modal-class-grid">
+                ${(GAME_CONFIG.HERO_CLASSES || []).map(cls => `
+                  <div class="gate-class-card ${cls.id === gateSelectedHeroClass ? 'selected' : ''}" id="modal-card-${cls.id}" onclick="App.selectGateClass('${cls.id}')">
+                    <div class="gate-class-mini-sprite">
+                      ${PixelSprites.renderHero('happy', 1, 1, 0, cls.id)}
+                    </div>
+                    <div class="gate-class-title">${cls.name}</div>
+                    <div class="gate-class-badge">${cls.badge}</div>
+                  </div>
+                `).join('')}
+              </div>
+              <div id="modal-class-detail" class="gate-class-detail-box">
+                ${(() => {
+                  const cur = (GAME_CONFIG.HERO_CLASSES || []).find(c => c.id === gateSelectedHeroClass) || (GAME_CONFIG.HERO_CLASSES || [])[0];
+                  return cur ? `
+                    <div class="gate-detail-name">【${cur.name}】${cur.title}</div>
+                    <div class="gate-detail-bonus">⚡ 初始加成：${cur.bonusDesc}</div>
+                    <div class="gate-detail-desc">${cur.desc}</div>
+                  ` : '';
+                })()}
+              </div>
+
               <button class="claim-btn" style="padding:8px;" onclick="App.handleSignup()">建立帳號並登入</button>
             ` : `
               <div style="font-size:12px; color:var(--text-muted);">
@@ -2104,7 +2215,9 @@ const App = (() => {
       showToast('正在註冊帳號...');
       await SupabaseClient.signUp(email, password, username, heroname);
       if (SupabaseClient.isLoggedIn()) {
-        state = getDefaultState(heroname || '單字勇者');
+        const chosenClass = gateSelectedHeroClass || 'knight';
+        state = getDefaultState(heroname || '單字勇者', chosenClass);
+        state.heroClass = chosenClass;
         saveState();
         await SupabaseClient.syncToCloud(state);
         showToast('註冊成功！已自動登入！');
@@ -2541,6 +2654,7 @@ const App = (() => {
     showAuthModal,
     showClassSelectModal,
     selectHeroClass,
+    selectGateClass,
     handleLogin,
     handleSignup,
     handleLogout,
