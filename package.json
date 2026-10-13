@@ -1,0 +1,10 @@
+{
+  "name": "word-dungeon-pwa",
+  "version": "1.0.0",
+  "description": "單字地下城與通天塔 Word Dungeon & Babel Tower PWA",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8000"
+  },
+  "keywords": ["pwa", "game", "vocabulary", "rpg", "pixel-art"]
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#201a2d">
+  <meta name="description" content="結合15大地下城Boss與1000樓通天塔的像素背單字RPG遊戲">
+  <title>單字地下城與通天塔 - Word Dungeon</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Global HUD -->
+    <header class="top-hud">
+      <div class="hud-row-1">
+        <div class="hud-stats-group">
+          <div class="hud-stat">
+            <span id="hud-coin-icon"></span>
+            <span class="gold-val" id="hud-gold">0</span>
+          </div>
+          <div class="hud-stat">
+            <span id="hud-streak-icon"></span>
+            <span class="streak-val" id="hud-streak">0 天</span>
+          </div>
+        </div>
+
+        <div class="hud-actions">
+          <div id="hud-active-buff-badge" class="hud-badges" style="display: none;"></div>
+          <div id="hud-leave-pass-badge" class="hud-badges" style="display: none;"></div>
+          <button id="btn-sound-toggle" class="hud-btn" title="切換音效">
+            <span id="hud-sound-icon"></span>
+          </button>
+          <button id="btn-account-open" class="hud-btn" title="帳號與排行">
+            <span id="hud-user-icon"></span>
+            <span id="hud-hero-name">勇者</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="hud-row-2">
+        <div class="hp-bar-wrapper">
+          <div class="hp-label-row">
+            <span>生命值 (HP)</span>
+            <span id="hud-hp-text">120 / 120</span>
+          </div>
+          <div class="pixel-bar-bg">
+            <div id="hud-hp-fill" class="pixel-bar-fill-hp" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main View Content Container -->
+    <main id="main-content" class="view-container">
+      <!-- Dynamically Injected by App State -->
+    </main>
+
+    <!-- Simulation / Debug Toolbar -->
+    <footer class="debug-toolbar">
+      <div class="debug-title">🛠️ 開發調試工具 (可直接測試情勒與數值)</div>
+      <div class="debug-buttons">
+        <button class="debug-btn" id="dbg-absent-1">模擬缺席 1 天</button>
+        <button class="debug-btn" id="dbg-absent-3">模擬缺席 3 天</button>
+        <button class="debug-btn" id="dbg-absent-7">模擬缺席 7 天</button>
+        <button class="debug-btn" id="dbg-add-gold">+100 金幣</button>
+        <button class="debug-btn" id="dbg-damage-50">-50 HP</button>
+        <button class="debug-btn" id="dbg-full-heal">回滿血</button>
+        <button class="debug-btn" id="dbg-reset-save">重設存檔</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Global Modals Container -->
+  <div id="modal-root"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js"></script>
+  <script src="./js/supabase-client.js"></script>
+  <script src="./js/pixel-sprites.js"></script>
+  <script src="./js/vocab-data.js"></script>
+  <script src="./js/game-data.js"></script>
+  <script src="./js/audio.js"></script>
+  <script src="./js/app.js"></script>
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.log('SW registration note:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

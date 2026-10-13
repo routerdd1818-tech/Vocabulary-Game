@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "^/sw.js$",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "service-worker-allowed": "/"
+      },
+      "dest": "/sw.js"
+    },
+    {
+      "src": "^/manifest.json$",
+      "headers": {
+        "content-type": "application/manifest+json; charset=utf-8",
+        "access-control-allow-origin": "*"
+      },
+      "dest": "/manifest.json"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
