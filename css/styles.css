@@ -2727,5 +2727,927 @@ body {
   opacity: 0.6;
 }
 
+/* ==========================================
+   🐾 CABIN COMPANION PETS & PERCH
+   ========================================== */
+.cabin-pet-perch {
+  position: absolute;
+  right: 18px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 4;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.cabin-pet-perch:hover {
+  transform: scale(1.08) translateY(-3px);
+}
+.pet-name-badge {
+  background: rgba(18, 12, 28, 0.9);
+  border: 1px solid #ffd700;
+  border-radius: 3px;
+  color: #ffd700;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 5px;
+  margin-top: 3px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.fighter-hero-with-pet {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+}
+.battle-pet-companion {
+  position: absolute;
+  right: -24px;
+  bottom: 0px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  animation: petIdle 2.4s ease-in-out infinite alternate;
+}
+@keyframes petIdle {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
 
+.pet-modal-dialog {
+  max-width: 540px;
+  background: #1b1420;
+  border: 3px solid #8e6242;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5);
+}
+.pet-banner-hint {
+  font-size: 11px;
+  color: #d8c8e8;
+  background: #2b1c28;
+  border: 1px dashed #68485e;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.pet-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+@media (min-width: 480px) {
+  .pet-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pet-card {
+  background: #251c2c;
+  border: 2px solid #4a3854;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+.pet-card.active-pet-card {
+  border-color: #ffd700;
+  background: #2e2034;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+}
+.pet-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.pet-sprite-box {
+  background: #17101e;
+  border: 2px solid #553e62;
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  min-height: 50px;
+}
+.pet-title-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffeedd;
+}
+.pet-lv-pill {
+  background: #ffd700;
+  color: #1a0f00;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.pet-honor-title {
+  font-size: 10px;
+  color: #a090b4;
+  margin-top: 2px;
+}
+.pet-desc-text {
+  font-size: 11px;
+  color: #c0b0d0;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+.pet-skill-box {
+  background: #191220;
+  border-left: 3px solid #ffaa44;
+  padding: 6px 8px;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+.pet-skill-name {
+  color: #ffaa44;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 2px;
+}
+.pet-skill-desc {
+  color: #e4d8f0;
+  font-size: 10px;
+  line-height: 1.3;
+}
+.pet-action-row {
+  display: flex;
+  gap: 6px;
+}
+.pet-select-btn {
+  flex: 1;
+  background: #3b2848;
+  border: 1px solid #785090;
+  color: #ffeedd;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.pet-select-btn.current-pet-btn {
+  background: #183820;
+  border-color: #388844;
+  color: #68ff88;
+  cursor: default;
+}
+.pet-feed-btn {
+  flex: 1.3;
+  background: #7a3a1e;
+  border: 1px solid #c86830;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.pet-feed-btn:disabled, .pet-select-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
+/* Battle Owl Skill & Choice Crossout */
+.owl-skill-btn {
+  background: #2b1f48;
+  border: 1px solid #8c58f0;
+  color: #d8c0ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.owl-skill-btn.used {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #555;
+}
+.eliminated-choice {
+  opacity: 0.28 !important;
+  text-decoration: line-through !important;
+  pointer-events: none !important;
+  filter: grayscale(1) !important;
+  border-color: #444 !important;
+}
+
+/* ==========================================
+   ⚒️ BLACKSMITH FORGE & RUNES
+   ========================================== */
+.blacksmith-modal-dialog {
+  max-width: 560px;
+  background: #1a1518;
+  border: 3px solid #844c28;
+}
+.forge-anvil-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #261a1e;
+  border: 2px solid #5c341e;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.forge-anvil-speech {
+  font-size: 11px;
+  color: #ffd0a0;
+  font-style: italic;
+  line-height: 1.4;
+}
+.forge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.forge-item-row {
+  background: #22181d;
+  border: 2px solid #4a2e22;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.forge-item-info {
+  flex: 1;
+}
+.forge-item-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  color: #ffeedd;
+}
+.forge-lv-badge {
+  background: #ff5522;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.forge-item-desc {
+  font-size: 11px;
+  color: #baa090;
+  margin: 2px 0;
+}
+.forge-stat-preview {
+  font-size: 10px;
+  color: #ff9966;
+}
+.forge-btn {
+  background: #8e321a;
+  border: 2px solid #e05428;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.forge-btn:hover:not(:disabled) {
+  background: #b24020;
+  transform: translateY(-2px);
+}
+.forge-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Rune Sockets */
+.runes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.runes-header-desc {
+  font-size: 11px;
+  color: #d0c0e0;
+  background: #241c2c;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #b060f0;
+}
+.rune-sockets-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+@media (min-width: 480px) {
+  .rune-sockets-container {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.rune-socket-slot {
+  background: #181220;
+  border: 2px dashed #644878;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 80px;
+  justify-content: center;
+}
+.socket-idx {
+  font-size: 9px;
+  color: #9a88b0;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.rune-slotted-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.rune-badge-name {
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: bold;
+}
+.rune-badge-desc {
+  font-size: 9px;
+  color: #bbb;
+  line-height: 1.2;
+}
+.rune-unsocket-btn {
+  background: #442222;
+  border: 1px solid #884444;
+  color: #ff9999;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.rune-empty-socket {
+  font-size: 10px;
+  color: #645074;
+  text-align: center;
+}
+.runes-available-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.rune-buy-card {
+  background: #211928;
+  border: 2px solid #443254;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rune-buy-card.rune-active {
+  border-color: #ffd700;
+  background: #281e34;
+}
+.rune-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rune-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #f0e0ff;
+}
+.rune-cost {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: bold;
+}
+.rune-desc {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 2px;
+}
+.rune-btn {
+  background: #4a2868;
+  border: 1px solid #884cb4;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rune-btn.equipped {
+  background: #183820;
+  border-color: #388844;
+  color: #68ff88;
+  cursor: default;
+}
+.rune-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   🏆 TROPHIES & TITLES
+   ========================================== */
+.equipped-title-badge {
+  background: linear-gradient(135deg, #302008 0%, #1e1428 100%);
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 10px;
+  margin-bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+}
+.equipped-title-badge .title-star {
+  color: #fff;
+}
+.trophy-modal-dialog {
+  max-width: 560px;
+  background: #191420;
+  border: 3px solid #d4af37;
+}
+.trophy-current-title-banner {
+  background: #271c32;
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.gold-title-text {
+  color: #ffd700;
+  font-weight: bold;
+}
+.trophy-scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.trophy-badge-card {
+  background: #221a2c;
+  border: 2px solid #48345a;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.15s ease;
+}
+.trophy-badge-card.done {
+  border-color: #ffd700;
+  background: #2a2036;
+}
+.trophy-badge-card.locked {
+  opacity: 0.65;
+}
+.trophy-badge-icon {
+  background: #140e1c;
+  border: 2px solid #4a3458;
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trophy-badge-content {
+  flex: 1;
+}
+.trophy-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.trophy-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffeedd;
+}
+.trophy-status-done {
+  font-size: 10px;
+  color: #44ee77;
+  font-weight: bold;
+}
+.trophy-status-lock {
+  font-size: 10px;
+  color: #888;
+}
+.trophy-desc {
+  font-size: 11px;
+  color: #baa0cc;
+  margin: 2px 0 4px;
+}
+.trophy-rewards {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+}
+.trophy-gold-tag {
+  color: var(--gold);
+  font-weight: bold;
+}
+.trophy-title-tag {
+  color: #a0d8ff;
+}
+.title-equip-btn {
+  background: #3b2848;
+  border: 1px solid #785090;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.title-equip-btn.equipped {
+  background: #183820;
+  border-color: #388844;
+  color: #68ff88;
+  cursor: default;
+}
+.title-equip-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   🎲 ROGUELIKE RANDOM ENCOUNTERS
+   ========================================== */
+.encounter-modal-dialog {
+  max-width: 480px;
+  background: #181422;
+  border: 3px solid #6b4098;
+  text-align: center;
+}
+.encounter-sprite-banner {
+  padding: 12px 0 6px;
+  display: flex;
+  justify-content: center;
+}
+.encounter-title-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+.encounter-desc-quote {
+  font-size: 12px;
+  color: #d8cce8;
+  font-style: italic;
+  background: #231a30;
+  border: 1px dashed #543a74;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 14px;
+  line-height: 1.45;
+}
+.encounter-options-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.encounter-option-btn {
+  background: #2c1e40;
+  border: 2px solid #5d3888;
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #ffeedd;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.encounter-option-btn:hover:not(:disabled) {
+  background: #422860;
+  border-color: #ffd700;
+  transform: translateY(-2px);
+}
+.encounter-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   ⚔️ SHADOW GHOST PVP ARENA
+   ========================================== */
+.pvp-modal-dialog {
+  max-width: 520px;
+  background: #1a1420;
+  border: 3px solid #8e44ad;
+}
+.pvp-profile-bar {
+  display: flex;
+  justify-content: space-around;
+  background: #261b32;
+  border: 1px solid #583c74;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.pvp-intro-text {
+  font-size: 11px;
+  color: #c8b8dc;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+.pvp-rivals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pvp-rival-card {
+  background: #22182e;
+  border: 2px solid #4c3066;
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pvp-rival-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pvp-rival-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffeedd;
+}
+.pvp-rival-tier {
+  font-size: 10px;
+  color: #d4a0ff;
+}
+.pvp-rival-desc {
+  font-size: 11px;
+  color: #9988aa;
+  margin: 2px 0;
+}
+.pvp-rival-bounty {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: bold;
+}
+.pvp-challenge-btn {
+  background: #6c2d96;
+  border: 2px solid #a855f7;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pvp-challenge-btn:hover {
+  background: #8b3abf;
+  transform: translateY(-2px);
+}
+
+/* PVP Live Battle Arena */
+.pvp-arena-container {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 12px;
+}
+.pvp-dual-score-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1e1428;
+  border: 2px solid #583c74;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.pvp-player-box, .pvp-rival-box {
+  display: flex;
+  flex-direction: column;
+}
+.pvp-rival-box {
+  align-items: flex-end;
+}
+.pvp-name {
+  font-size: 12px;
+  color: #aaa;
+}
+.pvp-score-num {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+}
+.pvp-vs-badge {
+  background: #4a154b;
+  border: 1px solid #c058f8;
+  color: #f0a3ff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.pvp-question-card {
+  background: #241a30;
+  border: 3px solid #6c4098;
+  border-radius: 8px;
+  padding: 18px 14px;
+}
+.pvp-word-prompt {
+  font-size: 26px;
+  font-weight: bold;
+  color: #ffd700;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.pvp-pos-tag {
+  font-size: 11px;
+  color: #55e6ff;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.pvp-result-modal-box {
+  max-width: 480px;
+  margin: 20px auto;
+  background: #1f162c;
+  border: 3px solid #8e44ad;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+.pvp-final-score-display {
+  display: flex;
+  justify-content: space-around;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffeedd;
+  margin: 16px 0;
+}
+.pvp-reward-summary {
+  background: #150e20;
+  border: 1px dashed #543872;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+/* ==========================================
+   📥 CUSTOM VOCAB IMPORTER
+   ========================================== */
+.custom-vocab-dialog {
+  max-width: 540px;
+  background: #181420;
+  border: 3px solid #583c74;
+}
+.custom-vocab-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.custom-lists-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.custom-list-card {
+  background: #22182c;
+  border: 2px solid #4a345c;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.custom-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.custom-list-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffd700;
+}
+.custom-list-count {
+  font-size: 10px;
+  color: #a090b8;
+}
+.custom-list-words-preview {
+  font-size: 11px;
+  color: #bbb;
+  margin: 4px 0 8px;
+}
+.custom-list-actions {
+  display: flex;
+  gap: 6px;
+}
+.custom-practice-btn {
+  flex: 1;
+  background: #2a5830;
+  border: 1px solid #44aa55;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.custom-delete-btn {
+  background: #442222;
+  border: 1px solid #884444;
+  color: #ff9999;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.custom-presets-section {
+  background: #20162a;
+  border: 1px dashed #583a70;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 6px;
+}
+.custom-presets-title {
+  font-size: 11px;
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.custom-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.preset-pill-btn {
+  background: #342246;
+  border: 1px solid #684488;
+  color: #eeddff;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.preset-pill-btn:hover {
+  border-color: #ffd700;
+  background: #462c60;
+}
+.custom-import-form {
+  display: flex;
+  flex-direction: column;
+}
+.custom-input-label {
+  font-size: 12px;
+  color: #ffeedd;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.custom-text-input {
+  background: #140e1c;
+  border: 2px solid #543872;
+  border-radius: 4px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+}
+.custom-textarea {
+  background: #140e1c;
+  border: 2px solid #543872;
+  border-radius: 4px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+.custom-import-hint {
+  font-size: 10px;
+  color: #a090b8;
+  margin-top: 6px;
+  line-height: 1.4;
+}

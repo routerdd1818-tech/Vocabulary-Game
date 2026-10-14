@@ -49,7 +49,20 @@ const App = (() => {
     checkinClaimedDate: '',
     checkinDayIndex: 0,
     lotteryPity: 0,
-    lotteryTotalSpins: 0
+    lotteryTotalSpins: 0,
+    activePet: 'shiba',
+    petLevels: { shiba: 1, owl: 1, dragon: 1, cat: 1 },
+    petsOwned: ['shiba', 'owl', 'dragon', 'cat'],
+    equipmentLevels: { weapon: 0, armor: 0, relic: 0 },
+    equippedRunes: { slot1: null, slot2: null, slot3: null },
+    inventoryRunes: [],
+    unlockedAchievements: [],
+    equippedTitle: '見習冒險家',
+    pvpPoints: 1000,
+    pvpWins: 0,
+    pvpLosses: 0,
+    customVocabLists: [],
+    activeTimeBlessingFloors: 0
   });
 
   // Global App State
@@ -130,6 +143,18 @@ const App = (() => {
       }
       if (!state.heroClass) state.heroClass = 'novice';
       if (!state.classAwakening || typeof state.classAwakening !== 'object') state.classAwakening = {};
+      if (!state.activePet) state.activePet = 'shiba';
+      if (!state.petLevels) state.petLevels = { shiba: 1, owl: 1, dragon: 1, cat: 1 };
+      if (!state.petsOwned) state.petsOwned = ['shiba', 'owl', 'dragon', 'cat'];
+      if (!state.equipmentLevels) state.equipmentLevels = { weapon: 0, armor: 0, relic: 0 };
+      if (!state.equippedRunes) state.equippedRunes = { slot1: null, slot2: null, slot3: null };
+      if (!Array.isArray(state.inventoryRunes)) state.inventoryRunes = [];
+      if (!Array.isArray(state.unlockedAchievements)) state.unlockedAchievements = [];
+      if (!state.equippedTitle) state.equippedTitle = '見習冒險家';
+      if (typeof state.pvpPoints !== 'number') state.pvpPoints = 1000;
+      if (typeof state.pvpWins !== 'number') state.pvpWins = 0;
+      if (typeof state.pvpLosses !== 'number') state.pvpLosses = 0;
+      if (!Array.isArray(state.customVocabLists)) state.customVocabLists = [];
     } catch (e) {
       console.error('Load failed', e);
       state = getDefaultState();
@@ -185,6 +210,10 @@ const App = (() => {
       base.def += weapon.def || 0;
       base.maxHp += weapon.hp || 0;
     }
+    const wLv = (state.equipmentLevels && state.equipmentLevels.weapon) || 0;
+    if (wLv > 0 && GAME_CONFIG.BLACKSMITH && GAME_CONFIG.BLACKSMITH.levels[wLv - 1]) {
+      base.atk += GAME_CONFIG.BLACKSMITH.levels[wLv - 1].bonusAtk;
+    }
 
     // Armor
     const armor = GAME_CONFIG.EQUIPMENT.armors.find(a => a.id === state.equippedArmor);
@@ -192,6 +221,11 @@ const App = (() => {
       base.maxHp += armor.hp || 0;
       base.def += armor.def || 0;
       base.atk += armor.atk || 0;
+    }
+    const aLv = (state.equipmentLevels && state.equipmentLevels.armor) || 0;
+    if (aLv > 0 && GAME_CONFIG.BLACKSMITH && GAME_CONFIG.BLACKSMITH.levels[aLv - 1]) {
+      base.def += GAME_CONFIG.BLACKSMITH.levels[aLv - 1].bonusDef;
+      base.maxHp += GAME_CONFIG.BLACKSMITH.levels[aLv - 1].bonusHp;
     }
 
     // Relic
@@ -201,6 +235,37 @@ const App = (() => {
       base.atk += relic.atk || 0;
       base.def += relic.def || 0;
       base.timeBonus += relic.timeBonus || 0;
+    }
+    const rLv = (state.equipmentLevels && state.equipmentLevels.relic) || 0;
+    if (rLv > 0 && GAME_CONFIG.BLACKSMITH && GAME_CONFIG.BLACKSMITH.levels[rLv - 1]) {
+      base.atk += Math.round(GAME_CONFIG.BLACKSMITH.levels[rLv - 1].bonusAtk * 0.7);
+      base.def += Math.round(GAME_CONFIG.BLACKSMITH.levels[rLv - 1].bonusDef * 0.7);
+    }
+
+    // Runes Bonuses
+    const activeRunes = Object.values(state.equippedRunes || {});
+    if (activeRunes.includes('rune_swift')) {
+      base.timeBonus += 1.5;
+    }
+    if (activeRunes.includes('rune_greed')) {
+      classGoldBonus += 0.3;
+    }
+
+    // Pet Stat Perks
+    if (state.activePet === 'dragon') {
+      const dLv = (state.petLevels && state.petLevels.dragon) || 1;
+      base.atk += dLv * 2;
+    } else if (state.activePet === 'owl') {
+      const oLv = (state.petLevels && state.petLevels.owl) || 1;
+      base.timeBonus += oLv * 0.2;
+    } else if (state.activePet === 'cat') {
+      const cLv = (state.petLevels && state.petLevels.cat) || 1;
+      base.maxHp += cLv * 10;
+    }
+
+    // Fairy Fountain Time Blessing
+    if (state.activeTimeBlessingFloors > 0) {
+      base.timeBonus += 3.0;
     }
 
     // Timed Buff
@@ -415,7 +480,9 @@ const App = (() => {
     globalTurnCounter++;
     let pool = [];
 
-    if (battle.mode === 'review') {
+    if (battle.dojoCategory === 'custom' && battle.customVocabList && battle.customVocabList.length > 0) {
+      pool = battle.customVocabList;
+    } else if (battle.mode === 'review') {
       const targetIds = Array.from(new Set([...(state.bookmarkedWords || []), ...(state.mistakeWords || [])]));
       pool = getAllTrackedVocabList(targetIds);
       if (pool.length === 0) pool = getTierVocabPool(1).slice(0, 8);
@@ -476,9 +543,18 @@ const App = (() => {
   // Build 4 Question Types (Dynamic Synthesis Engine)
   const generateQuestion = (tier) => {
     const vocab = pickVocab(tier);
+    if ((!vocab.sentence || !vocab.meaning) && window.SentenceEngine) {
+      const syn = window.SentenceEngine.generateSentence(vocab.word, tier || 5);
+      if (!vocab.sentence) vocab.sentence = syn.sentence;
+      if (!vocab.sentenceZh) vocab.sentenceZh = syn.sentenceZh;
+      if (!vocab.categoryLabel) vocab.categoryLabel = syn.categoryLabel;
+    }
+
     const type = Math.floor(Math.random() * 4) + 1;
     let tierPool;
-    if (battle.mode === 'dojo_class_trial') {
+    if (battle.dojoCategory === 'custom' && battle.customVocabList && battle.customVocabList.length > 0) {
+      tierPool = battle.customVocabList;
+    } else if (battle.mode === 'dojo_class_trial') {
       tierPool = getDojoVocabPool('toeic');
     } else if (battle.mode === 'dojo_awakening_trial') {
       tierPool = getDojoVocabPool('gre');
@@ -734,10 +810,18 @@ const App = (() => {
             <div class="cabin-hero-perch" onclick="App.showClassSelectModal()" style="cursor:pointer;" title="點擊切換英雄姿態與神域覺醒">
               ${PixelSprites.renderHero(heroExpression, weaponTier, armorTier, relicTier, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
             </div>
+            <!-- Hearthside Resting Companion Pet -->
+            <div class="cabin-pet-perch" id="btn-hearth-pet" onclick="App.showPetKennelModal()" style="cursor:pointer;" title="壁爐陪伴寵物（點擊更換與餵食升級）">
+              ${PixelSprites.renderPet(state.activePet || 'shiba', 38)}
+              <div class="pet-name-badge">${(GAME_CONFIG.PETS && GAME_CONFIG.PETS[state.activePet || 'shiba'])?.name || '小柴犬'} Lv.${(state.petLevels && state.petLevels[state.activePet || 'shiba']) || 1}</div>
+            </div>
           </div>
 
-          <!-- Hero Class Insignia Plaque -->
+          <!-- Hero Class Insignia Plaque & Equipped Title -->
           <div class="cabin-class-plaque-row">
+            <div class="equipped-title-badge" onclick="App.showTrophyModal()" style="cursor:pointer;" title="當前冒險稱號（點擊前往榮譽獎盃室更換）">
+              <span class="title-star">★</span> 稱號: 【${state.equippedTitle || '見習冒險家'}】
+            </div>
             ${state.heroClass === 'novice' ? `
               <button class="cabin-plaque-btn novice-plaque" onclick="App.showClassSelectModal()">
                 ${PixelSprites.icon('quill', 12)}
@@ -829,13 +913,49 @@ const App = (() => {
           </button>
         </div>
 
-        <!-- 3. Cabin Furniture & Supplies (五大機能家具按鈕：可觸摸的實物風格) -->
+        <!-- 3. Cabin Furniture & Supplies (機能家具按鈕：可觸摸的實物風格) -->
         <div class="cabin-section-box">
           <div class="cabin-section-header">
-            <span>🪑 小屋家具與補給物資 (點擊互動)</span>
+            <span>🪑 小屋家具、鍛造與競速設施 (點擊互動)</span>
           </div>
 
           <div class="cabin-furniture-grid">
+            <!-- 矮人鐵匠鋪 (鐵砧) -->
+            <button class="cabin-furniture-card" id="btn-open-blacksmith" title="矮人鐵匠鋪：強化武器防具、鑲嵌古代符文">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderBlacksmithAnvil(28)}
+              </div>
+              <span class="furniture-title">矮人鐵匠</span>
+              <span class="furniture-desc">強化・符文</span>
+            </button>
+
+            <!-- 榮譽獎盃架 (獎盃) -->
+            <button class="cabin-furniture-card" id="btn-open-trophies" title="榮譽獎盃室：解鎖成就、領取金幣、自選戰鬥稱號">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderTrophyShelf(28)}
+              </div>
+              <span class="furniture-title">榮譽獎盃</span>
+              <span class="furniture-desc">成就・稱號</span>
+            </button>
+
+            <!-- 影子異地競技 (雙劍) -->
+            <button class="cabin-furniture-card" id="btn-open-pvp" title="影子競技場：與各國冒險家幽靈影子進行5題速度對決">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderPvpArena(28)}
+              </div>
+              <span class="furniture-title">影子競技</span>
+              <span class="furniture-desc">異地PVP對決</span>
+            </button>
+
+            <!-- 自訂生詞本 (秘卷) -->
+            <button class="cabin-furniture-card" id="btn-open-custom-vocab" title="生詞密卷：自由貼上單字本或載入雅思/商業/旅遊題庫專修">
+              <div class="furniture-sprite-wrap">
+                ${PixelSprites.renderBookshelfTome(28)}
+              </div>
+              <span class="furniture-title">自訂生詞</span>
+              <span class="furniture-desc">詞庫・專練</span>
+            </button>
+
             <!-- 矮人食堂 (餐桌) -->
             <button class="cabin-furniture-card" id="btn-open-tavern" title="矮人食堂：享用美味料理恢復生命">
               <div class="furniture-sprite-wrap">
@@ -935,6 +1055,10 @@ const App = (() => {
     document.getElementById('btn-mode-tower').onclick = () => startTowerMode();
     document.getElementById('btn-mode-dungeon').onclick = () => renderDungeonSelectView();
     document.getElementById('btn-mode-dojo').onclick = () => showDojoSelectModal();
+    document.getElementById('btn-open-blacksmith').onclick = () => showBlacksmithModal('forge');
+    document.getElementById('btn-open-trophies').onclick = () => showTrophyModal();
+    document.getElementById('btn-open-pvp').onclick = () => showPvpDuelModal();
+    document.getElementById('btn-open-custom-vocab').onclick = () => showCustomVocabModal('list');
     document.getElementById('btn-open-tavern').onclick = () => renderShopView('food');
     document.getElementById('btn-open-shop').onclick = () => renderShopView('equip');
     document.getElementById('btn-open-codex').onclick = () => renderCodexView('bookmarks');
@@ -1327,7 +1451,9 @@ const App = (() => {
         </div>
         <div class="choices-grid-2x2">
           ${q.meaningChoices.map(m => `
-            <button class="pixel-choice-btn ${q.userSelectedMeaning === m ? 'selected' : ''}" onclick="App.selectMeaning('${m}')">${m}</button>
+            <button class="pixel-choice-btn ${q.userSelectedMeaning === m ? 'selected' : ''} ${q.eliminatedChoice === m ? 'eliminated-choice' : ''}" 
+                    ${q.eliminatedChoice === m ? 'disabled' : ''}
+                    onclick="App.selectMeaning('${m}')">${m}</button>
           `).join('')}
         </div>
       `;
@@ -1353,7 +1479,9 @@ const App = (() => {
         </div>
         <div class="choices-grid-2x2 ${q.isDoubleCloze ? 'double-choices-grid' : ''}">
           ${q.choices.map(choice => `
-            <button class="pixel-choice-btn ${q.isDoubleCloze ? 'double-choice-btn' : ''}" onclick="App.answerType2('${choice}')">${choice}</button>
+            <button class="pixel-choice-btn ${q.isDoubleCloze ? 'double-choice-btn' : ''} ${q.eliminatedChoice === choice ? 'eliminated-choice' : ''}" 
+                    ${q.eliminatedChoice === choice ? 'disabled' : ''}
+                    onclick="App.answerType2('${choice}')">${choice}</button>
           `).join('')}
         </div>
       `;
@@ -1388,7 +1516,9 @@ const App = (() => {
         </div>
         <div class="choices-stack">
           ${q.choices.map((choice, idx) => `
-            <button class="pixel-choice-btn" style="text-align:left; font-size:12px;" onclick="App.answerType4(${idx})">
+            <button class="pixel-choice-btn ${q.eliminatedChoice === choice ? 'eliminated-choice' : ''}" 
+                    ${q.eliminatedChoice === choice ? 'disabled' : ''}
+                    style="text-align:left; font-size:12px;" onclick="App.answerType4(${idx})">
               ${choice}
             </button>
           `).join('')}
@@ -1469,6 +1599,7 @@ const App = (() => {
         toeic: 'TOEIC 多益職場商務',
         gre: 'GRE / 托福 高階殿堂',
         mistakes: '錯題強化專修庫',
+        custom: '個人自訂生詞專修',
         all: '全單字庫綜合試煉'
       };
       const catName = catLabels[battle.dojoCategory] || '自由修煉';
@@ -1511,7 +1642,14 @@ const App = (() => {
             <div class="fighter-mini-hp">
               <div class="mini-hp-fill" style="width: ${(state.currentHp / heroStats.maxHp) * 100}%;"></div>
             </div>
-            ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
+            <div class="fighter-hero-with-pet">
+              ${PixelSprites.renderHero(heroExpression, heroWeapon ? heroWeapon.tier : 1, heroArmor ? heroArmor.tier : 1, heroRelic ? heroRelic.tier : 0, state.heroClass || 'novice', (state.classAwakening && state.classAwakening[state.heroClass]) || 0)}
+              ${state.activePet ? `
+                <div class="battle-pet-companion" onclick="App.showPetKennelModal()" style="cursor:pointer;" title="${(GAME_CONFIG.PETS && GAME_CONFIG.PETS[state.activePet])?.name || '寵物'} Lv.${(state.petLevels && state.petLevels[state.activePet]) || 1}">
+                  ${PixelSprites.renderPet(state.activePet, 26)}
+                </div>
+              ` : ''}
+            </div>
           </div>
 
           <!-- Enemy Unit -->
@@ -1560,6 +1698,11 @@ const App = (() => {
 
         <!-- Quick Items Bar -->
         <div class="battle-quick-items">
+          ${state.activePet === 'owl' ? `
+            <button class="item-badge-btn owl-skill-btn ${battle.owlSkillUsed ? 'used' : ''}" onclick="App.useOwlInsight()" ${battle.owlSkillUsed ? 'disabled' : ''} title="貓頭鷹主動技：排除 1 個錯誤選項">
+              ${PixelSprites.renderPet('owl', 16)} <span>${battle.owlSkillUsed ? '已用心靈洞察' : '心靈洞察 (排除錯項)'}</span>
+            </button>
+          ` : ''}
           <button class="item-badge-btn" onclick="App.useQuickPotion()" ${(state.inventory.potion || 0) > 0 ? '' : 'disabled'}>
             ${PixelSprites.icon('potion', 14)} 聖水x${state.inventory.potion || 0}
           </button>
@@ -1686,6 +1829,44 @@ const App = (() => {
         showToast('勤學無限賞達成！獲得 +15 金幣！');
       }
 
+      // Pet Perk: Shiba Gold Digging
+      if (state.activePet === 'shiba' && Math.random() < 0.35) {
+        const shibaLv = (state.petLevels && state.petLevels.shiba) || 1;
+        const dugGold = 4 + shibaLv * 2;
+        state.gold += dugGold;
+        showFloatingText('hero-floating-box', `🐕 柴犬探寶 +${dugGold}G!`, 'dmg-heal');
+      }
+
+      // Rune Perk: Vampiric Healing (Every 5 combo)
+      const activeRunes = Object.values(state.equippedRunes || {});
+      if (activeRunes.includes('rune_vampire') && battle.combo > 0 && battle.combo % 5 === 0) {
+        const heroStats = getHeroStats();
+        const healAmt = 12;
+        state.currentHp = Math.min(heroStats.maxHp, state.currentHp + healAmt);
+        showFloatingText('hero-floating-box', `🩸 嗜血靈石 +${healAmt}HP`, 'dmg-heal');
+      }
+
+      // Roguelike: Gnome Gambler 3-Streak Bet
+      if (battle.activeGnomeBet) {
+        battle.gnomeBetStreak = (battle.gnomeBetStreak || 0) + 1;
+        if (battle.gnomeBetStreak >= 3) {
+          state.gold += battle.activeGnomeBet.payout;
+          showToast(`🎲 侏儒賭徒驚呼：不可思議！連對3題！賠付你 ${battle.activeGnomeBet.payout} 金幣！`);
+          AudioManager.play('victory');
+          battle.activeGnomeBet = null;
+        } else {
+          showToast(`🎲 侏儒連擊挑戰進度: ${battle.gnomeBetStreak}/3 題！`);
+        }
+      }
+
+      // Sphinx Riddle Solved Bonus
+      if (battle.isSphinxRiddle) {
+        state.gold += 80;
+        showToast('🏛️ 斯芬克斯讚嘆：智慧凡人！贈予古代賢者寶箱 +80 G！');
+        AudioManager.play('victory');
+        battle.isSphinxRiddle = false;
+      }
+
       // Hero attacks Boss!
       executeHeroAttack();
     } else {
@@ -1699,10 +1880,22 @@ const App = (() => {
         state.mistakeWords.push(vocabId);
       }
 
+      // Roguelike: Gnome Gambler Bet Lost
+      if (battle.activeGnomeBet) {
+        showToast('🎲 侏儒賭徒大笑：連擊中斷！賭金 20 G 歸我啦！');
+        battle.activeGnomeBet = null;
+      }
+
+      if (battle.isSphinxRiddle) {
+        showToast('🏛️ 斯芬克斯搖頭：凡人終有未識之境。石碑隱入迷霧。');
+        battle.isSphinxRiddle = false;
+      }
+
       // Boss attacks Hero!
       executeEnemyAttack(feedbackMsg);
     }
 
+    checkAchievements();
     saveState();
     updateHUD();
   };
@@ -1717,7 +1910,15 @@ const App = (() => {
     const comboMult = 1 + Math.min(battle.combo * 0.05, 0.30);
     const critMult = isCrit ? 1.3 : 1.0;
     const rawDmg = heroStats.atk * (1 - defMitigation) * critMult * comboMult;
-    const damage = Math.max(5, Math.round(rawDmg));
+    let damage = Math.max(5, Math.round(rawDmg));
+
+    // Pet Perk: Dragon extra burn damage
+    if (state.activePet === 'dragon') {
+      const dragonLv = (state.petLevels && state.petLevels.dragon) || 1;
+      const burnDmg = Math.max(4, Math.round(heroStats.atk * 0.18 + dragonLv * 3));
+      damage += burnDmg;
+      showFloatingText('enemy-floating-box', `🔥 雛龍怒焰 -${burnDmg}`, 'dmg-crit');
+    }
 
     // Sound & Floating Number
     if (isCrit) {
@@ -1889,7 +2090,14 @@ const App = (() => {
     // Defense mitigation
     const effectiveDef = heroStats.def * (1 - pierce);
     const defMitigation = effectiveDef / (effectiveDef + 100);
-    const rawDmg = enemyAtk * (1 - defMitigation);
+    let rawDmg = enemyAtk * (1 - defMitigation);
+
+    // Rune Perk: Granite Shield
+    const activeRunes = Object.values(state.equippedRunes || {});
+    if (activeRunes.includes('rune_shield')) {
+      rawDmg = rawDmg * 0.85;
+    }
+
     const damage = Math.max(1, Math.round(rawDmg) + extraFixed);
 
     // Apply Burn Damage if active
@@ -1914,6 +2122,16 @@ const App = (() => {
     // Apply HP loss (persistent!)
     state.currentHp = Math.max(0, state.currentHp - totalDamage);
     showToast(feedbackMsg);
+
+    // Pet Perk: Mystic Cat Nine Lives Revive
+    if (state.currentHp <= 0 && state.activePet === 'cat' && !battle.catReviveUsed) {
+      battle.catReviveUsed = true;
+      const reviveHp = Math.max(15, Math.round(heroStats.maxHp * 0.3));
+      state.currentHp = reviveHp;
+      showFloatingText('hero-floating-box', '🐾 玄貓九命守護！', 'dmg-heal');
+      showToast('🐾 魔法玄貓的【九命庇護】發動！為你擋下致命一擊並回復 30% 生命！');
+      AudioManager.play('crit');
+    }
 
     if (state.currentHp <= 0) {
       if (battle.mode === 'tower') {
@@ -2194,6 +2412,10 @@ const App = (() => {
       state.towerRecordFloor = state.towerFloor;
     }
 
+    if (state.activeTimeBlessingFloors > 0) {
+      state.activeTimeBlessingFloors--;
+    }
+
     AudioManager.play('floorUp');
 
     // Calculate Floor Gold Reward
@@ -2209,11 +2431,18 @@ const App = (() => {
     }
 
     state.gold += floorGold;
+    checkAchievements();
     saveState();
     updateHUD();
 
     // Trigger visual floor-up splash celebration!
     showFloorUpCelebration(state.towerFloor, floorGold);
+
+    // Roguelike Random Encounter check (e.g. every 5 floors if not boss floor)
+    if (state.towerFloor % 5 === 0 && state.towerFloor % 10 !== 0 && state.towerFloor > 3) {
+      setTimeout(() => triggerRandomEncounter(), 1400);
+      return;
+    }
 
     setupTowerFloorMonster();
     setTimeout(() => loadNextQuestion(), 1600);
@@ -4394,6 +4623,1048 @@ const App = (() => {
     renderLobbyView();
   };
 
+  // ==========================================
+  // 🏆 ACHIEVEMENTS & TITLE VERIFICATION
+  // ==========================================
+  const checkAchievements = () => {
+    if (!state.unlockedAchievements) state.unlockedAchievements = [];
+    const achs = GAME_CONFIG.ACHIEVEMENTS || [];
+    let newlyUnlocked = false;
+
+    const totalWords = state.stats ? Object.values(state.stats).reduce((a, b) => a + (b.correct || 0), 0) : 0;
+    const maxCombo = state.stats ? Object.values(state.stats).reduce((max, s) => Math.max(max, s.bestStreak || 0), 0) : 0;
+    const maxEquipLv = Object.values(state.equipmentLevels || {}).reduce((max, lv) => Math.max(max, lv || 0), 0);
+    const maxPetLv = Object.values(state.petLevels || {}).reduce((max, lv) => Math.max(max, lv || 0), 0);
+
+    achs.forEach(ach => {
+      if (state.unlockedAchievements.includes(ach.id)) return;
+      let unlocked = false;
+
+      if (ach.id === 'tower_10' && (state.towerFloor >= 10 || state.towerRecordFloor >= 10)) unlocked = true;
+      else if (ach.id === 'tower_50' && (state.towerFloor >= 50 || state.towerRecordFloor >= 50)) unlocked = true;
+      else if (ach.id === 'tower_100' && (state.towerFloor >= 100 || state.towerRecordFloor >= 100)) unlocked = true;
+      else if (ach.id === 'dungeon_5' && ((state.dungeonFirstCleared || []).includes(5) || state.dungeonProgress > 5)) unlocked = true;
+      else if (ach.id === 'dungeon_15' && (state.dungeonFirstCleared || []).includes(15)) unlocked = true;
+      else if (ach.id === 'words_50' && totalWords >= 50) unlocked = true;
+      else if (ach.id === 'words_200' && totalWords >= 200) unlocked = true;
+      else if (ach.id === 'combo_10' && (maxCombo >= 10 || battle.combo >= 10)) unlocked = true;
+      else if (ach.id === 'combo_20' && (maxCombo >= 20 || battle.combo >= 20)) unlocked = true;
+      else if (ach.id === 'class_unlocked' && state.heroClass && state.heroClass !== 'novice') unlocked = true;
+      else if (ach.id === 'class_awakened' && state.heroClass && ((state.classAwakening && state.classAwakening[state.heroClass]) || 0) > 0) unlocked = true;
+      else if (ach.id === 'forge_5' && maxEquipLv >= 5) unlocked = true;
+      else if (ach.id === 'pet_3' && maxPetLv >= 3) unlocked = true;
+      else if (ach.id === 'pvp_win' && (state.pvpWins || 0) >= 1) unlocked = true;
+
+      if (unlocked) {
+        state.unlockedAchievements.push(ach.id);
+        state.gold += ach.rewardGold || 0;
+        newlyUnlocked = true;
+        showToast(`🏆 解鎖榮譽成就：【${ach.title}】！獲得稱號【${ach.titleReward}】與 +${ach.rewardGold} G！`);
+        AudioManager.play('victory');
+      }
+    });
+
+    if (newlyUnlocked) {
+      saveState();
+      updateHUD();
+    }
+  };
+
+  // ==========================================
+  // 🐾 PETS & COMPANIONS SYSTEM
+  // ==========================================
+  const showPetKennelModal = () => {
+    const pets = GAME_CONFIG.PETS || {};
+    const petList = Object.values(pets);
+    const activePet = state.activePet || 'shiba';
+
+    const cardsHtml = petList.map(pet => {
+      const lv = (state.petLevels && state.petLevels[pet.id]) || 1;
+      const isSelected = activePet === pet.id;
+      const feedCost = pet.feedCost + (lv - 1) * 15;
+      const isMax = lv >= (pet.maxLevel || 10);
+
+      return `
+        <div class="pet-card ${isSelected ? 'active-pet-card' : ''}">
+          <div class="pet-card-header">
+            <div class="pet-sprite-box">
+              ${PixelSprites.renderPet(pet.id, 44)}
+            </div>
+            <div class="pet-card-title-col">
+              <div class="pet-title-name">
+                <span>${pet.name}</span>
+                <span class="pet-lv-pill">Lv.${lv}</span>
+              </div>
+              <div class="pet-honor-title">${pet.title}</div>
+            </div>
+          </div>
+          <div class="pet-desc-text">${pet.desc}</div>
+          <div class="pet-skill-box">
+            <span class="pet-skill-name">${pet.skillName}</span>
+            <span class="pet-skill-desc">${pet.skillDesc}</span>
+          </div>
+          <div class="pet-action-row">
+            ${isSelected ? `
+              <button class="pet-select-btn current-pet-btn" disabled>出戰中 ✓</button>
+            ` : `
+              <button class="pet-select-btn" onclick="App.selectActivePet('${pet.id}')">攜帶出戰</button>
+            `}
+            <button class="pet-feed-btn" onclick="App.feedPet('${pet.id}')" ${isMax || state.gold < feedCost ? 'disabled' : ''}>
+              ${isMax ? '已達極限 Lv.10' : `餵食靈糧 (+Lv1 需 ${feedCost} G)`}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog pet-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🐾 冒險者寵物與精靈夥伴 (壁爐獸舍)</span>
+            <span style="font-size:12px; color:var(--gold);">${PixelSprites.icon('coin', 12)} ${state.gold} G</span>
+          </div>
+          <div class="pet-banner-hint">
+            在溫暖的壁爐旁休息的小生靈們！攜帶出戰即可獲得對應被動戰鬥異能或主動解謎神技！
+          </div>
+          <div class="pet-cards-grid">
+            ${cardsHtml}
+          </div>
+          <button class="secondary-btn" style="width:100%; margin-top:12px;" onclick="App.closeModal()">返回冒險者小屋</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const selectActivePet = (petId) => {
+    state.activePet = petId;
+    AudioManager.play('click');
+    showToast(`🐾 已攜帶【${GAME_CONFIG.PETS[petId]?.name || petId}】作為冒險夥伴！`);
+    saveState();
+    updateHUD();
+    showPetKennelModal();
+    if (document.querySelector('.cabin-lodge-container')) {
+      renderLobbyView();
+    }
+  };
+
+  const feedPet = (petId) => {
+    const pet = GAME_CONFIG.PETS[petId];
+    if (!pet) return;
+    const lv = (state.petLevels && state.petLevels[petId]) || 1;
+    if (lv >= (pet.maxLevel || 10)) {
+      showToast('寵物已達最高等級！');
+      return;
+    }
+    const cost = pet.feedCost + (lv - 1) * 15;
+    if (state.gold < cost) {
+      showToast('金幣不足，無法購買特級寵物靈糧！');
+      return;
+    }
+    state.gold -= cost;
+    if (!state.petLevels) state.petLevels = {};
+    state.petLevels[petId] = lv + 1;
+    AudioManager.play('coin');
+    showToast(`🍖 餵食成功！【${pet.name}】晉升至 Lv.${state.petLevels[petId]}！戰鬥屬性大幅提升！`);
+    checkAchievements();
+    saveState();
+    updateHUD();
+    showPetKennelModal();
+    if (document.querySelector('.cabin-lodge-container')) {
+      renderLobbyView();
+    }
+  };
+
+  const useOwlInsight = () => {
+    if (battle.owlSkillUsed || !battle.active || !battle.currentQuestion) return;
+    const q = battle.currentQuestion;
+    let wrongOption = null;
+
+    if (q.type === 2 && Array.isArray(q.choices)) {
+      const correct = q.correctAnswer || q.vocab.word;
+      const wrongs = q.choices.filter(c => c !== correct && c !== q.eliminatedChoice);
+      if (wrongs.length > 0) {
+        wrongOption = wrongs[Math.floor(Math.random() * wrongs.length)];
+      }
+    } else if (q.type === 1 && Array.isArray(q.meaningChoices)) {
+      const correct = q.correctMeaning || q.vocab.meaning;
+      const wrongs = q.meaningChoices.filter(c => c !== correct && c !== q.eliminatedChoice);
+      if (wrongs.length > 0) {
+        wrongOption = wrongs[Math.floor(Math.random() * wrongs.length)];
+      }
+    } else if (q.type === 4 && Array.isArray(q.choices)) {
+      const wrongs = q.choices.filter((c, idx) => idx !== q.correctIndex && c !== q.eliminatedChoice);
+      if (wrongs.length > 0) {
+        wrongOption = wrongs[Math.floor(Math.random() * wrongs.length)];
+      }
+    }
+
+    if (wrongOption) {
+      battle.owlSkillUsed = true;
+      q.eliminatedChoice = wrongOption;
+      AudioManager.play('crit');
+      showToast(`🦉 貓頭鷹【心靈洞察】發動！已看破並排除錯誤選項：【${wrongOption}】！`);
+      renderBattleView();
+    } else {
+      showToast('此題型無法排除選項！');
+    }
+  };
+
+  // ==========================================
+  // ⚒️ BLACKSMITH FORGE & RUNES SYSTEM
+  // ==========================================
+  const showBlacksmithModal = (tab = 'forge') => {
+    const equipLevels = state.equipmentLevels || { weapon: 0, armor: 0, relic: 0 };
+    const cfg = GAME_CONFIG.BLACKSMITH;
+
+    let contentHtml = '';
+    if (tab === 'forge') {
+      const items = [
+        { type: 'weapon', label: '⚔️ 主手武器', curLv: equipLevels.weapon || 0, desc: '每次強化 +ATK 總攻擊力' },
+        { type: 'armor', label: '🛡️ 冒險重甲', curLv: equipLevels.armor || 0, desc: '每次強化 +DEF 總防禦力與 +HP 最大生命' },
+        { type: 'relic', label: '📿 古代聖物', curLv: equipLevels.relic || 0, desc: '每次強化 +ATK/+DEF 均衡提升' }
+      ];
+
+      const rows = items.map(item => {
+        const nextLv = item.curLv + 1;
+        const isMax = item.curLv >= cfg.maxLevel;
+        const nextData = !isMax ? cfg.levels[nextLv - 1] : null;
+
+        return `
+          <div class="forge-item-row">
+            <div class="forge-item-info">
+              <div class="forge-item-name">
+                <span>${item.label}</span>
+                <span class="forge-lv-badge">+${item.curLv}</span>
+              </div>
+              <div class="forge-item-desc">${item.desc}</div>
+              ${!isMax ? `
+                <div class="forge-stat-preview">
+                  下階預覽: ${item.type === 'weapon' ? `+${nextData.bonusAtk} ATK` : item.type === 'armor' ? `+${nextData.bonusDef} DEF / +${nextData.bonusHp} HP` : `+${Math.round(nextData.bonusAtk * 0.7)} ATK / +${Math.round(nextData.bonusDef * 0.7)} DEF`}
+                  ・成功率: <span style="color:#55e6ff; font-weight:bold;">${Math.round(nextData.rate * 100)}%</span>
+                </div>
+              ` : `
+                <div class="forge-stat-preview" style="color:var(--gold);">★ 已達傳奇鍛造巔峰 (+10)</div>
+              `}
+            </div>
+            <div class="forge-item-action">
+              ${!isMax ? `
+                <button class="forge-btn" onclick="App.forgeItem('${item.type}')" ${state.gold < nextData.cost ? 'disabled' : ''}>
+                  叩擊鍛造 (${nextData.cost} G)
+                </button>
+              ` : `
+                <button class="forge-btn" disabled>最高階</button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      contentHtml = `
+        <div class="forge-section">
+          <div class="forge-anvil-hero">
+            ${PixelSprites.renderBlacksmithAnvil(48)}
+            <div class="forge-anvil-speech">
+              「矮人神匠雷錘：『拿精鐵與金幣來！哪怕是最平凡的鐵劍，老子也能將它鍛造成弒神之刃！』」
+            </div>
+          </div>
+          <div class="forge-list">
+            ${rows}
+          </div>
+        </div>
+      `;
+    } else {
+      // Runes Tab
+      const equipped = state.equippedRunes || { slot1: null, slot2: null, slot3: null };
+      const slotsHtml = ['slot1', 'slot2', 'slot3'].map((slotKey, idx) => {
+        const runeId = equipped[slotKey];
+        const rune = runeId ? cfg.runes.find(r => r.id === runeId) : null;
+        return `
+          <div class="rune-socket-slot">
+            <span class="socket-idx">槽位 #${idx + 1}</span>
+            ${rune ? `
+              <div class="rune-slotted-box">
+                <span class="rune-badge-name">${rune.name}</span>
+                <span class="rune-badge-desc">${rune.desc}</span>
+                <button class="rune-unsocket-btn" onclick="App.unsocketRune('${slotKey}')">卸下</button>
+              </div>
+            ` : `
+              <div class="rune-empty-socket">【空鑲嵌槽】點選下方符文鑲入</div>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      const runesListHtml = cfg.runes.map(rune => {
+        const isEquipped = Object.values(equipped).includes(rune.id);
+        const hasFreeSlot = Object.values(equipped).some(v => v === null);
+
+        return `
+          <div class="rune-buy-card ${isEquipped ? 'rune-active' : ''}">
+            <div class="rune-buy-info">
+              <div class="rune-title-row">
+                <span class="rune-title">${rune.name}</span>
+                <span class="rune-cost">${rune.cost} G</span>
+              </div>
+              <div class="rune-desc">${rune.desc}</div>
+            </div>
+            <div class="rune-buy-action">
+              ${isEquipped ? `
+                <button class="rune-btn equipped" disabled>已鑲嵌中</button>
+              ` : `
+                <button class="rune-btn" onclick="App.buyAndSocketRune('${rune.id}')" ${!hasFreeSlot || state.gold < rune.cost ? 'disabled' : ''}>
+                  ${!hasFreeSlot ? '槽位已滿' : state.gold < rune.cost ? '金幣不足' : '購入並鑲嵌'}
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      contentHtml = `
+        <div class="runes-section">
+          <div class="runes-header-desc">
+            裝備擁有 3 個遠古符文凹槽！鑲嵌符文可賦予作答延長、嗜血汲取、黃金豐饒與堅如磐石之特效！
+          </div>
+          <div class="rune-sockets-container">
+            ${slotsHtml}
+          </div>
+          <div class="runes-available-list">
+            ${runesListHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog blacksmith-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>⚒️ 矮人黑鐵神匠鋪 (鍛造與遠古符文)</span>
+            <span style="font-size:12px; color:var(--gold);">${PixelSprites.icon('coin', 12)} ${state.gold} G</span>
+          </div>
+          <div class="tab-switch-row" style="display:flex; gap:8px; margin:10px 0;">
+            <button class="tab-pill-btn ${tab === 'forge' ? 'active' : ''}" onclick="App.showBlacksmithModal('forge')">⚒️ 裝備淬火強化</button>
+            <button class="tab-pill-btn ${tab === 'runes' ? 'active' : ''}" onclick="App.showBlacksmithModal('runes')">🔮 遠古符文鑲嵌</button>
+          </div>
+          ${contentHtml}
+          <button class="secondary-btn" style="width:100%; margin-top:14px;" onclick="App.closeModal()">返回大廳</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const forgeItem = (type) => {
+    const cfg = GAME_CONFIG.BLACKSMITH;
+    if (!state.equipmentLevels) state.equipmentLevels = { weapon: 0, armor: 0, relic: 0 };
+    const curLv = state.equipmentLevels[type] || 0;
+    if (curLv >= cfg.maxLevel) return;
+
+    const nextLv = curLv + 1;
+    const forgeData = cfg.levels[nextLv - 1];
+    if (state.gold < forgeData.cost) {
+      showToast('金幣不足，無法進行強化鍛造！');
+      return;
+    }
+
+    state.gold -= forgeData.cost;
+    const isSuccess = Math.random() <= forgeData.rate;
+
+    if (isSuccess) {
+      state.equipmentLevels[type] = nextLv;
+      AudioManager.play('crit');
+      showToast(`🔥 叮！鍛造大獲成功！裝備強化至 +${nextLv}！`);
+      checkAchievements();
+    } else {
+      AudioManager.play('clang');
+      showToast('💨 叮咚！淬火稍欠火候，鍛造未能成功！精鐵並未損毀，下次請再接再厲！');
+    }
+
+    saveState();
+    updateHUD();
+    showBlacksmithModal('forge');
+    if (document.querySelector('.cabin-lodge-container')) {
+      renderLobbyView();
+    }
+  };
+
+  const buyAndSocketRune = (runeId) => {
+    const cfg = GAME_CONFIG.BLACKSMITH;
+    const rune = cfg.runes.find(r => r.id === runeId);
+    if (!rune) return;
+    if (state.gold < rune.cost) {
+      showToast('金幣不足，無法購買符文！');
+      return;
+    }
+    if (!state.equippedRunes) state.equippedRunes = { slot1: null, slot2: null, slot3: null };
+    const emptySlot = Object.keys(state.equippedRunes).find(k => state.equippedRunes[k] === null);
+    if (!emptySlot) {
+      showToast('符文槽已滿！請先卸下現有符文。');
+      return;
+    }
+
+    state.gold -= rune.cost;
+    state.equippedRunes[emptySlot] = runeId;
+    AudioManager.play('coin');
+    showToast(`🔮 符文【${rune.name}】已成功鑲嵌至槽位！特效立即生效！`);
+    saveState();
+    updateHUD();
+    showBlacksmithModal('runes');
+  };
+
+  const unsocketRune = (slotKey) => {
+    if (!state.equippedRunes || !state.equippedRunes[slotKey]) return;
+    state.equippedRunes[slotKey] = null;
+    AudioManager.play('click');
+    showToast('已卸下該符文。');
+    saveState();
+    updateHUD();
+    showBlacksmithModal('runes');
+  };
+
+  // ==========================================
+  // 🏆 TROPHIES & TITLES SYSTEM
+  // ==========================================
+  const showTrophyModal = () => {
+    checkAchievements();
+    const achs = GAME_CONFIG.ACHIEVEMENTS || [];
+    const unlocked = state.unlockedAchievements || [];
+
+    const listHtml = achs.map(ach => {
+      const isDone = unlocked.includes(ach.id);
+      const isEquipped = state.equippedTitle === ach.titleReward;
+
+      return `
+        <div class="trophy-badge-card ${isDone ? 'done' : 'locked'}">
+          <div class="trophy-badge-icon">
+            ${PixelSprites.renderTrophyShelf(36)}
+          </div>
+          <div class="trophy-badge-content">
+            <div class="trophy-title-row">
+              <span class="trophy-name">${ach.title}</span>
+              ${isDone ? `<span class="trophy-status-done">已達成 ✓</span>` : `<span class="trophy-status-lock">未達成</span>`}
+            </div>
+            <div class="trophy-desc">${ach.desc}</div>
+            <div class="trophy-rewards">
+              <span class="trophy-gold-tag">+${ach.rewardGold} G</span>
+              <span class="trophy-title-tag">稱號:【${ach.titleReward}】</span>
+            </div>
+          </div>
+          <div class="trophy-action-col">
+            ${isDone ? `
+              <button class="title-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="App.equipTitle('${ach.titleReward}')">
+                ${isEquipped ? '配戴中' : '配戴稱號'}
+              </button>
+            ` : `
+              <button class="title-equip-btn" disabled>鎖定中</button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog trophy-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🏆 小屋榮譽獎盃室與自選稱號</span>
+            <span style="font-size:12px; color:var(--gold);">達成進度: ${unlocked.length} / ${achs.length}</span>
+          </div>
+          <div class="trophy-current-title-banner">
+            當前佩戴稱號：<span class="gold-title-text">【${state.equippedTitle || '見習冒險家'}】</span>
+            <span style="font-size:10px; color:#aaa; margin-left:6px;">(將在英雄名牌、道場與排行榜彰顯榮耀姿態)</span>
+          </div>
+          <div class="trophy-scroll-list">
+            ${listHtml}
+          </div>
+          <button class="secondary-btn" style="width:100%; margin-top:12px;" onclick="App.closeModal()">返回冒險者小屋</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const equipTitle = (title) => {
+    state.equippedTitle = title;
+    AudioManager.play('click');
+    showToast(`🏆 已佩戴稱號：【${title}】！`);
+    saveState();
+    updateHUD();
+    showTrophyModal();
+    if (document.querySelector('.cabin-lodge-container')) {
+      renderLobbyView();
+    }
+  };
+
+  // ==========================================
+  // 🎲 ROGUELIKE RANDOM ENCOUNTERS
+  // ==========================================
+  const triggerRandomEncounter = () => {
+    const encounters = GAME_CONFIG.RANDOM_ENCOUNTERS || [];
+    const enc = encounters[Math.floor(Math.random() * encounters.length)];
+    showEncounterModal(enc);
+  };
+
+  const showEncounterModal = (enc) => {
+    const optionsHtml = enc.options.map(opt => `
+      <button class="encounter-option-btn" onclick="App.handleEncounterOption('${enc.id}', '${opt.id}')" ${opt.cost > 0 && state.gold < opt.cost ? 'disabled' : ''}>
+        <span>${opt.text}</span>
+      </button>
+    `).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-dialog encounter-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title">
+            <span>🎲 通天塔神秘奇遇事件！</span>
+          </div>
+          <div class="encounter-sprite-banner">
+            ${PixelSprites.renderEncounterSprite(enc.id, 64)}
+          </div>
+          <div class="encounter-title-text">${enc.title}</div>
+          <div class="encounter-desc-quote">${enc.desc}</div>
+          <div class="encounter-options-stack">
+            ${optionsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const handleEncounterOption = (encId, optId) => {
+    const enc = (GAME_CONFIG.RANDOM_ENCOUNTERS || []).find(e => e.id === encId);
+    if (!enc) return closeModalAndResumeTower();
+    const opt = enc.options.find(o => o.id === optId);
+    if (!opt) return closeModalAndResumeTower();
+
+    if (opt.cost > 0 && state.gold < opt.cost) {
+      showToast('金幣不足！');
+      return;
+    }
+
+    if (opt.cost > 0) state.gold -= opt.cost;
+
+    if (opt.effect === 'potion') {
+      state.inventory.potion = (state.inventory.potion || 0) + 1;
+      AudioManager.play('coin');
+      showToast('獲得了特惠生命聖水！');
+      closeModalAndResumeTower();
+    } else if (opt.effect === 'scroll') {
+      state.inventory.guard_scroll = (state.inventory.guard_scroll || 0) + 1;
+      AudioManager.play('coin');
+      showToast('獲得了特惠護樓神卷！');
+      closeModalAndResumeTower();
+    } else if (opt.effect === 'heal_full') {
+      const stats = getHeroStats();
+      state.currentHp = stats.maxHp;
+      AudioManager.play('crit');
+      showToast('✨ 沐浴泉水，生命值全面回復至 100%！');
+      closeModalAndResumeTower();
+    } else if (opt.effect === 'time_bless') {
+      state.activeTimeBlessingFloors = 5;
+      AudioManager.play('coin');
+      showToast('⏳ 妖精賜予祝福！接下來 5 層通天塔作答時間延長 +3 秒！');
+      closeModalAndResumeTower();
+    } else if (opt.effect === 'gamble_bet') {
+      battle.activeGnomeBet = { payout: 60 };
+      battle.gnomeBetStreak = 0;
+      AudioManager.play('coin');
+      showToast('🎲 賭約成立！若接下來 3 題全部答對，將贏取 60 金幣大獎！');
+      closeModalAndResumeTower();
+    } else if (opt.effect === 'riddle') {
+      closeModal();
+      startSphinxRiddleChallenge();
+    } else {
+      showToast('你揮手告別，繼續沿著石階登塔。');
+      closeModalAndResumeTower();
+    }
+
+    saveState();
+    updateHUD();
+  };
+
+  const closeModalAndResumeTower = () => {
+    closeModal();
+    setupTowerFloorMonster();
+    setTimeout(() => loadNextQuestion(), 700);
+  };
+
+  const startSphinxRiddleChallenge = () => {
+    battle.isSphinxRiddle = true;
+    battle.currentQuestion = generateQuestion(14); // GRE tier
+    renderBattleView();
+    startQuestionTimer(18);
+  };
+
+  // ==========================================
+  // ⚔️ SHADOW GHOST PVP SPEED DUEL
+  // ==========================================
+  let pvpDuel = {
+    active: false,
+    config: null,
+    questions: [],
+    qIdx: 0,
+    playerScore: 0,
+    rivalScore: 0,
+    playerAnsweredThisRound: false,
+    rivalAnsweredThisRound: false,
+    rivalTimeoutId: null
+  };
+
+  const showPvpDuelModal = () => {
+    const rivals = [
+      { id: 'apprentice', name: '影子幽靈學徒', title: '【青銅試煉影】', pts: '+15分 / +25G', acc: 0.65, spd: '3.5~5.0s' },
+      { id: 'scholar', name: '異國疾風學者', title: '【白銀競速影】', pts: '+25分 / +45G', acc: 0.80, spd: '2.5~4.0s' },
+      { id: 'phantom', name: '傳奇深淵幻影', title: '【黃金宗師影】', pts: '+40分 / +80G', acc: 0.92, spd: '1.8~3.2s' }
+    ];
+
+    const rivalsHtml = rivals.map(r => `
+      <div class="pvp-rival-card">
+        <div class="pvp-rival-info">
+          <div class="pvp-rival-name-row">
+            <span class="pvp-rival-name">${r.name}</span>
+            <span class="pvp-rival-tier">${r.title}</span>
+          </div>
+          <div class="pvp-rival-desc">作答速度約 ${r.spd}・預估勝率 ${Math.round(r.acc * 100)}%</div>
+          <div class="pvp-rival-bounty">勝出獎賞: ${r.pts}</div>
+        </div>
+        <button class="pvp-challenge-btn" onclick="App.startPvpDuel('${r.id}')">挑戰競速</button>
+      </div>
+    `).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog pvp-modal-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>⚔️ 影子異地競速 PVP 競技場</span>
+            <span style="font-size:12px; color:var(--gold);">${PixelSprites.icon('crown', 12)} 積分: ${state.pvpPoints || 1000}</span>
+          </div>
+          <div class="pvp-profile-bar">
+            <span>勝場: <b style="color:#55ff88;">${state.pvpWins || 0}</b></span>
+            <span>敗場: <b style="color:#ff6666;">${state.pvpLosses || 0}</b></span>
+            <span>稱號: <b>【${state.equippedTitle || '見習冒險家'}】</b></span>
+          </div>
+          <div class="pvp-intro-text">
+            與全球歷代冒險者留下的速度殘影進行 5 題快速對決！雙方同時答題，比拼答題速度與正確率！
+          </div>
+          <div class="pvp-rivals-grid">
+            ${rivalsHtml}
+          </div>
+          <button class="secondary-btn" style="width:100%; margin-top:12px;" onclick="App.closeModal()">返回大廳</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const startPvpDuel = (rivalId) => {
+    closeModal();
+    let rivalConfig = {
+      name: '影子幽靈學徒',
+      acc: 0.65,
+      spdMin: 3.5,
+      spdMax: 5.0,
+      rewardGold: 25,
+      rewardPts: 15
+    };
+    if (rivalId === 'scholar') {
+      rivalConfig = { name: '異國疾風學者', acc: 0.80, spdMin: 2.5, spdMax: 4.0, rewardGold: 45, rewardPts: 25 };
+    } else if (rivalId === 'phantom') {
+      rivalConfig = { name: '傳奇深淵幻影', acc: 0.92, spdMin: 1.8, spdMax: 3.2, rewardGold: 80, rewardPts: 40 };
+    }
+
+    pvpDuel = {
+      active: true,
+      config: rivalConfig,
+      qIdx: 0,
+      playerScore: 0,
+      rivalScore: 0,
+      playerAnsweredThisRound: false,
+      rivalAnsweredThisRound: false,
+      rivalTimeoutId: null,
+      questions: []
+    };
+
+    // Generate 5 rapid questions
+    for (let i = 0; i < 5; i++) {
+      pvpDuel.questions.push(generateQuestion(9));
+    }
+
+    renderPvpBattleView();
+  };
+
+  const renderPvpBattleView = () => {
+    if (!pvpDuel.active || pvpDuel.qIdx >= 5) {
+      return finishPvpDuel();
+    }
+
+    pvpDuel.playerAnsweredThisRound = false;
+    pvpDuel.rivalAnsweredThisRound = false;
+    clearTimeout(pvpDuel.rivalTimeoutId);
+
+    const q = pvpDuel.questions[pvpDuel.qIdx];
+    const rival = pvpDuel.config;
+
+    // Simulate rival thinking delay
+    const rivalDelayMs = (rival.spdMin + Math.random() * (rival.spdMax - rival.spdMin)) * 1000;
+    pvpDuel.rivalTimeoutId = setTimeout(() => {
+      if (!pvpDuel.active) return;
+      pvpDuel.rivalAnsweredThisRound = true;
+      const isRivalCorrect = Math.random() < rival.acc;
+      if (isRivalCorrect) {
+        pvpDuel.rivalScore += 1;
+        showToast(`⚡ ${rival.name} 搶先答對！`);
+      } else {
+        showToast(`💥 ${rival.name} 發生失誤！`);
+      }
+      updatePvpScoreDisplay();
+      if (pvpDuel.playerAnsweredThisRound) {
+        advancePvpNextRound();
+      }
+    }, rivalDelayMs);
+
+    // Build choices
+    const choices = (q.meaningChoices && q.meaningChoices.length >= 4)
+      ? q.meaningChoices
+      : [q.vocab.meaning, '破壞；損害', '增加；強化', '觀察；檢視'].sort(() => Math.random() - 0.5);
+
+    const html = `
+      <div class="pvp-arena-container">
+        <!-- Dual Score Top Header -->
+        <div class="pvp-dual-score-bar">
+          <div class="pvp-player-box">
+            <span class="pvp-name">${state.heroName} (你)</span>
+            <span class="pvp-score-num" id="pvp-player-score">${pvpDuel.playerScore} 勝分</span>
+          </div>
+          <div class="pvp-vs-badge">VS (第 ${pvpDuel.qIdx + 1}/5 題)</div>
+          <div class="pvp-rival-box">
+            <span class="pvp-name">${rival.name}</span>
+            <span class="pvp-score-num" id="pvp-rival-score">${pvpDuel.rivalScore} 勝分</span>
+          </div>
+        </div>
+
+        <div class="pvp-question-card">
+          <div class="pvp-word-prompt">${q.vocab.word}</div>
+          <div class="pvp-pos-tag">${q.vocab.pos}</div>
+          <div style="font-size:12px; color:#ddd; margin-bottom:12px; text-align:center;">快速選出正確中文釋義搶分：</div>
+          <div class="choices-grid-2x2">
+            ${choices.map(m => `
+              <button class="pixel-choice-btn" onclick="App.answerPvpQuestion('${m}')">${m}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <button class="secondary-btn" style="margin-top:14px;" onclick="App.closePvpDuel()">退出競技場</button>
+      </div>
+    `;
+
+    setMainView(html);
+  };
+
+  const updatePvpScoreDisplay = () => {
+    const pEl = document.getElementById('pvp-player-score');
+    const rEl = document.getElementById('pvp-rival-score');
+    if (pEl) pEl.textContent = `${pvpDuel.playerScore} 勝分`;
+    if (rEl) rEl.textContent = `${pvpDuel.rivalScore} 勝分`;
+  };
+
+  const answerPvpQuestion = (selectedMeaning) => {
+    if (pvpDuel.playerAnsweredThisRound) return;
+    pvpDuel.playerAnsweredThisRound = true;
+
+    const q = pvpDuel.questions[pvpDuel.qIdx];
+    const isCorrect = (selectedMeaning === q.vocab.meaning);
+
+    if (isCorrect) {
+      pvpDuel.playerScore += 1;
+      AudioManager.play('crit');
+      showToast('🎯 你搶答正確！得分！');
+    } else {
+      AudioManager.play('buzzer');
+      showToast(`❌ 答錯了！正確是：${q.vocab.meaning}`);
+    }
+
+    updatePvpScoreDisplay();
+
+    setTimeout(() => {
+      advancePvpNextRound();
+    }, 600);
+  };
+
+  const advancePvpNextRound = () => {
+    clearTimeout(pvpDuel.rivalTimeoutId);
+    pvpDuel.qIdx += 1;
+    if (pvpDuel.qIdx < 5) {
+      renderPvpBattleView();
+    } else {
+      finishPvpDuel();
+    }
+  };
+
+  const finishPvpDuel = () => {
+    pvpDuel.active = false;
+    clearTimeout(pvpDuel.rivalTimeoutId);
+
+    const isWin = pvpDuel.playerScore > pvpDuel.rivalScore;
+    const isTie = pvpDuel.playerScore === pvpDuel.rivalScore;
+    const cfg = pvpDuel.config;
+
+    if (isWin) {
+      state.pvpWins = (state.pvpWins || 0) + 1;
+      state.pvpPoints = (state.pvpPoints || 1000) + cfg.rewardPts;
+      state.gold += cfg.rewardGold;
+      AudioManager.play('victory');
+      checkAchievements();
+    } else if (!isTie) {
+      state.pvpLosses = (state.pvpLosses || 0) + 1;
+      state.pvpPoints = Math.max(0, (state.pvpPoints || 1000) - 10);
+      AudioManager.play('playerHurt');
+    }
+
+    saveState();
+    updateHUD();
+
+    const resultHtml = `
+      <div class="pvp-result-modal-box">
+        <h2 style="color:${isWin ? 'var(--gold)' : '#ff8888'}; text-align:center;">
+          ${isWin ? '🏆 競速對決大捷！' : isTie ? '⚖️ 勢均力敵 (平手)' : '💀 惜敗於影子疾速'}
+        </h2>
+        <div class="pvp-final-score-display">
+          <span>你: ${pvpDuel.playerScore} 分</span>
+          <span>VS</span>
+          <span>${cfg.name}: ${pvpDuel.rivalScore} 分</span>
+        </div>
+        <div class="pvp-reward-summary">
+          ${isWin ? `
+            <div style="color:var(--gold); font-weight:bold;">獲得金幣: +${cfg.rewardGold} G</div>
+            <div style="color:#55ff88;">PVP 競技積分: +${cfg.rewardPts} (當前: ${state.pvpPoints})</div>
+          ` : `
+            <div style="color:#aaa;">未達勝出條件，積分稍降 -10。繼續加油！</div>
+          `}
+        </div>
+        <button class="claim-btn" onclick="App.renderLobbyView()">返回冒險者大廳</button>
+      </div>
+    `;
+
+    setMainView(resultHtml);
+  };
+
+  const closePvpDuel = () => {
+    pvpDuel.active = false;
+    clearTimeout(pvpDuel.rivalTimeoutId);
+    renderLobbyView();
+  };
+
+  // ==========================================
+  // 📥 CUSTOM VOCAB IMPORTER & DOJO PRACTICE
+  // ==========================================
+  const showCustomVocabModal = (tab = 'list') => {
+    const lists = state.customVocabLists || [];
+    const presets = GAME_CONFIG.CUSTOM_VOCAB_PRESETS || [];
+
+    let tabContent = '';
+    if (tab === 'list') {
+      const listCards = lists.map((lst) => `
+        <div class="custom-list-card">
+          <div class="custom-list-header">
+            <span class="custom-list-title">📚 ${lst.name}</span>
+            <span class="custom-list-count">${lst.words.length} 單字</span>
+          </div>
+          <div class="custom-list-words-preview">
+            ${lst.words.slice(0, 5).map(w => w.word).join(', ')}${lst.words.length > 5 ? '...' : ''}
+          </div>
+          <div class="custom-list-actions">
+            <button class="custom-practice-btn" onclick="App.startCustomVocabTrial('${lst.id}')">進入道場專練</button>
+            <button class="custom-delete-btn" onclick="App.deleteCustomVocabList('${lst.id}')">刪除</button>
+          </div>
+        </div>
+      `).join('');
+
+      tabContent = `
+        <div class="custom-vocab-tab-content">
+          ${lists.length === 0 ? `
+            <div class="custom-empty-notice">
+              尚無自訂詞庫！點選上方「📥 匯入新詞庫」或載入下方官方精選推薦題庫！
+            </div>
+          ` : `
+            <div class="custom-lists-grid">
+              ${listCards}
+            </div>
+          `}
+          <div class="custom-presets-section">
+            <div class="custom-presets-title">🌟 官方精選題庫一鍵匯入：</div>
+            <div class="custom-presets-row">
+              ${presets.map((p, pIdx) => `
+                <button class="preset-pill-btn" onclick="App.loadPresetVocab(${pIdx})">
+                  ${p.name} (${p.words.length}單)
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Import Tab
+      tabContent = `
+        <div class="custom-import-form">
+          <div class="custom-input-label">題庫名稱:</div>
+          <input type="text" id="custom-import-name" class="custom-text-input" placeholder="例: 我的雅思衝刺單字本" value="我的客製化單字庫 #${lists.length + 1}" />
+          
+          <div class="custom-input-label" style="margin-top:10px;">單字清單 (每行一個單字，格式支援 word - 中文 或 word, 中文):</div>
+          <textarea id="custom-import-textarea" class="custom-textarea" rows="8" placeholder="feasible - 可行的\nfluctuate - 波動\nlucrative - 獲利豐厚的\nmitigate - 緩和"></textarea>
+          
+          <div class="custom-import-hint">
+            💡 小撇步：貼上後系統自動分詞，並由語境引擎動態合成英漢句型與克漏字題！
+          </div>
+
+          <button class="claim-btn" style="width:100%; margin-top:12px;" onclick="App.saveCustomVocabList()">
+            儲存並建立專屬題庫
+          </button>
+        </div>
+      `;
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-overlay" onclick="App.closeModal(event)">
+        <div class="modal-dialog custom-vocab-dialog" onclick="event.stopPropagation()">
+          <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>📥 自訂個人生詞本與專屬題庫</span>
+            <span style="font-size:12px; color:var(--gold);">庫存: ${lists.length} 本</span>
+          </div>
+          <div class="tab-switch-row" style="display:flex; gap:8px; margin:10px 0;">
+            <button class="tab-pill-btn ${tab === 'list' ? 'active' : ''}" onclick="App.showCustomVocabModal('list')">📚 我的生詞本</button>
+            <button class="tab-pill-btn ${tab === 'import' ? 'active' : ''}" onclick="App.showCustomVocabModal('import')">📥 匯入新詞庫</button>
+          </div>
+          ${tabContent}
+          <button class="secondary-btn" style="width:100%; margin-top:12px;" onclick="App.closeModal()">返回大廳</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-root').innerHTML = modalHtml;
+  };
+
+  const saveCustomVocabList = () => {
+    const nameInput = document.getElementById('custom-import-name');
+    const textInput = document.getElementById('custom-import-textarea');
+    const name = (nameInput && nameInput.value.trim()) || '自訂題庫';
+    const rawText = (textInput && textInput.value.trim()) || '';
+
+    if (!rawText) {
+      showToast('請輸入單字內容！');
+      return;
+    }
+
+    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const parsedWords = [];
+
+    lines.forEach((line, idx) => {
+      let parts = line.split(/[-–—=,\t]/).map(p => p.trim()).filter(p => p.length > 0);
+      if (parts.length >= 2) {
+        const word = parts[0];
+        const meaning = parts.slice(1).join(' ');
+        parsedWords.push({
+          id: `custom_${Date.now()}_${idx}`,
+          word: word,
+          pos: 'n.',
+          meaning: meaning,
+          tier: 5,
+          categoryLabel: '自訂詞彙'
+        });
+      } else if (parts.length === 1 && parts[0].length > 0) {
+        parsedWords.push({
+          id: `custom_${Date.now()}_${idx}`,
+          word: parts[0],
+          pos: 'n.',
+          meaning: parts[0],
+          tier: 5,
+          categoryLabel: '自訂詞彙'
+        });
+      }
+    });
+
+    if (parsedWords.length === 0) {
+      showToast('未解析出有效單字，請檢查格式！');
+      return;
+    }
+
+    if (!state.customVocabLists) state.customVocabLists = [];
+    state.customVocabLists.push({
+      id: `list_${Date.now()}`,
+      name: name,
+      words: parsedWords
+    });
+
+    saveState();
+    AudioManager.play('coin');
+    showToast(`成功建立【${name}】！收錄 ${parsedWords.length} 個單字！`);
+    showCustomVocabModal('list');
+  };
+
+  const loadPresetVocab = (presetIdx) => {
+    const p = GAME_CONFIG.CUSTOM_VOCAB_PRESETS[presetIdx];
+    if (!p) return;
+    if (!state.customVocabLists) state.customVocabLists = [];
+    const newWords = p.words.map((w, idx) => ({
+      id: `preset_${presetIdx}_${idx}_${Date.now()}`,
+      word: w.word,
+      pos: w.pos || 'n.',
+      meaning: w.meaning,
+      tier: 8,
+      categoryLabel: p.name.split(' ')[1] || '精選推薦'
+    }));
+
+    state.customVocabLists.push({
+      id: `preset_${Date.now()}`,
+      name: p.name,
+      words: newWords
+    });
+
+    saveState();
+    AudioManager.play('coin');
+    showToast(`成功匯入【${p.name}】！`);
+    showCustomVocabModal('list');
+  };
+
+  const deleteCustomVocabList = (listId) => {
+    state.customVocabLists = (state.customVocabLists || []).filter(l => l.id !== listId);
+    saveState();
+    showToast('已刪除該題庫。');
+    showCustomVocabModal('list');
+  };
+
+  const startCustomVocabTrial = (listId) => {
+    const list = (state.customVocabLists || []).find(l => l.id === listId);
+    if (!list || list.words.length === 0) {
+      showToast('題庫中無可用單字！');
+      return;
+    }
+
+    closeModal();
+    battle.active = true;
+    battle.mode = 'dojo';
+    battle.dojoCategory = 'custom';
+    battle.customVocabList = list.words;
+    battle.combo = 0;
+    battle.correctInSession = 0;
+    battle.enemyName = `【${list.name}】道場木人`;
+    battle.enemyMaxHp = 9999;
+    battle.enemyCurrentHp = 9999;
+    battle.enemyDef = 10;
+    battle.enemyAtk = 10;
+    battle.timeLimit = 16.0;
+
+    loadNextQuestion();
+  };
+
   // Toast Notification
   const showToast = (msg) => {
     const existing = document.getElementById('toast-msg');
@@ -4597,6 +5868,26 @@ const App = (() => {
     handleLogout,
     handleSaveSupabaseConfig,
     applyCloudProfile,
+    showPetKennelModal,
+    selectActivePet,
+    feedPet,
+    useOwlInsight,
+    showBlacksmithModal,
+    forgeItem,
+    buyAndSocketRune,
+    unsocketRune,
+    showTrophyModal,
+    equipTitle,
+    handleEncounterOption,
+    showPvpDuelModal,
+    startPvpDuel,
+    answerPvpQuestion,
+    closePvpDuel,
+    showCustomVocabModal,
+    saveCustomVocabList,
+    loadPresetVocab,
+    deleteCustomVocabList,
+    startCustomVocabTrial,
     saveState: (syncCloud) => saveState(syncCloud)
   };
 })();

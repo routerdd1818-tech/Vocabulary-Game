@@ -2285,6 +2285,172 @@ const PixelSprites = (() => {
     `, 'pixel-icon');
   };
 
+  // 10. Pixel Pets / Companions (Shiba Inu, Scholar Owl, Baby Dragon, Mystic Black Cat)
+  const renderPet = (petId, size = 32) => {
+    petId = petId || 'shiba';
+    if (petId === 'owl') {
+      return makeSvg(size, size, `
+        <rect x="4" y="23" width="20" height="3" fill="#583818"/>
+        <rect x="8" y="10" width="12" height="13" fill="#784820"/>
+        <rect x="10" y="13" width="8" height="9" fill="#e8d8b8"/>
+        <polygon points="5,5 14,8 23,5 14,2" fill="#241438"/>
+        <polygon points="14,8 13,11 15,11" fill="#e8a820"/>
+        <circle cx="11" cy="12" r="3" fill="#ffd700"/>
+        <circle cx="17" cy="12" r="3" fill="#ffd700"/>
+        <circle cx="11" cy="12" r="1.5" fill="#100820"/>
+        <circle cx="17" cy="12" r="1.5" fill="#100820"/>
+        <polygon points="14,14 12,17 16,17" fill="#ffaa20"/>
+        <rect x="10" y="22" width="2" height="2" fill="#ffaa20"/>
+        <rect x="16" y="22" width="2" height="2" fill="#ffaa20"/>
+      `, 'pet-sprite-svg');
+    } else if (petId === 'dragon') {
+      return makeSvg(size, size, `
+        <ellipse cx="14" cy="24" rx="9" ry="3" fill="#200808"/>
+        <rect x="7" y="12" width="13" height="10" fill="#c02828"/>
+        <rect x="9" y="14" width="7" height="7" fill="#f09040"/>
+        <polygon points="17,14 26,9 23,19" fill="#e03838"/>
+        <polygon points="18,15 24,11 22,18" fill="#ffaa30"/>
+        <polygon points="6,6 9,11 4,11" fill="#ffd700"/>
+        <polygon points="13,6 10,11 15,11" fill="#ffd700"/>
+        <rect x="5" y="9" width="10" height="7" fill="#d03030"/>
+        <circle cx="8" cy="12" r="1.5" fill="#ffffff"/>
+        <circle cx="8" cy="12" r="0.75" fill="#180000"/>
+        <polygon points="20,20 26,20 23,17" fill="#c02828"/>
+        <polygon points="25,19 28,19 26,17" fill="#ffaa00"/>
+        <rect x="8" y="21" width="3" height="3" fill="#a01818"/>
+        <rect x="14" y="21" width="3" height="3" fill="#a01818"/>
+      `, 'pet-sprite-svg');
+    } else if (petId === 'cat') {
+      return makeSvg(size, size, `
+        <ellipse cx="14" cy="24" rx="9" ry="3" fill="#120c18"/>
+        <rect x="8" y="13" width="11" height="9" fill="#181420"/>
+        <polygon points="7,8 10,13 6,13" fill="#241e30"/>
+        <polygon points="20,8 17,13 21,13" fill="#241e30"/>
+        <rect x="8" y="10" width="11" height="6" fill="#241e30"/>
+        <circle cx="10" cy="12" r="1.5" fill="#30e060"/>
+        <circle cx="16" cy="12" r="1.5" fill="#30e060"/>
+        <circle cx="10" cy="12" r="0.75" fill="#082010"/>
+        <circle cx="16" cy="12" r="0.75" fill="#082010"/>
+        <rect x="9" y="16" width="9" height="2" fill="#8a30d8"/>
+        <polygon points="13,17 14,19 15,17" fill="#e0a0ff"/>
+        <path d="M 19,16 Q 24,14 23,20" stroke="#181420" stroke-width="2" fill="none"/>
+        <rect x="9" y="21" width="3" height="3" fill="#140f1a"/>
+        <rect x="15" y="21" width="3" height="3" fill="#140f1a"/>
+      `, 'pet-sprite-svg');
+    } else {
+      // Default: Lucky Shiba Inu
+      return makeSvg(size, size, `
+        <ellipse cx="14" cy="24" rx="10" ry="3.5" fill="#1b120c"/>
+        <rect x="8" y="12" width="12" height="10" fill="#e07a28"/>
+        <rect x="7" y="14" width="14" height="7" fill="#f09038"/>
+        <rect x="10" y="16" width="8" height="6" fill="#fff5ea"/>
+        <polygon points="7,8 10,13 6,13" fill="#b05818"/>
+        <polygon points="21,8 18,13 22,13" fill="#b05818"/>
+        <rect x="8" y="10" width="12" height="7" fill="#f09038"/>
+        <rect x="9" y="13" width="10" height="4" fill="#fff5ea"/>
+        <rect x="10" y="11" width="2" height="2" fill="#201008"/>
+        <rect x="16" y="11" width="2" height="2" fill="#201008"/>
+        <rect x="13" y="13" width="2" height="2" fill="#180800"/>
+        <rect x="19" y="12" width="4" height="4" fill="#e07a28"/>
+        <rect x="9" y="21" width="3" height="4" fill="#fff5ea"/>
+        <rect x="16" y="21" width="3" height="4" fill="#fff5ea"/>
+      `, 'pet-sprite-svg');
+    }
+  };
+
+  // 11. Blacksmith Anvil & Bellows
+  const renderBlacksmithAnvil = (size = 32) => {
+    return makeSvg(size, size, `
+      <rect x="8" y="20" width="12" height="6" fill="#4a301c"/>
+      <rect x="6" y="25" width="16" height="2" fill="#301e10"/>
+      <rect x="10" y="16" width="8" height="5" fill="#3c4454"/>
+      <polygon points="4,11 23,11 25,13 22,17 7,17 4,14" fill="#586478"/>
+      <rect x="7" y="10" width="14" height="2" fill="#7888a4"/>
+      <polygon points="23,11 27,13 23,14" fill="#687890"/>
+      <rect x="10" y="10" width="6" height="2" fill="#ff7a20"/>
+      <circle cx="9" cy="8" r="1" fill="#ffdd40"/>
+      <circle cx="17" cy="7" r="1" fill="#ff9920"/>
+      <rect x="18" y="5" width="2" height="8" fill="#845028" transform="rotate(35 18 5)"/>
+      <rect x="22" y="8" width="5" height="4" fill="#444c5c" transform="rotate(35 22 8)"/>
+    `, 'pixel-icon');
+  };
+
+  // 12. Trophy Shelf & Crowned Medal
+  const renderTrophyShelf = (size = 32) => {
+    return makeSvg(size, size, `
+      <rect x="2" y="22" width="24" height="4" fill="#583818"/>
+      <rect x="3" y="22" width="22" height="1" fill="#845028"/>
+      <rect x="8" y="18" width="12" height="4" fill="#181008"/>
+      <rect x="13" y="13" width="2" height="5" fill="#d4a020"/>
+      <polygon points="7,4 21,4 19,13 9,13" fill="#ffd700"/>
+      <polygon points="8,5 20,5 18,12 10,12" fill="#ffea50"/>
+      <path d="M 7,6 Q 3,8 7,11" stroke="#d4a020" stroke-width="1.5" fill="none"/>
+      <path d="M 21,6 Q 25,8 21,11" stroke="#d4a020" stroke-width="1.5" fill="none"/>
+      <polygon points="14,6 15,9 18,9 15.5,11 16.5,13 14,11.5 11.5,13 12.5,11 10,9 13,9" fill="#c82828"/>
+    `, 'pixel-icon');
+  };
+
+  // 13. Shadow Duel PVP Arena Heraldry
+  const renderPvpArena = (size = 32) => {
+    return makeSvg(size, size, `
+      <polygon points="14,3 24,7 21,21 14,26 7,21 4,7" fill="#4a1860"/>
+      <polygon points="14,5 22,8 19,19 14,24 9,19 6,8" fill="#2d0c3c"/>
+      <line x1="4" y1="4" x2="24" y2="24" stroke="#c0d0e8" stroke-width="2"/>
+      <line x1="24" y1="4" x2="4" y2="24" stroke="#c0d0e8" stroke-width="2"/>
+      <circle cx="14" cy="14" r="4" fill="#ffd700"/>
+      <polygon points="14,11 15,13 17,13 15.5,14.5 16,16.5 14,15.5 12,16.5 12.5,14.5 11,13 13,13" fill="#b82020"/>
+    `, 'pixel-icon');
+  };
+
+  // 14. Random Encounter Room Sprites (Merchant, Fountain, Sphinx, Gambler)
+  const renderEncounterSprite = (key, size = 48) => {
+    key = key || 'merchant';
+    if (key === 'fountain') {
+      return makeSvg(size, size, `
+        <ellipse cx="24" cy="40" rx="18" ry="6" fill="#1b2434"/>
+        <rect x="10" y="24" width="28" height="14" fill="#44556a"/>
+        <ellipse cx="24" cy="24" rx="14" ry="4" fill="#2098d8"/>
+        <rect x="22" y="10" width="4" height="14" fill="#586c84"/>
+        <circle cx="24" cy="10" r="3" fill="#68d8ff"/>
+        <circle cx="18" cy="16" r="1" fill="#a0f0ff"/>
+        <circle cx="30" cy="18" r="1" fill="#a0f0ff"/>
+      `, 'encounter-sprite-svg');
+    } else if (key === 'sphinx') {
+      return makeSvg(size, size, `
+        <polygon points="12,12 36,12 38,36 10,36" fill="#907038"/>
+        <polygon points="16,8 32,8 30,24 18,24" fill="#ffd700"/>
+        <rect x="19" y="14" width="10" height="12" fill="#d4a020"/>
+        <rect x="21" y="17" width="2" height="2" fill="#180c04"/>
+        <rect x="25" y="17" width="2" height="2" fill="#180c04"/>
+        <polygon points="22,28 26,28 24,34" fill="#245084"/>
+      `, 'encounter-sprite-svg');
+    } else if (key === 'gambler') {
+      return makeSvg(size, size, `
+        <rect x="14" y="28" width="20" height="16" fill="#583818"/>
+        <rect x="18" y="16" width="12" height="14" fill="#308838"/>
+        <polygon points="14,14 18,18 16,22" fill="#286828"/>
+        <polygon points="34,14 30,18 32,22" fill="#286828"/>
+        <circle cx="21" cy="20" r="1.5" fill="#ffd700"/>
+        <circle cx="27" cy="20" r="1.5" fill="#ffd700"/>
+        <circle cx="24" cy="12" r="3.5" fill="#ffd700"/>
+        <rect x="30" y="22" width="5" height="5" fill="#c02028"/>
+        <circle cx="32" cy="24" r="0.75" fill="#ffffff"/>
+      `, 'encounter-sprite-svg');
+    } else {
+      // Merchant
+      return makeSvg(size, size, `
+        <ellipse cx="24" cy="42" rx="14" ry="4" fill="#1a1410"/>
+        <rect x="26" y="18" width="14" height="18" fill="#6a4428"/>
+        <rect x="14" y="20" width="16" height="20" fill="#4a2468"/>
+        <polygon points="16,14 32,14 28,8 20,8" fill="#582a7a"/>
+        <rect x="18" y="14" width="12" height="8" fill="#ffcaa0"/>
+        <circle cx="22" cy="17" r="1" fill="#201008"/>
+        <circle cx="26" cy="17" r="1" fill="#201008"/>
+        <polygon points="18,20 30,20 24,28" fill="#885830"/>
+      `, 'encounter-sprite-svg');
+    }
+  };
+
   return {
     icon: (name, size) => (icons[name] ? icons[name](size) : icons.coin(size)),
     renderHero,
@@ -2301,6 +2467,11 @@ const PixelSprites = (() => {
     renderSupplyChest,
     renderBookshelfTome,
     renderParchmentCalendar,
-    renderFortuneWheel
+    renderFortuneWheel,
+    renderPet,
+    renderBlacksmithAnvil,
+    renderTrophyShelf,
+    renderPvpArena,
+    renderEncounterSprite
   };
 })();

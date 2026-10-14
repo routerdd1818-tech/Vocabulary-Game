@@ -589,5 +589,193 @@ const GAME_CONFIG = {
       '【哥布林賭徒】哄堂大笑：「輸得連一條褲衩都不剩了！警衛，把這個窮光蛋扔回營地去！」',
       '【哥布林守衛】拔刀驅趕：「沒錢還想賴在賭桌前？快滾！口袋有 30 金幣再回來做夢！」'
     ]
-  }
+  },
+
+  // 🐾 Pets & Companions
+  PETS: {
+    shiba: {
+      id: 'shiba',
+      name: '幸運柴犬',
+      title: '寶藏嗅覺使者',
+      icon: 'sparkle',
+      desc: '可愛搖尾巴的赤色柴犬，擁有敏銳的金幣嗅覺。',
+      skillName: '【幸運探寶】',
+      skillDesc: '答對或達成連擊時，有 35% 機率額外發掘 +5~15 金幣。',
+      feedCost: 25,
+      maxLevel: 10
+    },
+    owl: {
+      id: 'owl',
+      name: '智慧貓頭鷹',
+      title: '真理之眼導師',
+      icon: 'quill',
+      desc: '頭戴迷你學者帽的深邃貓頭鷹，熟知字根字首與排除法。',
+      skillName: '【心靈洞察】',
+      skillDesc: '每場戰鬥可發動 1 次：主動排除 1 個錯誤選項（二選一刪去法）。',
+      feedCost: 35,
+      maxLevel: 10
+    },
+    dragon: {
+      id: 'dragon',
+      name: '緋紅幼火龍',
+      title: '怒焰破壁夥伴',
+      icon: 'fire',
+      desc: '噴著溫暖小火苗的緋紅小龍，戰鬥時全力噴吐龍息。',
+      skillName: '【龍息焚燒】',
+      skillDesc: '英雄每次攻擊附加 +18% 額外灼燒真實傷害，大幅縮短討伐時間。',
+      feedCost: 45,
+      maxLevel: 10
+    },
+    cat: {
+      id: 'cat',
+      name: '魔法黑貓',
+      title: '九命奧術靈伴',
+      icon: 'gem',
+      desc: '佩戴紫水晶項圈的優雅黑貓，能夠操縱幽冥九命守護。',
+      skillName: '【九命庇護】',
+      skillDesc: '每場戰鬥免死一次（以 1 HP 抵擋致死打擊），且戰鬥勝利後恢復 15 HP。',
+      feedCost: 40,
+      maxLevel: 10
+    }
+  },
+
+  // ⚒️ Blacksmith Forge & Runes
+  BLACKSMITH: {
+    maxLevel: 10,
+    levels: [
+      { level: 1, cost: 30, rate: 1.0, bonusAtk: 3, bonusDef: 2, bonusHp: 15 },
+      { level: 2, cost: 50, rate: 0.95, bonusAtk: 6, bonusDef: 4, bonusHp: 30 },
+      { level: 3, cost: 80, rate: 0.90, bonusAtk: 10, bonusDef: 7, bonusHp: 50 },
+      { level: 4, cost: 120, rate: 0.85, bonusAtk: 15, bonusDef: 10, bonusHp: 75 },
+      { level: 5, cost: 180, rate: 0.75, bonusAtk: 21, bonusDef: 14, bonusHp: 105 },
+      { level: 6, cost: 260, rate: 0.65, bonusAtk: 28, bonusDef: 19, bonusHp: 140 },
+      { level: 7, cost: 360, rate: 0.55, bonusAtk: 36, bonusDef: 25, bonusHp: 180 },
+      { level: 8, cost: 500, rate: 0.45, bonusAtk: 46, bonusDef: 32, bonusHp: 230 },
+      { level: 9, cost: 700, rate: 0.35, bonusAtk: 58, bonusDef: 40, bonusHp: 290 },
+      { level: 10, cost: 1000, rate: 0.25, bonusAtk: 75, bonusDef: 50, bonusHp: 360 }
+    ],
+    runes: [
+      { id: 'rune_swift', name: '疾風神速符文', icon: 'zap', cost: 120, desc: '作答基礎時間上限永久延長 +1.5 秒。' },
+      { id: 'rune_vampire', name: '嗜血生命符文', icon: 'heart', cost: 150, desc: '連續答對 5 題（Combo x5）時，自動恢復 12 點生命值。' },
+      { id: 'rune_greed', name: '貪婪黃金符文', icon: 'coin', cost: 130, desc: '戰鬥勝利與答題所獲金幣全面提升 +30%。' },
+      { id: 'rune_shield', name: '花崗岩庇護符文', icon: 'shield', cost: 140, desc: '承受魔物攻擊之傷害永久降低 15%。' }
+    ]
+  },
+
+  // 🏆 Achievements & Titles
+  ACHIEVEMENTS: [
+    { id: 'tower_10', title: '初登巴別塔', desc: '通天塔突破第 10 層', rewardGold: 50, titleReward: '登塔見習生' },
+    { id: 'tower_50', title: '雲海穿梭者', desc: '通天塔突破第 50 層', rewardGold: 100, titleReward: '平流層漫步者' },
+    { id: 'tower_100', title: '百層攀爬者', desc: '通天塔突破第 100 層', rewardGold: 200, titleReward: '星穹觀星者' },
+    { id: 'dungeon_5', title: '討伐者之證', desc: '擊敗地下城 B5F 領主', rewardGold: 80, titleReward: '地牢斬首官' },
+    { id: 'dungeon_15', title: '深淵終結神', desc: '討伐地下城最終領主 (B15F)', rewardGold: 500, titleReward: '深淵終焉支配者' },
+    { id: 'words_50', title: '初窺門徑', desc: '累計答對 50 個英文詞彙', rewardGold: 40, titleReward: '勤勉學士' },
+    { id: 'words_200', title: '詞海泛舟', desc: '累計答對 200 個英文詞彙', rewardGold: 150, titleReward: '博學探求者' },
+    { id: 'combo_10', title: '行雲流水', desc: '達成連續 10 題 Combo 無失誤', rewardGold: 60, titleReward: '十步一殺' },
+    { id: 'combo_20', title: '神經反射極限', desc: '達成連續 20 題 Combo 無失誤', rewardGold: 180, titleReward: '絕頂思維大師' },
+    { id: 'class_unlocked', title: '榮譽晉升', desc: '通過道場多益試煉獲得專屬職業', rewardGold: 100, titleReward: '認證冒險家' },
+    { id: 'class_awakened', title: '神域覺醒', desc: '通過 GRE 試煉達成職業覺醒', rewardGold: 250, titleReward: '真理領悟者' },
+    { id: 'forge_5', title: '神匠學徒', desc: '任一裝備強化至 +5 以上', rewardGold: 120, titleReward: '鍛造大師' },
+    { id: 'pet_3', title: '最佳拍檔', desc: '將任意寵物餵食培育至 Lv.3 以上', rewardGold: 80, titleReward: '溫馨馴獸師' },
+    { id: 'pvp_win', title: '初試身手', desc: '在影子競速 PVP 中取得首勝', rewardGold: 50, titleReward: '影子角鬥士' }
+  ],
+
+  // 🎲 Random Roguelike Encounters
+  RANDOM_ENCOUNTERS: [
+    {
+      id: 'merchant',
+      name: '神秘旅行商人',
+      icon: 'shop',
+      title: '在迴廊轉角遇見了揹著大包袱的神秘商人！',
+      desc: '「嗨！勇敢的冒險者！我這裡有些冒險工會特惠物資，只賣給識貨的人！」',
+      options: [
+        { id: 'buy_potion', text: '【半價採購】特惠生命聖水 (15 G)', cost: 15, effect: 'potion' },
+        { id: 'buy_scroll', text: '【特價保命】護樓神卷 (25 G)', cost: 25, effect: 'scroll' },
+        { id: 'leave', text: '【婉拒離開】揮手告別繼續爬塔', cost: 0, effect: 'leave' }
+      ]
+    },
+    {
+      id: 'fountain',
+      name: '妖精祝福泉水',
+      icon: 'water',
+      title: '石壁間湧出一汪泛著微光的妖精泉水！',
+      desc: '空氣中瀰漫著甘甜的花香，水面飄蕩著溫暖的魔法靈光。',
+      options: [
+        { id: 'drink_heal', text: '【沐浴泉水】掬飲甘泉，生命值立即回復至 100%', cost: 0, effect: 'heal_full' },
+        { id: 'throw_gold', text: '【投擲金幣】向泉中投擲 20 G，獲得「答題時限 +3 秒」祝福', cost: 20, effect: 'time_bless' },
+        { id: 'leave', text: '【靜靜凝視】不打擾妖精，繼續前進', cost: 0, effect: 'leave' }
+      ]
+    },
+    {
+      id: 'sphinx',
+      name: '斯芬克斯謎語石碑',
+      icon: 'scroll',
+      title: '古老智慧的斯芬克斯雕像攔住了道路！',
+      desc: '「凡人！答對吾之高階真理難題，便贈你古代賢者之寶；若答不出，吾亦不傷你。」',
+      options: [
+        { id: 'accept_riddle', text: '【接受試煉】挑戰 1 題高階真理單字 (答對獲古代金幣寶箱！)', cost: 0, effect: 'riddle' },
+        { id: 'bypass', text: '【謹慎繞行】不浪費精力，繞過石像', cost: 0, effect: 'leave' }
+      ]
+    },
+    {
+      id: 'gambler',
+      name: '地精小賭徒',
+      icon: 'coin',
+      title: '一隻地精站在木桶上，手裡拋著金幣對你壞笑！',
+      desc: '「嘿嘿！敢不敢跟我賭一把？押注 20 金幣，若你接下來 3 題全對，我賠你 3 倍 (60 G)！」',
+      options: [
+        { id: 'accept_bet', text: '【接受賭局】押注 20 G，若接下來 3 題全對獎勵 60 G！', cost: 20, effect: 'gamble_bet' },
+        { id: 'decline_bet', text: '【拒絕賭博】正義冒險家不與地精賭博', cost: 0, effect: 'leave' }
+      ]
+    }
+  ],
+
+  // 📥 Custom Vocab Presets
+  CUSTOM_VOCAB_PRESETS: [
+    {
+      name: '🎯 雅思 IELTS 核心高頻 10 單',
+      words: [
+        { word: 'feasible', pos: 'adj.', meaning: '可行的；行得通的' },
+        { word: 'fluctuate', pos: 'v.', meaning: '波動；起伏不定' },
+        { word: 'lucrative', pos: 'adj.', meaning: '獲利豐厚的；賺錢的' },
+        { word: 'mitigate', pos: 'v.', meaning: '緩和；減輕' },
+        { word: 'negligible', pos: 'adj.', meaning: '微不足道的；可忽略的' },
+        { word: 'paradox', pos: 'n.', meaning: '自相矛盾的情況；悖論' },
+        { word: 'scrutinize', pos: 'v.', meaning: '詳細審查；細察' },
+        { word: 'tentative', pos: 'adj.', meaning: '暫時的；試驗性的' },
+        { word: 'ubiquitous', pos: 'adj.', meaning: '無所不在的；普遍存在的' },
+        { word: 'viable', pos: 'adj.', meaning: '可望成功的；切實可行的' }
+      ]
+    },
+    {
+      name: '💼 商務職場 Email 常用 10 詞',
+      words: [
+        { word: 'agenda', pos: 'n.', meaning: '議程；日常工作事項' },
+        { word: 'collaborate', pos: 'v.', meaning: '合作；協同工作' },
+        { word: 'deadline', pos: 'n.', meaning: '截止期限；最後期限' },
+        { word: 'feedback', pos: 'n.', meaning: '回饋意見；反應' },
+        { word: 'implement', pos: 'v.', meaning: '實施；貫徹執行' },
+        { word: 'inquiry', pos: 'n.', meaning: '詢問；查詢' },
+        { word: 'negotiate', pos: 'v.', meaning: '談判；商談' },
+        { word: 'priority', pos: 'n.', meaning: '優先事項；當務之急' },
+        { word: 'schedule', pos: 'n.', meaning: '時程表；行程安排' },
+        { word: 'update', pos: 'v.', meaning: '更新；提供最新消息' }
+      ]
+    },
+    {
+      name: '✈️ 旅遊差旅必備 10 詞',
+      words: [
+        { word: 'boarding', pos: 'n.', meaning: '登機；登船' },
+        { word: 'customs', pos: 'n.', meaning: '海關；報關手續' },
+        { word: 'departure', pos: 'n.', meaning: '出發；啟程' },
+        { word: 'destination', pos: 'n.', meaning: '目的地；終點' },
+        { word: 'luggage', pos: 'n.', meaning: '行李；隨身包件' },
+        { word: 'itinerary', pos: 'n.', meaning: '行程表；旅行計劃' },
+        { word: 'passenger', pos: 'n.', meaning: '乘客；旅客' },
+        { word: 'reservation', pos: 'n.', meaning: '預訂；預約' },
+        { word: 'terminal', pos: 'n.', meaning: '航廈；轉運終點站' },
+        { word: 'transit', pos: 'n.', meaning: '過境；轉機' }
+      ]
+    }
+  ]
 };
