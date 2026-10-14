@@ -345,16 +345,19 @@ const App = (() => {
       const pool = getTierVocabPool(tier);
       const found = pool.find(item => item.id === id || item.word.toLowerCase().replace(/[^a-z0-9]/g, '_') === wordKey);
       if (found) {
+        const sData = window.SentenceEngine
+          ? window.SentenceEngine.generateSentence(found, tier)
+          : { sentence: `Drinking a cup of hot tea is a relaxing ______ after a busy day.`, sentenceZh: `在忙碌的一天後喝杯熱茶是一種放鬆身心的【${found.meaning}】。`, sentenceTarget: found.word };
         return {
           id: found.id,
           word: found.word,
           pos: found.pos,
           meaning: found.meaning,
           tier: tier,
-          categoryLabel: `Tier ${tier}`,
-          sentence: `The party discussed the significance of ______ during their rest.`,
-          sentenceTarget: found.word,
-          sentenceZh: `請依據語境選出適合單字【${found.meaning}】。`
+          categoryLabel: window.SentenceEngine ? window.SentenceEngine.getCategoryLabel(tier) : `Tier ${tier}`,
+          sentence: sData.sentence,
+          sentenceTarget: sData.sentenceTarget,
+          sentenceZh: sData.sentenceZh
         };
       }
     }
@@ -518,63 +521,48 @@ const App = (() => {
       qData.userSelectedMeaning = null;
 
     } else if (type === 2) {
-      // Type 2: Sentence Cloze in Context
-      let sentence = vocab.sentence;
-      let sentenceZh = vocab.sentenceZh;
+      // Type 2: Sentence Cloze in Context (Daily, Business & Double-Cloze in Higher Tiers)
+      const canDoubleCloze = (tier >= 5 || battle.stageId >= 5 || state.towerFloor >= 30 || battle.mode === 'dojo_class_trial' || battle.mode === 'dojo_awakening_trial' || battle.dojoCategory === 'toeic' || battle.dojoCategory === 'gre');
+      const isDoubleCloze = canDoubleCloze && (Math.random() < 0.5);
 
-      if (!sentence) {
-        const posTemplates = {
-          'n.': [
-            'The brave adventurer discovered an ancient ______ inside the secret vault.',
-            'Every knight in the realm must respect this sacred ______.',
-            'A glowing ______ rested upon the stone altar of the forgotten temple.',
-            'Without adequate ______, venturing into the deeper labyrinth is perilous.'
-          ],
-          'v.': [
-            'The party members must ______ together before the chamber walls collapse.',
-            'Legends state that only a pure heart can ______ the seal of the holy relic.',
-            'The paladin stepped forward to ______ the sanctuary against encroaching gloom.',
-            'The scouts gathered near the campfire to ______ for the treacherous trial ahead.'
-          ],
-          'adj.': [
-            'The winding stone corridor felt remarkably ______ to the wary party scouts.',
-            'A ______ aura emanated from the glowing runes embedded in the chamber floor.',
-            'Only a truly ______ champion could endure the trials of the Babel Tower.',
-            'The ancient stone tablets bore a ______ message that puzzled the scholar.'
-          ],
-          'adv.': [
-            'The phantom assassin moved ______ through the corridor without alerting the sentry.',
-            'The battle mage ______ cast the barrier before the dragon fire struck the squad.',
-            'The massive dungeon gates swung open ______ as the champion placed the talisman.'
-          ]
-        };
-        const templates = posTemplates[vocab.pos] || [
-          'Mastering this ______ is essential for survival in this perilous floor.'
-        ];
-        sentence = templates[Math.floor(Math.random() * templates.length)];
-        sentenceZh = `依據語境與【${vocab.meaning}】之意選出正確單字填入空格。`;
-      }
-
-      let choices = [];
-      if (vocab.sentenceChoices && vocab.sentenceChoices.length >= 4) {
-        choices = [...vocab.sentenceChoices].sort(() => Math.random() - 0.5);
+      if (isDoubleCloze && window.SentenceEngine) {
+        const dData = window.SentenceEngine.generateDoubleCloze(vocab, tier, tierPool);
+        qData.isDoubleCloze = true;
+        qData.sentence = dData.sentence;
+        qData.sentenceHtml = dData.sentenceHtml;
+        qData.sentenceZh = dData.sentenceZh;
+        qData.choices = dData.choices;
+        qData.correctAnswer = dData.correctAnswer;
+        qData.vocab2 = dData.vocab2;
+        qData.target1 = dData.target1;
+        qData.target2 = dData.target2;
       } else {
-        const samePosWords = tierPool
-          .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase() && v.pos === vocab.pos)
-          .map(v => v.word);
-        const otherWords = tierPool
-          .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase())
-          .map(v => v.word);
-        const poolToPick = samePosWords.length >= 3 ? samePosWords : otherWords;
-        const distractors = pickDistinct(poolToPick, 3);
-        choices = [vocab.word, ...distractors].sort(() => Math.random() - 0.5);
-      }
+        const sData = window.SentenceEngine
+          ? window.SentenceEngine.generateSentence(vocab, tier)
+          : { sentence: `Drinking a cup of hot tea is a relaxing ______ after a busy day.`, sentenceZh: `在忙碌的一天後喝杯熱茶是一種放鬆身心的【${vocab.meaning}】。`, sentenceTarget: vocab.word };
 
-      vocab.sentence = sentence;
-      vocab.sentenceZh = sentenceZh;
-      vocab.sentenceTarget = vocab.word;
-      qData.choices = choices;
-      qData.correctAnswer = vocab.word;
+        let choices = [];
+        if (vocab.sentenceChoices && vocab.sentenceChoices.length >= 4) {
+          choices = [...vocab.sentenceChoices].sort(() => Math.random() - 0.5);
+        } else {
+          const samePosWords = tierPool
+            .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase() && v.pos === vocab.pos)
+            .map(v => v.word);
+          const otherWords = tierPool
+            .filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase())
+            .map(v => v.word);
+          const poolToPick = samePosWords.length >= 3 ? samePosWords : otherWords;
+          const distractors = pickDistinct(poolToPick, 3);
+          choices = [vocab.word, ...distractors].sort(() => Math.random() - 0.5);
+        }
+
+        vocab.sentence = sData.sentence;
+        vocab.sentenceZh = sData.sentenceZh;
+        vocab.sentenceTarget = sData.sentenceTarget || vocab.word;
+        qData.isDoubleCloze = false;
+        qData.choices = choices;
+        qData.correctAnswer = vocab.word;
+      }
 
     } else if (type === 3) {
       // Type 3: Spelling Fill-in
@@ -614,29 +602,38 @@ const App = (() => {
       qData.userTypedLetters = [];
 
     } else if (type === 4) {
-      // Type 4: Context Q&A
+      // Type 4: Context Q&A (Daily & Business Real-World Scenarios)
       let qaQuestion = vocab.qaQuestion;
       let choices = vocab.qaChoices;
       let correctIndex = vocab.qaCorrect;
 
-      if (!qaQuestion || !choices) {
-        qaQuestion = `Q: 古老地下城石碑刻有單字【${vocab.word}】(${vocab.pos})。在當前地牢情境中，此詞彙的深層含義為何？`;
-        const otherEntries = tierPool.filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase());
-        const distractors = pickDistinct(otherEntries, 3);
-        const correctChoice = `此詞代表【${vocab.meaning}】，指示破解當前地牢機關之關鍵條件。`;
-        const wrongChoice1 = `誤指【${distractors[0]?.meaning || '未知危險'}】，若盲目應對將觸發防禦護盾陷阱。`;
-        const wrongChoice2 = `誤解為【${distractors[1]?.meaning || '幻象迷宮'}】，會導致小隊行進方向產生偏誤。`;
-        const wrongChoice3 = `代表【${distractors[2]?.meaning || '雜湊魔力'}】，屬於完全不相關的無效干擾訊息。`;
+      if (!qaQuestion || !choices || qaQuestion.includes('地下城石碑') || qaQuestion.includes('地牢情境')) {
+        const qaData = window.SentenceEngine
+          ? window.SentenceEngine.generateType4QA(vocab, tier, tierPool)
+          : null;
+        if (qaData) {
+          qaQuestion = qaData.qaQuestion;
+          choices = qaData.choices;
+          correctIndex = qaData.correctIndex;
+        } else {
+          qaQuestion = `日常與職場應用：在商務或生活溝通中使用單字【${vocab.word}】(${vocab.pos})，最適切的意涵為何？`;
+          const otherEntries = tierPool.filter(v => v.word.toLowerCase() !== vocab.word.toLowerCase());
+          const distractors = pickDistinct(otherEntries, 3);
+          const correctChoice = `代表【${vocab.meaning}】，用於表達精確情境或商務交流。`;
+          const wrongChoice1 = `誤指【${distractors[0]?.meaning || '其他意思'}】，容易造成語境理解上的偏差。`;
+          const wrongChoice2 = `誤解為【${distractors[1]?.meaning || '無關意涵'}】，不符合當前語境邏輯。`;
+          const wrongChoice3 = `誤認為【${distractors[2]?.meaning || '錯誤解釋'}】，屬於不相干的選項。`;
 
-        const allChoices = [
-          { text: correctChoice, isCorrect: true },
-          { text: wrongChoice1, isCorrect: false },
-          { text: wrongChoice2, isCorrect: false },
-          { text: wrongChoice3, isCorrect: false }
-        ].sort(() => Math.random() - 0.5);
+          const allChoices = [
+            { text: correctChoice, isCorrect: true },
+            { text: wrongChoice1, isCorrect: false },
+            { text: wrongChoice2, isCorrect: false },
+            { text: wrongChoice3, isCorrect: false }
+          ].sort(() => Math.random() - 0.5);
 
-        choices = allChoices.map(c => c.text);
-        correctIndex = allChoices.findIndex(c => c.isCorrect);
+          choices = allChoices.map(c => c.text);
+          correctIndex = allChoices.findIndex(c => c.isCorrect);
+        }
       }
 
       qData.qaQuestion = qaQuestion;
@@ -1156,7 +1153,24 @@ const App = (() => {
   // Setup monster specs for Tower floors
   const setupTowerFloorMonster = () => {
     const floor = state.towerFloor;
-    const tier = Math.min(15, Math.max(1, Math.ceil(floor / 66))); // 1 to 15 tier mapping
+    const calculateTowerTier = (f) => {
+      if (f <= 5) return 1;
+      if (f <= 12) return 2;
+      if (f <= 22) return 3;
+      if (f <= 35) return 4;
+      if (f <= 50) return 5;
+      if (f <= 70) return 6;
+      if (f <= 95) return 7;
+      if (f <= 125) return 8;
+      if (f <= 160) return 9;
+      if (f <= 200) return 10;
+      if (f <= 260) return 11;
+      if (f <= 330) return 12;
+      if (f <= 420) return 13;
+      if (f <= 550) return 14;
+      return 15;
+    };
+    const tier = calculateTowerTier(floor);
 
     // Scaling HP/ATK/DEF
     const baseHp = 100 + floor * 5;
@@ -1203,7 +1217,7 @@ const App = (() => {
 
     clearInterval(battle.timerId);
 
-    // Determine vocabulary tier
+    // Determine vocabulary tier progressively
     let tier = 1;
     if (battle.mode === 'dungeon') {
       const boss = GAME_CONFIG.DUNGEON_BOSSES.find(b => b.id === battle.stageId);
@@ -1213,11 +1227,31 @@ const App = (() => {
     } else if (battle.mode === 'dojo_awakening_trial') {
       tier = 14;
     } else if (battle.mode === 'dojo') {
-      tier = 1;
+      const cat = battle.dojoCategory || 'all';
+      if (cat === 'elementary') tier = 2;
+      else if (cat === 'highschool') tier = 6;
+      else if (cat === 'toeic') tier = 11;
+      else if (cat === 'gre') tier = 15;
+      else tier = 5;
     } else if (battle.mode === 'review') {
-      tier = 1;
+      tier = 5;
     } else {
-      tier = Math.min(15, Math.max(1, Math.ceil(state.towerFloor / 66)));
+      const f = state.towerFloor;
+      if (f <= 5) tier = 1;
+      else if (f <= 12) tier = 2;
+      else if (f <= 22) tier = 3;
+      else if (f <= 35) tier = 4;
+      else if (f <= 50) tier = 5;
+      else if (f <= 70) tier = 6;
+      else if (f <= 95) tier = 7;
+      else if (f <= 125) tier = 8;
+      else if (f <= 160) tier = 9;
+      else if (f <= 200) tier = 10;
+      else if (f <= 260) tier = 11;
+      else if (f <= 330) tier = 12;
+      else if (f <= 420) tier = 13;
+      else if (f <= 550) tier = 14;
+      else tier = 15;
     }
 
     battle.currentQuestion = generateQuestion(tier);
@@ -1298,14 +1332,28 @@ const App = (() => {
         </div>
       `;
     } else if (q.type === 2) {
-      // Type 2: Sentence Cloze
+      // Type 2: Sentence Cloze (Single or Double Cloze)
+      let sentenceHtml = '';
+      if (q.isDoubleCloze) {
+        sentenceHtml = q.sentenceHtml || q.sentence;
+      } else {
+        sentenceHtml = (q.vocab.sentence || '').replace('______', '<span class="sentence-blank">______</span>');
+      }
+
       questionBodyHtml = `
         <div class="sentence-prompt">
-          <div class="sentence-cloze-text">${q.vocab.sentence.replace('______', '<span class="sentence-blank">______</span>')}</div>
+          <div class="cloze-badge-bar">
+            ${q.isDoubleCloze
+              ? `<span class="double-cloze-badge">${PixelSprites.icon('gem', 12)} 雙空格填空挑戰</span>`
+              : `<span class="single-cloze-badge">${PixelSprites.icon('quill', 12)} 語境克漏字</span>`
+            }
+            <span class="category-tier-pill">${q.vocab.categoryLabel || '實用英語'}</span>
+          </div>
+          <div class="sentence-cloze-text ${q.isDoubleCloze ? 'double-cloze-text' : ''}">${sentenceHtml}</div>
         </div>
-        <div class="choices-grid-2x2">
+        <div class="choices-grid-2x2 ${q.isDoubleCloze ? 'double-choices-grid' : ''}">
           ${q.choices.map(choice => `
-            <button class="pixel-choice-btn" onclick="App.answerType2('${choice}')">${choice}</button>
+            <button class="pixel-choice-btn ${q.isDoubleCloze ? 'double-choice-btn' : ''}" onclick="App.answerType2('${choice}')">${choice}</button>
           `).join('')}
         </div>
       `;
@@ -1562,11 +1610,14 @@ const App = (() => {
     }
   };
 
-  // Type 2 Handler
+  // Type 2 Handler (Single & Double Cloze)
   const answerType2 = (choice) => {
     const q = battle.currentQuestion;
     const isCorrect = (choice === q.correctAnswer);
-    onQuestionAnswered(isCorrect, isCorrect ? '填詞正確！' : `答錯！正解: ${q.correctAnswer}`);
+    const feedback = isCorrect
+      ? (q.isDoubleCloze ? '⚡ 雙空格連擊填詞正確！' : '填詞正確！')
+      : `答錯！正解: ${q.correctAnswer}`;
+    onQuestionAnswered(isCorrect, feedback);
   };
 
   // Type 3 Handlers
@@ -1904,52 +1955,88 @@ const App = (() => {
     }
   };
 
-  // Medieval Obsidian Truth Revelation / Correction Modal
+  // Truth Revelation / Correction Modal (with Full Chinese Translation & Dual-Blank support)
   const showCorrectionModal = (q, feedbackMsg) => {
     if (!q || !q.vocab) {
       loadNextQuestion();
       return;
     }
     const isBookmarked = (state.bookmarkedWords || []).includes(q.vocab.id);
-    const highlightedSentence = q.vocab.sentence.replace('______', `<strong>${q.vocab.sentenceTarget}</strong>`);
+    const isDouble = !!q.isDoubleCloze;
 
+    let highlightedSentence = '';
     let correctAnswerText = '';
-    if (q.type === 1) {
-      correctAnswerText = `【${q.correctPos}】 ${q.correctMeaning}`;
-    } else if (q.type === 2) {
-      correctAnswerText = `【${q.correctAnswer}】 (詞意: ${q.vocab.meaning})`;
-    } else if (q.type === 3) {
-      correctAnswerText = `【${q.vocab.word}】 (缺漏字母: ${q.neededLetters.join(', ')})`;
-    } else if (q.type === 4) {
-      correctAnswerText = q.choices[q.correctIndex];
+
+    if (isDouble) {
+      highlightedSentence = (q.sentence || '')
+        .replace('[ 1 ] ______', `<strong class="correction-target-word">[ 1 ] ${q.target1}</strong>`)
+        .replace('[ 2 ] ______', `<strong class="correction-target-word">[ 2 ] ${q.target2}</strong>`);
+      correctAnswerText = `[ 1 ] ${q.target1} (${q.vocab.meaning}) / [ 2 ] ${q.target2} (${q.vocab2?.meaning || ''})`;
+    } else {
+      const target = q.vocab.sentenceTarget || q.vocab.word;
+      highlightedSentence = (q.vocab.sentence || '').replace('______', `<strong class="correction-target-word">${target}</strong>`);
+
+      if (q.type === 1) {
+        correctAnswerText = `【${q.correctPos}】 ${q.correctMeaning}`;
+      } else if (q.type === 2) {
+        correctAnswerText = `【${q.correctAnswer}】 (詞意: ${q.vocab.meaning})`;
+      } else if (q.type === 3) {
+        correctAnswerText = `【${q.vocab.word}】 (缺漏字母: ${q.neededLetters.join(', ')})`;
+      } else if (q.type === 4) {
+        correctAnswerText = q.choices[q.correctIndex];
+      }
     }
+
+    const sentenceZh = isDouble ? q.sentenceZh : (q.vocab.sentenceZh || '暫無翻譯');
 
     const modalHtml = `
       <div class="modal-overlay" id="modal-correction-overlay" onclick="event.stopPropagation()">
         <div class="modal-dialog modal-dialog-dark correction-dialog" onclick="event.stopPropagation()">
           <div class="correction-header">
-            <div style="filter: drop-shadow(0 2px 4px rgba(255,50,50,0.6));">
+            <div style="filter: drop-shadow(0 2px 4px rgba(255,80,80,0.6));">
               ${PixelSprites.icon('skull', 20)}
             </div>
             <div>
-              <div class="correction-title">魔物反擊・古籍真理顯現</div>
-              <div style="font-size:11px; color:#ffaaaa;">${feedbackMsg || '作答失誤！古籍顯露了正確答案'}</div>
+              <div class="correction-title">${isDouble ? '雙空格真理解析・中文翻譯' : '題型真理解析・完整中文翻譯'}</div>
+              <div style="font-size:11px; color:#ffaaaa;">${feedbackMsg || '作答失誤！已為您整理正確答案與語境翻譯'}</div>
             </div>
           </div>
 
           <div class="correction-card">
-            <div class="correction-word-row">
-              <div style="display:flex; align-items:baseline; gap:6px;">
-                <span class="correction-word">${q.vocab.word}</span>
-                <span class="correction-pos">${q.vocab.pos}</span>
-                <span class="question-category-badge">${q.vocab.categoryLabel || '核心英文'}</span>
+            ${isDouble ? `
+              <div class="correction-dual-vocab-row">
+                <div class="dual-vocab-card">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="dual-slot-tag">[ 1 ]</span>
+                    <button class="audio-btn" style="padding:2px 4px; font-size:10px;" onclick="AudioManager.speak('${q.vocab.word}')">${PixelSprites.icon('speaker', 10)} 聽</button>
+                  </div>
+                  <strong style="color:#ffd700; font-size:14px;">${q.vocab.word}</strong>
+                  <span style="font-size:11px; color:#ffdd88;">(${q.vocab.pos})</span>
+                  <div style="color:#ffffff; font-weight:bold; margin-top:2px;">${q.vocab.meaning}</div>
+                </div>
+                <div class="dual-vocab-card">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="dual-slot-tag">[ 2 ]</span>
+                    <button class="audio-btn" style="padding:2px 4px; font-size:10px;" onclick="AudioManager.speak('${q.vocab2?.word || ''}')">${PixelSprites.icon('speaker', 10)} 聽</button>
+                  </div>
+                  <strong style="color:#ffd700; font-size:14px;">${q.vocab2?.word || ''}</strong>
+                  <span style="font-size:11px; color:#ffdd88;">(${q.vocab2?.pos || ''})</span>
+                  <div style="color:#ffffff; font-weight:bold; margin-top:2px;">${q.vocab2?.meaning || ''}</div>
+                </div>
               </div>
-              <button class="audio-btn" onclick="AudioManager.speak('${q.vocab.word}')" title="播放發音">
-                ${PixelSprites.icon('speaker', 14)} <span>聽發音</span>
-              </button>
-            </div>
-
-            <div class="correction-meaning">${q.vocab.meaning}</div>
+            ` : `
+              <div class="correction-word-row">
+                <div style="display:flex; align-items:baseline; gap:6px;">
+                  <span class="correction-word">${q.vocab.word}</span>
+                  <span class="correction-pos">${q.vocab.pos}</span>
+                  <span class="question-category-badge">${q.vocab.categoryLabel || '核心英文'}</span>
+                </div>
+                <button class="audio-btn" onclick="AudioManager.speak('${q.vocab.word}')" title="播放發音">
+                  ${PixelSprites.icon('speaker', 14)} <span>聽發音</span>
+                </button>
+              </div>
+              <div class="correction-meaning">${q.vocab.meaning}</div>
+            `}
 
             <div class="correction-answer-box">
               <div class="correction-label">📜 正解核心：</div>
@@ -1957,9 +2044,10 @@ const App = (() => {
             </div>
 
             <div class="correction-sentence-box">
-              <div class="correction-label">📖 語境真理例句：</div>
+              <div class="correction-label">📖 語境完整例句：</div>
               <div class="correction-sentence-en">${highlightedSentence}</div>
-              <div class="correction-sentence-zh">${q.vocab.sentenceZh}</div>
+              <div class="correction-label-zh">🈯 完整中文翻譯：</div>
+              <div class="correction-sentence-zh">${sentenceZh}</div>
             </div>
 
             <div class="correction-bookmark-row">

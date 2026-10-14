@@ -2162,9 +2162,107 @@ body {
   text-decoration: underline;
 }
 
+.correction-label-zh {
+  font-size: 11px;
+  color: #ffc107;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
 .correction-sentence-zh {
+  font-size: 13px;
+  color: #ffd788;
+  font-weight: 500;
+  line-height: 1.5;
+  background: rgba(255, 215, 0, 0.08);
+  padding: 6px 8px;
+  border-left: 3px solid var(--gold);
+  margin-top: 4px;
+}
+
+.correction-target-word {
+  color: #44dd66 !important;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.correction-dual-vocab-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dual-vocab-card {
+  background: #231834;
+  border: 1px solid #573a7d;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #e0d0f5;
+  line-height: 1.4;
+}
+
+.dual-slot-tag {
+  color: #ffd700;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+/* Dual Blank / Double Cloze Styles */
+.cloze-badge-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.double-cloze-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #3b1848;
+  border: 1px solid #c058f8;
+  color: #f0a3ff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+}
+
+.single-cloze-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #1c2638;
+  border: 1px solid #4a75b0;
+  color: #8bc3ff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+}
+
+.category-tier-pill {
+  font-size: 11px;
+  color: #ffdd88;
+  background: #251c14;
+  border: 1px solid #6b4021;
+  padding: 2px 6px;
+}
+
+.double-cloze-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.double-choices-grid .pixel-choice-btn {
   font-size: 12px;
-  color: #a095b5;
+  padding: 8px 6px;
+  word-break: break-word;
+}
+
+.double-choice-btn {
+  color: #f7e8ff;
+  border-color: #6a4988;
 }
 
 .correction-bookmark-row {
